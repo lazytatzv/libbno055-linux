@@ -4,6 +4,30 @@ A robust, thread-safe, and dependency-free C++17 library for the BNO055 sensor o
 
 ---
 
+## Prerequisites (Linux / Raspberry Pi Setup)
+
+Before using the library, you must enable the I2C interface on your Linux device (such as a Raspberry Pi) and ensure your user has permissions to access it.
+
+### 1. Enable I2C
+On Raspberry Pi OS:
+1. Run `sudo raspi-config`.
+2. Navigate to **Interface Options** -> **I2C** and select **Yes** to enable it.
+3. Reboot your Raspberry Pi.
+
+Alternatively, add/uncomment the following line in `/boot/config.txt` (or `/boot/firmware/config.txt` on newer OS versions) and reboot:
+```text
+dtparam=i2c_arm=on
+```
+
+### 2. Set Permissions
+By default, access to I2C devices (`/dev/i2c-*`) requires root privileges. To run your program as a non-root user, add your user to the `i2c` group:
+```bash
+sudo usermod -aG i2c $USER
+```
+*Note: You must log out and log back in for the group changes to take effect.*
+
+---
+
 ## Build & Install
 
 ```bash
