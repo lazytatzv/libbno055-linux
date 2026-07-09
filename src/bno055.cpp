@@ -919,4 +919,64 @@ void BNO055::setLogger(LoggerCallback callback) {
     impl_->logger_ = std::move(callback);
 }
 
+Vector3 BNO055::getAccelerometerOrDefault() noexcept {
+    return getAccelerometerNoexcept().value_or(Vector3{0.0, 0.0, 0.0});
+}
+
+Vector3 BNO055::getMagnetometerOrDefault() noexcept {
+    return getMagnetometerNoexcept().value_or(Vector3{0.0, 0.0, 0.0});
+}
+
+Vector3 BNO055::getGyroscopeOrDefault() noexcept {
+    return getGyroscopeNoexcept().value_or(Vector3{0.0, 0.0, 0.0});
+}
+
+Vector3 BNO055::getEulerAnglesOrDefault() noexcept {
+    return getEulerAnglesNoexcept().value_or(Vector3{0.0, 0.0, 0.0});
+}
+
+Vector3 BNO055::getLinearAccelerationOrDefault() noexcept {
+    return getLinearAccelerationNoexcept().value_or(Vector3{0.0, 0.0, 0.0});
+}
+
+Vector3 BNO055::getGravityOrDefault() noexcept {
+    return getGravityNoexcept().value_or(Vector3{0.0, 0.0, 0.0});
+}
+
+Quaternion BNO055::getQuaternionOrDefault() noexcept {
+    return getQuaternionNoexcept().value_or(Quaternion{1.0, 0.0, 0.0, 0.0});
+}
+
+int8_t BNO055::getTemperatureOrDefault() noexcept {
+    return getTemperatureNoexcept().value_or(0);
+}
+
+Vector3 toEulerDegrees(const Quaternion& q) noexcept {
+    double sinr_cosp = 2.0 * (q.w * q.x + q.y * q.z);
+    double cosr_cosp = 1.0 - 2.0 * (q.x * q.x + q.y * q.y);
+    double roll = std::atan2(sinr_cosp, cosr_cosp);
+
+    double sinp = 2.0 * (q.w * q.y - q.z * q.x);
+    double pitch = 0.0;
+    if (std::abs(sinp) >= 1.0) {
+        pitch = std::copysign(M_PI / 2.0, sinp);
+    } else {
+        pitch = std::asin(sinp);
+    }
+
+    double siny_cosp = 2.0 * (q.w * q.z + q.x * q.y);
+    double cosy_cosp = 1.0 - 2.0 * (q.y * q.y + q.z * q.z);
+    double yaw = std::atan2(siny_cosp, cosy_cosp);
+
+    double roll_deg = roll * 180.0 / M_PI;
+    double pitch_deg = pitch * 180.0 / M_PI;
+    double yaw_deg = yaw * 180.0 / M_PI;
+
+    if (yaw_deg < 0.0) {
+        yaw_deg += 360.0;
+    }
+
+    return Vector3{roll_deg, pitch_deg, yaw_deg};
+}
+
 } // namespace bno055lib
