@@ -1,129 +1,134 @@
 # bno055lib
 
-A robust, thread-safe, and dependency-free C++17 library for the Bosch BNO055 orientation sensor over I2C on Linux systems.
+A robust, thread-safe, and dependency-free C++17 library for the BNO055 orientation sensor over I2C on Linux.
 
-BNO055 orientation sensorをLinux上のI2C経由で制御するための、堅牢でスレッドセーフかつ外部依存性のないC++17ライブラリです。
+Linux上のI2C経由でBNO055センサを制御する、堅牢かつスレッドセーフなC++17ライブラリです。
 
 ---
 
 ## Features (特徴)
 
-- **Pure C++17 & CMake**: No ROS or external dependencies. Highly portable for any C++ project on Linux.
-  - ROSなどの外部依存関係が一切ありません。Linux上のあらゆるC++プロジェクトで動作します。
-- **Pimpl Idiom (API Cleanliness)**: System headers like `<linux/i2c-dev.h>` or internal register mappings are hidden from the public header, resulting in fast compilation and absolute API cleanliness.
-  - 公開ヘッダーからLinux依存のヘッダーやレジスタ構造を完全に排除しているため、ビルドがクリーンかつ高速です。
-- **Thread-Safety (スレッドセーフ)**: Fully thread-safe operations protected by `std::mutex`. Safe to query sensor data from multiple threads.
-  - 全てのI2Cアクセスは `std::mutex` で保護されており、複数スレッドからの同時呼び出しも安全です。
-- **Robust Communication & Auto-Reconnection (自動再接続)**: Automatically handles temporary I2C glitches by retrying operations. In case of major bus failures or disconnections, it automatically tries to close/re-open and reinitialize the sensor seamlessly.
-  - 一時的なI2Cノイズに対するリトライ処理に加え、バスの切断が検知された場合は自動的に再オープンと再初期化を試みます。
-- **Calibration Save/Restore (キャリブレーション保存と復元)**: Easily save the 22-byte calibration profiles into a binary file and restore it instantly on startup.
-  - キャリブレーションデータを22バイトのバイナリファイルとして保存・復元する機能を提供します。
-- **SI Unit Standardization (SI単位系でのデータ提供)**: Raw sensor values are automatically converted into standard physical SI units (`m/s^2` for accel, `rad/s` for gyro, `rad` for euler, `uT` for mag).
-  - 取得した値は自動的に標準物理単位（加速度: $m/s^2$, 角速度: $rad/s$, オイラー角: $rad$, 磁場: $\mu T$）に変換されて返されます。
-- **Custom Logger Hook (カスタムロガーの登録)**: Easily pipe log outputs into your custom logger (e.g., `ROS_INFO`, syslog, or Google Log).
-  - ログ出力をROS 2のロガーや独自のロギングシステムにコールバック経由で転送できます。
-
----
-
-## Directory Structure (ディレクトリ構造)
-
-```
-bno055lib/
-├── CMakeLists.txt
-├── README.md
-├── .gitignore
-├── cmake/
-│   └── bno055libConfig.cmake.in
-├── include/
-│   └── bno055lib/
-│       └── bno055.hpp (Clean Public Header)
-├── src/
-│   └── bno055.cpp (Implementation containing Pimpl)
-└── examples/
-    └── calibrate.cpp (Calibration Utility Tool)
-```
+- **No Dependencies**: Pure C++17 & CMake (No ROS dependency).
+- **Thread-safe**: All I2C operations are protected by `std::mutex`.
+- **Robust**: Automatic retries and reconnection logic on I2C bus errors.
+- **Pimpl Idiom**: Fast compilation, clean API, and no Linux system headers exposed.
+- **Auto conversion**: Sensor data is automatically converted to standard SI units ($m/s^2$, $rad/s$, $rad$, $\mu T$).
 
 ---
 
 ## Build & Install (ビルドとインストール)
 
-### Build Library (ライブラリのビルド)
 ```bash
-git clone git@github.com:lazytatzv/bno055lib.git
-cd bno055lib
 mkdir build && cd build
 cmake ..
 make
-```
-
-### Install Library (インストール)
-```bash
 sudo make install
 ```
-This installs the library targets and config files to standard locations, allowing other CMake projects to find it easily via `find_package(bno055lib REQUIRED)`.
 
 ---
 
-## Usage Example (使用例)
+## API Reference
+
+### Namespaces & Types
 
 ```cpp
-#include <bno055lib/bno055.hpp>
-#include <iostream>
-#include <thread>
-#include <chrono>
+namespace bno055lib {
+    struct Vector3 { double x, y, z; };
+    struct Quaternion { double w, x, y, z; };
+    
+    struct Offsets {
+        int16_t accel_offset_x, accel_offset_y, accel_offset_z;
+        int16_t mag_offset_x, mag_offset_y, mag_offset_z;
+        int16_t gyro_offset_x, gyro_offset_y, gyro_offset_z;
+        int16_t accel_radius, mag_radius;
+    };
 
-int main() {
-    // Initialize sensor on address 0x28 (default) using I2C device "/dev/i2c-1"
-    bno055lib::BNO055 imu(0x28, "/dev/i2c-1");
+    struct CalibrationStatus {
+        uint8_t sys;   // 0 (uncalibrated) to 3 (fully calibrated)
+        uint8_t gyro;
+        uint8_t accel;
+        uint8_t mag;
+        bool isFullyCalibrated() const;
+    };
 
-    // Optional: Setup custom logger callback (e.g., forwarding to your custom logger)
-    imu.setLogger([](bno055lib::LogLevel level, std::string_view message) {
-        std::cout << "[IMU LOG] " << message << std::endl;
-    });
+    enum class OpMode : uint8_t {
+        Config = 0X00, AccOnly = 0X01, MagOnly = 0X02, GyroOnly = 0X03,
+        AccMag = 0X04, AccGyro = 0X05, MagGyro = 0X06, AMG = 0X07,
+        IMUPlus = 0X08, Compass = 0X09, M4G = 0X0A, NDOF_FMC_Off = 0X0B,
+        NDOF = 0X0C
+    };
 
-    // Begin in NDOF mode (sensor fusion)
-    if (!imu.begin(bno055lib::OpMode::NDOF)) {
-        std::cerr << "Failed to initialize BNO055!" << std::endl;
-        return 1;
-    }
-
-    // Load calibration file if it exists
-    imu.loadCalibrationFile("bno055_calib.bin");
-
-    while (true) {
-        try {
-            // Get standard SI values
-            auto accel = imu.getLinearAcceleration(); // m/s^2
-            auto gyro = imu.getGyroscope();           // rad/s
-            auto quat = imu.getQuaternion();          // w, x, y, z
-
-            std::cout << "Accel: [" << accel.x << ", " << accel.y << ", " << accel.z << "] m/s^2" << std::endl;
-            std::cout << "Gyro:  [" << gyro.x << ", " << gyro.y << ", " << gyro.z << "] rad/s" << std::endl;
-            std::cout << "Quat:  [" << quat.w << ", " << quat.x << ", " << quat.y << ", " << quat.z << "]" << std::endl;
-        } catch (const bno055lib::IMUError& e) {
-            std::cerr << "Sensor error: " << e.what() << std::endl;
-        }
-        std::this_thread::sleep_for(std::chrono::milliseconds(50));
-    }
-
-    return 0;
+    enum class LogLevel { Debug, Info, Warning, Error };
+    using LoggerCallback = std::function<void(LogLevel level, std::string_view message)>;
 }
 ```
 
+### Class `BNO055`
+
+#### Lifecycle
+* **`explicit BNO055(uint8_t i2c_address = 0x28, std::string_view i2c_device = "/dev/i2c-1")`**
+  Constructs the IMU instance. Alternate I2C address is `0x29`.
+* **`bool begin(OpMode mode = OpMode::NDOF)`**
+  Initializes the I2C bus, resets the sensor, and sets the initial operating mode. Returns `true` if successful.
+
+#### Configuration
+* **`void setMode(OpMode mode)`**
+  Changes the sensor operation mode.
+* **`OpMode getMode()`**
+  Gets the current operation mode.
+* **`void setAxisRemap(AxisMapConfig config)`**
+  Configures the mapping of physical axes to coordinate axes.
+* **`void setAxisSign(AxisMapSign sign)`**
+  Configures the signs of the mapped axes.
+* **`void setExtCrystalUse(bool use_xtal)`**
+  Enables or disables the external 32.768kHz crystal.
+
+#### Sensor Data (SI Units)
+* **`Vector3 getAccelerometer()`**
+  Gets raw accelerometer data in **$m/s^2$**.
+* **`Vector3 getMagnetometer()`**
+  Gets magnetometer data in **$\mu T$** (Microtesla).
+* **`Vector3 getGyroscope()`**
+  Gets gyroscope data in **$rad/s$**.
+* **`Vector3 getEulerAngles()`**
+  Gets euler angles. Returns `Vector3` where `x = Roll`, `y = Pitch`, `z = Yaw` in **$rad$**.
+* **`Vector3 getLinearAcceleration()`**
+  Gets acceleration excluding gravity in **$m/s^2$**.
+* **`Vector3 getGravity()`**
+  Gets gravity vector in **$m/s^2$**.
+* **`Quaternion getQuaternion()`**
+  Gets normalized orientation quaternion (w, x, y, z).
+* **`int8_t getTemperature()`**
+  Gets ambient temperature in **Celsius**.
+
+#### Calibration & Offsets
+* **`CalibrationStatus getCalibrationStatus()`**
+  Gets current calibration levels (0 to 3) for all sensor parts.
+* **`bool getSensorOffsets(Offsets& offsets)`**
+  Populates the `offsets` structure with calibration profile. Returns `false` if read failed.
+* **`bool getSensorOffsets(std::array<uint8_t, 22>& calib_data)`**
+  Populates a raw 22-byte array with calibration profile.
+* **`void setSensorOffsets(const Offsets& offsets)`**
+  Writes calibration profile to the sensor.
+* **`void setSensorOffsets(const std::array<uint8_t, 22>& calib_data)`**
+  Writes raw 22-byte calibration profile.
+* **`bool saveCalibrationFile(std::string_view filepath)`**
+  Saves the current calibration profile to a 22-byte binary file.
+* **`bool loadCalibrationFile(std::string_view filepath)`**
+  Loads calibration profile from a 22-byte binary file and writes to the sensor.
+
+#### Power Management
+* **`void enterSuspendMode()`**
+  Puts the sensor to low-power suspend mode.
+* **`void enterNormalMode()`**
+  Wakes up the sensor to normal power mode.
+
+#### Logging
+* **`void setLogger(LoggerCallback callback)`**
+  Registers a callback to intercept internal debug and error logs.
+
 ---
 
-## Calibration Utility (キャリブレーションユーティリティ)
+## License
 
-A utility tool to calibrate BNO055 and save its profile is compiled in `build/calibrate_imu`.
-`build/calibrate_imu` にキャリブレーション及びプロファイル保存用のツールがビルドされます。
-
-Run it by specifying the I2C device and output filename:
-```bash
-./calibrate_imu /dev/i2c-1 bno055_calib.bin
-```
-
----
-
-## License (ライセンス)
-
-MIT License. Feel free to use in commercial and non-commercial projects.
+MIT License.
