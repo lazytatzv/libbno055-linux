@@ -1,8 +1,29 @@
 # libbno055-linux
 
+![C++17](https://img.shields.io/badge/C%2B%2B-17-blue.svg)
+![ROS 2](https://img.shields.io/badge/ROS%202-Compatible-22314E.svg)
+![Linux](https://img.shields.io/badge/OS-Linux-FCC624.svg)
+![License](https://img.shields.io/badge/License-MIT-green.svg)
+
 A robust, thread-safe, and dependency-free C++17 library for the BNO055 sensor over I2C on Linux.
 
 Designed for robotic control systems, autonomous vehicles, and ROS 2 deployments that demand high reliability, automatic error recovery, and zero-latency (noexcept) capabilities.
+
+<details>
+<summary><strong>Table of Contents</strong></summary>
+
+- [Compatibility](#compatibility)
+- [Key Features](#key-features)
+- [Sensor Overview and Operation Modes](#sensor-overview-and-operation-modes)
+- [Prerequisites (Linux / Raspberry Pi Setup)](#prerequisites-linux--raspberry-pi-setup)
+- [Build & Install (System-wide)](#build--install-system-wide)
+- [Integration (CMake & ROS 2)](#integration-cmake--ros-2)
+- [Running the Examples](#running-the-examples)
+- [Usage Examples](#usage-examples)
+- [API Reference](#api-reference)
+- [License](#license)
+
+</details>
 
 ## Compatibility
 
