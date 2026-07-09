@@ -1,12 +1,13 @@
-#include "libbno055-linux/bno055.hpp"
+#include <chrono>
 #include <iostream>
 #include <thread>
-#include <chrono>
+
+#include "libbno055-linux/bno055.hpp"
 
 int main(int argc, char* argv[]) {
     std::string device = "/dev/i2c-1";
     std::string output_file = "bno055_calib.bin";
-    
+
     if (argc > 1) {
         device = argv[1];
     }
@@ -16,15 +17,23 @@ int main(int argc, char* argv[]) {
 
     std::cout << "Initializing BNO055 on " << device << "..." << std::endl;
     bno055lib::BNO055 imu(0x28, device);
-    
+
     // Setup logger callback
     imu.setLogger([](bno055lib::LogLevel level, std::string_view message) {
         std::string label;
         switch (level) {
-            case bno055lib::LogLevel::Debug: label = "[DEBUG]"; break;
-            case bno055lib::LogLevel::Info: label = "[INFO]"; break;
-            case bno055lib::LogLevel::Warning: label = "[WARN]"; break;
-            case bno055lib::LogLevel::Error: label = "[ERR]"; break;
+            case bno055lib::LogLevel::Debug:
+                label = "[DEBUG]";
+                break;
+            case bno055lib::LogLevel::Info:
+                label = "[INFO]";
+                break;
+            case bno055lib::LogLevel::Warning:
+                label = "[WARN]";
+                break;
+            case bno055lib::LogLevel::Error:
+                label = "[ERR]";
+                break;
         }
         std::cout << label << " " << message << std::endl;
     });
@@ -44,16 +53,12 @@ int main(int argc, char* argv[]) {
     while (true) {
         auto status = imu.getCalibrationStatus();
         auto diag = imu.getDiagnostics();
-        
-        std::cout << "\rCalib: SYS=" << (int)status.sys 
-                  << " GYRO=" << (int)status.gyro 
-                  << " ACCEL=" << (int)status.accel 
-                  << " MAG=" << (int)status.mag 
-                  << " | Diagnostics: RxErr=" << diag.read_failures
-                  << " TxErr=" << diag.write_failures
-                  << " Reconn=" << diag.reconnect_attempts
-                  << "   " << std::flush;
-                  
+
+        std::cout << "\rCalib: SYS=" << (int)status.sys << " GYRO=" << (int)status.gyro
+                  << " ACCEL=" << (int)status.accel << " MAG=" << (int)status.mag
+                  << " | Diagnostics: RxErr=" << diag.read_failures << " TxErr=" << diag.write_failures
+                  << " Reconn=" << diag.reconnect_attempts << "   " << std::flush;
+
         if (status.isFullyCalibrated()) {
             std::cout << "\n\nSensor is fully calibrated!" << std::endl;
             break;

@@ -1,10 +1,11 @@
-#include "libbno055-linux/bno055.hpp"
-#include <iostream>
-#include <thread>
+#include <atomic>
 #include <chrono>
 #include <csignal>
-#include <atomic>
 #include <iomanip>
+#include <iostream>
+#include <thread>
+
+#include "libbno055-linux/bno055.hpp"
 
 // Flag to coordinate clean shutdown on Ctrl+C
 std::atomic<bool> keep_running{true};
@@ -30,10 +31,18 @@ int main(int argc, char* argv[]) {
     imu.setLogger([](bno055lib::LogLevel level, std::string_view message) {
         std::string label;
         switch (level) {
-            case bno055lib::LogLevel::Debug: label = "[DEBUG]"; break;
-            case bno055lib::LogLevel::Info: label = "[INFO]"; break;
-            case bno055lib::LogLevel::Warning: label = "[WARN]"; break;
-            case bno055lib::LogLevel::Error: label = "[ERR]"; break;
+            case bno055lib::LogLevel::Debug:
+                label = "[DEBUG]";
+                break;
+            case bno055lib::LogLevel::Info:
+                label = "[INFO]";
+                break;
+            case bno055lib::LogLevel::Warning:
+                label = "[WARN]";
+                break;
+            case bno055lib::LogLevel::Error:
+                label = "[ERR]";
+                break;
         }
         std::cerr << label << " " << message << std::endl;
     });
@@ -54,7 +63,7 @@ int main(int argc, char* argv[]) {
     uint32_t loop_count = 0;
 
     while (keep_running) {
-        next_loop += std::chrono::milliseconds(50); // 20Hz
+        next_loop += std::chrono::milliseconds(50);  // 20Hz
 
         // Read orientation (Quaternion) and angular velocity (Gyro) using noexcept APIs
         auto quat = imu.getQuaternionNoexcept();
@@ -62,13 +71,9 @@ int main(int argc, char* argv[]) {
         auto accel = imu.getLinearAccelerationNoexcept();
 
         if (quat && gyro && accel) {
-            std::cout << "\r[Data] Quat(w,x,y,z): (" 
-                      << quat->w << ", " << quat->x << ", " << quat->y << ", " << quat->z 
-                      << ") | Gyro(rad/s): (" 
-                      << gyro->x << ", " << gyro->y << ", " << gyro->z 
-                      << ") | Accel(m/s^2): ("
-                      << accel->x << ", " << accel->y << ", " << accel->z << ")" 
-                      << std::flush;
+            std::cout << "\r[Data] Quat(w,x,y,z): (" << quat->w << ", " << quat->x << ", " << quat->y << ", " << quat->z
+                      << ") | Gyro(rad/s): (" << gyro->x << ", " << gyro->y << ", " << gyro->z << ") | Accel(m/s^2): ("
+                      << accel->x << ", " << accel->y << ", " << accel->z << ")" << std::flush;
         } else {
             std::cout << "\r[Data] Reading failed (temporary I2C bus error)                 " << std::flush;
         }
@@ -77,12 +82,9 @@ int main(int argc, char* argv[]) {
         if (++loop_count % 40 == 0) {
             auto diag = imu.getDiagnostics();
             auto calib = imu.getCalibrationStatus();
-            std::cout << "\n[DIAG] Calib: SYS=" << (int)calib.sys 
-                      << " G=" << (int)calib.gyro 
-                      << " A=" << (int)calib.accel 
-                      << " M=" << (int)calib.mag 
-                      << " | Bus Stats: RxErr=" << diag.read_failures 
-                      << " TxErr=" << diag.write_failures 
+            std::cout << "\n[DIAG] Calib: SYS=" << (int)calib.sys << " G=" << (int)calib.gyro
+                      << " A=" << (int)calib.accel << " M=" << (int)calib.mag
+                      << " | Bus Stats: RxErr=" << diag.read_failures << " TxErr=" << diag.write_failures
                       << " Reconnects=" << diag.reconnect_attempts << std::endl;
         }
 
@@ -90,7 +92,7 @@ int main(int argc, char* argv[]) {
     }
 
     std::cout << "\nShutting down IMU..." << std::endl;
-    imu.enterSuspendMode(); // Power down the sensor to save energy
+    imu.enterSuspendMode();  // Power down the sensor to save energy
     std::cout << "IMU suspended. Exited cleanly." << std::endl;
 
     return 0;

@@ -1,24 +1,19 @@
 #ifndef LIBBNO055_LINUX_BNO055_HPP
 #define LIBBNO055_LINUX_BNO055_HPP
 
+#include <array>
+#include <functional>
 #include <memory>
+#include <optional>
+#include <stdexcept>
 #include <string>
 #include <string_view>
-#include <array>
-#include <optional>
-#include <functional>
 #include <system_error>
-#include <stdexcept>
 
 namespace bno055lib {
 
 // Log levels for customization
-enum class LogLevel {
-    Debug,
-    Info,
-    Warning,
-    Error
-};
+enum class LogLevel { Debug, Info, Warning, Error };
 
 // Logger callback type
 using LoggerCallback = std::function<void(LogLevel level, std::string_view message)>;
@@ -83,9 +78,7 @@ struct CalibrationStatus {
     uint8_t accel{0};
     uint8_t mag{0};
 
-    bool isFullyCalibrated() const {
-        return sys == 3 && gyro == 3 && accel == 3 && mag == 3;
-    }
+    bool isFullyCalibrated() const { return sys == 3 && gyro == 3 && accel == 3 && mag == 3; }
 };
 
 // Diagnostics information for telemetry and hardware monitoring
@@ -141,7 +134,7 @@ public:
     // i2c_address: Default BNO055_ADDRESS_A is 0x28. Alternate is 0x29.
     // i2c_device: Linux I2C device node.
     explicit BNO055(uint8_t i2c_address = 0x28, std::string_view i2c_device = "/dev/i2c-1");
-    
+
     // Destructor
     ~BNO055();
 
@@ -226,6 +219,6 @@ private:
 // Mapping: x = Roll (-180 to 180), y = Pitch (-90 to 90), z = Yaw (0 to 360).
 Vector3 toEulerDegrees(const Quaternion& q) noexcept;
 
-} // namespace bno055lib
+}  // namespace bno055lib
 
-#endif // LIBBNO055_LINUX_BNO055_HPP
+#endif  // LIBBNO055_LINUX_BNO055_HPP

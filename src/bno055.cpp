@@ -33,7 +33,7 @@ enum Register : uint8_t {
     SW_REV_ID_LSB = 0x04,
     SW_REV_ID_MSB = 0x05,
     BL_REV_ID = 0x06,
-    
+
     // Data Registers
     ACCEL_DATA_X_LSB = 0x08,
     MAG_DATA_X_LSB = 0x0E,
@@ -43,7 +43,7 @@ enum Register : uint8_t {
     LINEAR_ACCEL_DATA_X_LSB = 0x28,
     GRAVITY_DATA_X_LSB = 0x2E,
     TEMP = 0x34,
-    
+
     // Status
     CALIB_STAT = 0x35,
     SELFTEST_RESULT = 0x36,
@@ -51,7 +51,7 @@ enum Register : uint8_t {
     SYS_CLK_STAT = 0x38,
     SYS_STAT = 0x39,
     SYS_ERR = 0x3A,
-    
+
     // Configuration
     UNIT_SEL = 0x3B,
     OPR_MODE = 0x3D,
@@ -60,7 +60,7 @@ enum Register : uint8_t {
     TEMP_SOURCE = 0x40,
     AXIS_MAP_CONFIG = 0x41,
     AXIS_MAP_SIGN = 0x42,
-    
+
     // Offsets
     ACCEL_OFFSET_X_LSB = 0x55,
     ACCEL_OFFSET_X_MSB = 0x56,
@@ -68,21 +68,21 @@ enum Register : uint8_t {
     ACCEL_OFFSET_Y_MSB = 0x58,
     ACCEL_OFFSET_Z_LSB = 0x59,
     ACCEL_OFFSET_Z_MSB = 0x5A,
-    
+
     MAG_OFFSET_X_LSB = 0x5B,
     MAG_OFFSET_X_MSB = 0x5C,
     MAG_OFFSET_Y_LSB = 0x5D,
     MAG_OFFSET_Y_MSB = 0x5E,
     MAG_OFFSET_Z_LSB = 0x5F,
     MAG_OFFSET_Z_MSB = 0x60,
-    
+
     GYRO_OFFSET_X_LSB = 0x61,
     GYRO_OFFSET_X_MSB = 0x62,
     GYRO_OFFSET_Y_LSB = 0x63,
     GYRO_OFFSET_Y_MSB = 0x64,
     GYRO_OFFSET_Z_LSB = 0x65,
     GYRO_OFFSET_Z_MSB = 0x66,
-    
+
     ACCEL_RADIUS_LSB = 0x67,
     ACCEL_RADIUS_MSB = 0x68,
     MAG_RADIUS_LSB = 0x69,
@@ -98,7 +98,7 @@ constexpr uint8_t POWER_MODE_SUSPEND = 0x02;
 #define I2C_SLAVE 0x0703
 #endif
 
-} // namespace
+}  // namespace
 
 class BNO055::Impl {
 public:
@@ -113,19 +113,16 @@ public:
 
     // Configuration Cache (to restore on reconnect)
     OpMode mode_{OpMode::Config};
-    AxisMapConfig axis_map_config_{AxisMapConfig::P1}; // Default P1
-    AxisMapSign axis_map_sign_{AxisMapSign::P1};       // Default P1
+    AxisMapConfig axis_map_config_{AxisMapConfig::P1};  // Default P1
+    AxisMapSign axis_map_sign_{AxisMapSign::P1};        // Default P1
     bool use_xtal_{false};
-    uint8_t unit_sel_val_{0x00}; // Default SI units
+    uint8_t unit_sel_val_{0x00};  // Default SI units
     bool has_offsets_{false};
     std::array<uint8_t, 22> offsets_data_{0};
 
-    Impl(uint8_t address, std::string_view i2c_device)
-        : address_(address), i2c_device_(std::string(i2c_device)) {}
+    Impl(uint8_t address, std::string_view i2c_device) : address_(address), i2c_device_(std::string(i2c_device)) {}
 
-    ~Impl() {
-        close_i2c();
-    }
+    ~Impl() { close_i2c(); }
 
     void log(LogLevel level, std::string_view msg) {
         if (logger_) {
@@ -133,10 +130,18 @@ public:
         } else {
             std::string label;
             switch (level) {
-                case LogLevel::Debug: label = "[DEBUG]"; break;
-                case LogLevel::Info: label = "[INFO]"; break;
-                case LogLevel::Warning: label = "[WARNING]"; break;
-                case LogLevel::Error: label = "[ERROR]"; break;
+                case LogLevel::Debug:
+                    label = "[DEBUG]";
+                    break;
+                case LogLevel::Info:
+                    label = "[INFO]";
+                    break;
+                case LogLevel::Warning:
+                    label = "[WARNING]";
+                    break;
+                case LogLevel::Error:
+                    label = "[ERROR]";
+                    break;
             }
             std::cerr << "[bno055lib::BNO055] " << label << " " << msg << std::endl;
         }
@@ -206,7 +211,7 @@ public:
         // Reset
         if (!write8_raw(SYS_TRIGGER, 0x20)) return false;
         std::this_thread::sleep_for(std::chrono::milliseconds(50));
-        
+
         // Wait boot after reset with timeout
         timeout = 1000;
         boot_ok = false;
@@ -229,12 +234,12 @@ public:
         if (!write8_raw(PWR_MODE, POWER_MODE_NORMAL)) return false;
         std::this_thread::sleep_for(std::chrono::milliseconds(10));
         if (!write8_raw(PAGE_ID, 0)) return false;
-        
+
         // Restore external crystal
         uint8_t sys_trigger_val = use_xtal_ ? 0x80 : 0x00;
         if (!write8_raw(SYS_TRIGGER, sys_trigger_val)) return false;
         std::this_thread::sleep_for(std::chrono::milliseconds(10));
-        
+
         // Restore unit selection
         if (!write8_raw(UNIT_SEL, unit_sel_val_)) return false;
         std::this_thread::sleep_for(std::chrono::milliseconds(10));
@@ -268,7 +273,8 @@ public:
         uint8_t buffer[2] = {reg, value};
         return ::write(i2c_fd, buffer, 2) == 2;
 #else
-        (void)reg; (void)value;
+        (void)reg;
+        (void)value;
         return true;
 #endif
     }
@@ -276,12 +282,14 @@ public:
     bool writeLen_raw(uint8_t reg, const uint8_t* buffer, uint8_t len) {
         if (i2c_fd < 0) return false;
 #ifdef __linux__
-        uint8_t write_buf[32]; // Stack allocation instead of vector
+        uint8_t write_buf[32];  // Stack allocation instead of vector
         write_buf[0] = reg;
         std::memcpy(write_buf + 1, buffer, len);
         return ::write(i2c_fd, write_buf, len + 1) == len + 1;
 #else
-        (void)reg; (void)buffer; (void)len;
+        (void)reg;
+        (void)buffer;
+        (void)len;
         return true;
 #endif
     }
@@ -316,7 +324,8 @@ public:
                 return true;
             }
 #else
-            (void)reg; (void)value;
+            (void)reg;
+            (void)value;
             return true;
 #endif
             diagnostics_.write_failures++;
@@ -331,7 +340,8 @@ public:
                 return true;
             }
 #else
-            (void)reg; (void)value;
+            (void)reg;
+            (void)value;
             return true;
 #endif
         }
@@ -342,7 +352,7 @@ public:
 
     bool writeLen(uint8_t reg, const uint8_t* buffer, uint8_t len, int retries = 3) {
         std::lock_guard<std::mutex> lock(mutex_);
-        uint8_t write_buf[32]; // Stack allocation instead of vector
+        uint8_t write_buf[32];  // Stack allocation instead of vector
         write_buf[0] = reg;
         std::memcpy(write_buf + 1, buffer, len);
 
@@ -506,7 +516,7 @@ bool BNO055::begin(OpMode mode) {
     // Reset
     impl_->write8(SYS_TRIGGER, 0x20);
     std::this_thread::sleep_for(std::chrono::milliseconds(50));
-    
+
     // Wait boot after reset with timeout (avoid infinite loop)
     timeout = 1000;
     found = false;
@@ -529,7 +539,7 @@ bool BNO055::begin(OpMode mode) {
     std::this_thread::sleep_for(std::chrono::milliseconds(10));
 
     impl_->write8(PAGE_ID, 0);
-    
+
     // Configure UNIT_SEL explicitly to SI Units (0x00 = m/s^2, dps, degrees, Celsius, Windows orientation)
     impl_->unit_sel_val_ = 0x00;
     impl_->write8(UNIT_SEL, impl_->unit_sel_val_);
@@ -854,7 +864,7 @@ void BNO055::setSensorOffsets(const std::array<uint8_t, 22>& calib_data) {
     OpMode prev = impl_->mode_;
     setMode(OpMode::Config);
     std::this_thread::sleep_for(std::chrono::milliseconds(25));
-    
+
     impl_->writeLen(ACCEL_OFFSET_X_LSB, calib_data.data(), 22);
 
     setMode(prev);
@@ -979,4 +989,4 @@ Vector3 toEulerDegrees(const Quaternion& q) noexcept {
     return Vector3{roll_deg, pitch_deg, yaw_deg};
 }
 
-} // namespace bno055lib
+}  // namespace bno055lib
