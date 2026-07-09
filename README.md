@@ -15,12 +15,12 @@ Designed for robotic control systems, autonomous vehicles, and ROS 2 deployments
 
 ## Key Features
 
-*   **Thread-Safe**: Safe concurrent access to the IMU from multiple threads or asynchronous control loops.
-*   **State-Preserving Auto-Recovery**: Detects I2C drops, automatically reconnects, and restores all configuration (Axis Remaps, Calibration Offsets, Ext-Crystal selection, and Unit setup).
-*   **Performance Optimized**: Uses sequential burst-writes (writeLen) for uploading calibration offsets in a single batch, reducing bus overhead.
-*   **Zero-Latency API (noexcept)**: Companion non-throwing APIs returning std::optional to avoid memory/CPU overhead of C++ exceptions in real-time execution loops.
-*   **Hardware Diagnostics**: Real-time telemetry tracking cumulative read failures, write failures, and hardware reconnect attempts.
-*   **Cross-Platform Compatibility (Mock Mode)**: Automatically falls back to I2C mocks on macOS/Windows, allowing software compilation and CI/CD validation without access to physical hardware.
+*   **Thread-Safe**: Safe concurrent IMU access.
+*   **Auto-Recovery**: Transparently reconnects and restores state on I2C drops.
+*   **Performance Optimized**: Minimal bus overhead via burst-writes.
+*   **Zero-Latency API**: Non-throwing `noexcept` options for real-time loops.
+*   **Diagnostics**: Built-in telemetry for hardware health monitoring.
+*   **Cross-Platform**: Built-in I2C mock mode for CI/CD and offline compilation.
 
 ---
 
