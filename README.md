@@ -5,8 +5,6 @@
 ![Linux](https://img.shields.io/badge/OS-Linux-FCC624.svg)
 ![CMake](https://img.shields.io/badge/CMake-3.10%2B-064F8C.svg)
 ![CI](https://github.com/lazytatzv/libbno055-linux/actions/workflows/ci.yml/badge.svg)
-![Issues](https://img.shields.io/github/issues/lazytatzv/libbno055-linux.svg)
-![Pull Requests](https://img.shields.io/github/issues-pr/lazytatzv/libbno055-linux.svg)
 ![Repo Size](https://img.shields.io/github/repo-size/lazytatzv/libbno055-linux.svg)
 ![License](https://img.shields.io/badge/License-MIT-green.svg)
 
