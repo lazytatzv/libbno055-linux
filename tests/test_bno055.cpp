@@ -1,4 +1,4 @@
-#include "bno055lib/bno055.hpp"
+#include "libbno055-linux/bno055.hpp"
 #include <gtest/gtest.h>
 
 TEST(BNO055Test, ConstructorAndMockInitialization) {

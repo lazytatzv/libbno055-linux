@@ -1,5 +1,5 @@
-#ifndef BNO055LIB_BNO055_HPP
-#define BNO055LIB_BNO055_HPP
+#ifndef LIBBNO055_LINUX_BNO055_HPP
+#define LIBBNO055_LINUX_BNO055_HPP
 
 #include <memory>
 #include <string>
@@ -214,4 +214,4 @@ private:
 
 } // namespace bno055lib
 
-#endif // BNO055LIB_BNO055_HPP
+#endif // LIBBNO055_LINUX_BNO055_HPP

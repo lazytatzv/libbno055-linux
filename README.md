@@ -1,4 +1,4 @@
-# bno055lib
+# libbno055-linux
 
 A robust, thread-safe, and dependency-free C++17 library for the BNO055 sensor over I2C on Linux.
 
@@ -93,23 +93,23 @@ sudo make install
 If installed globally on your system, find and link the library in your CMakeLists.txt:
 
 ```cmake
-find_package(bno055lib REQUIRED)
-target_link_libraries(your_target PRIVATE bno055lib::bno055lib)
+find_package(libbno055-linux REQUIRED)
+target_link_libraries(your_target PRIVATE libbno055-linux::libbno055-linux)
 ```
 
 Include in your C++ code:
 ```cpp
-#include <bno055lib/bno055.hpp>
+#include <libbno055-linux/bno055.hpp>
 ```
 
 ### Local CMake Integration (Without System Installation)
 If you do not want to install the library system-wide, integrate it locally:
 
 #### Method A: add_subdirectory
-Place the bno055lib directory inside your project (e.g., under third_party/) and add it in your CMakeLists.txt:
+Place the libbno055-linux directory inside your project (e.g., under third_party/) and add it in your CMakeLists.txt:
 ```cmake
-add_subdirectory(third_party/bno055lib)
-target_link_libraries(your_target PRIVATE bno055lib)
+add_subdirectory(third_party/libbno055-linux)
+target_link_libraries(your_target PRIVATE libbno055-linux)
 ```
 
 #### Method B: FetchContent (CMake 3.11+)
@@ -117,25 +117,24 @@ target_link_libraries(your_target PRIVATE bno055lib)
 include(FetchContent)
 
 FetchContent_Declare(
-  bno055lib
-  GIT_REPOSITORY https://github.com/lazytatzv/bno055lib.git
+  libbno055-linux
+  GIT_REPOSITORY https://github.com/lazytatzv/libbno055-linux.git
   GIT_TAG        main
 )
-FetchContent_MakeAvailable(bno055lib)
+FetchContent_MakeAvailable(libbno055-linux)
 
-target_link_libraries(your_target PRIVATE bno055lib)
+target_link_libraries(your_target PRIVATE libbno055-linux)
 ```
 
 ### ROS 2 (colcon) Integration
-Place the bno055lib directory directly inside your ROS 2 workspace's src folder. colcon will build it as a pure CMake package.
+Place the libbno055-linux directory directly inside your ROS 2 workspace's src folder. colcon will build it as a pure CMake package.
 
 **Workspace Directory Structure:**
 ```text
 your_ros2_ws/
 └── src/
-    ├── bno055lib/         # <--- Place this library here (Pure CMake package)
+    ├── libbno055-linux/   # <--- Place this library here (Pure CMake package)
     │   ├── CMakeLists.txt
-    │   ├── package.xml
     │   └── ...
     └── your_ros_package/  # Your ROS 2 node package (Ament CMake package)
         ├── CMakeLists.txt
@@ -146,12 +145,12 @@ your_ros2_ws/
 To use it from another ROS 2 package:
 1. Add dependency to package.xml:
    ```xml
-   <depend>bno055lib</depend>
+   <depend>libbno055-linux</depend>
    ```
 2. Find and link in CMakeLists.txt:
    ```cmake
-   find_package(bno055lib REQUIRED)
-   ament_target_dependencies(your_node_target bno055lib)
+   find_package(libbno055-linux REQUIRED)
+   ament_target_dependencies(your_node_target libbno055-linux)
    ```
 
 ---
@@ -170,7 +169,6 @@ To specify a different I2C device (e.g., /dev/i2c-0) and/or operation mode (e.g.
 ./build/read_all_data /dev/i2c-0 imu
 ```
 (Supported modes: ndof, imu, amg, gyro. Default is ndof. Selecting "imu" enables IMUPlus mode, which runs 6-axis sensor fusion without the magnetometer, avoiding orientation drift and distortion in indoor environments with magnetic interference.)
-
 
 ### 2. High-Frequency Real-time Loop (Exception-free API)
 Reads orientation, angular velocity, and linear acceleration at 20Hz, displays telemetry diagnostics, and safely suspends the sensor on Ctrl+C.
@@ -198,7 +196,7 @@ sudo ./build/read_all_data
 Highly recommended for real-time controllers (like ROS 2 control nodes) where exceptions are prohibited.
 
 ```cpp
-#include <bno055lib/bno055.hpp>
+#include <libbno055-linux/bno055.hpp>
 #include <iostream>
 #include <thread>
 #include <chrono>
@@ -241,7 +239,7 @@ int main() {
 
 ### 2. Quaternion Retrieval (With Exception Handling)
 ```cpp
-#include <bno055lib/bno055.hpp>
+#include <libbno055-linux/bno055.hpp>
 #include <iostream>
 
 int main() {
