@@ -4,6 +4,7 @@
 ![ROS 2](https://img.shields.io/badge/ROS%202-Compatible-22314E.svg)
 ![Linux](https://img.shields.io/badge/OS-Linux-FCC624.svg)
 ![License](https://img.shields.io/badge/License-MIT-green.svg)
+![CI](https://github.com/lazytatzv/libbno055-linux/actions/workflows/ci.yml/badge.svg)
 
 A robust, thread-safe, and dependency-free C++17 library for the BNO055 sensor over I2C on Linux.
 
