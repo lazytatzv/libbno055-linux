@@ -15,6 +15,7 @@ Designed for robotic control systems, autonomous vehicles, and ROS 2 deployments
 
 - [Compatibility](#compatibility)
 - [Key Features](#key-features)
+- [Quick Start](#quick-start)
 - [Sensor Overview and Operation Modes](#sensor-overview-and-operation-modes)
 - [Prerequisites (Linux / Raspberry Pi Setup)](#prerequisites-linux--raspberry-pi-setup)
 - [Build & Install (System-wide)](#build--install-system-wide)
@@ -43,6 +44,37 @@ Designed for robotic control systems, autonomous vehicles, and ROS 2 deployments
 *   **Zero-Latency API**: Non-throwing `noexcept` options for real-time loops.
 *   **Diagnostics**: Built-in telemetry for hardware health monitoring.
 *   **Cross-Platform**: Built-in I2C mock mode for CI/CD and offline compilation.
+
+---
+
+## Quick Start
+
+1. **Install tools:** `sudo apt install build-essential cmake`
+2. **Build & Install:**
+   ```bash
+   git clone https://github.com/lazytatzv/libbno055-linux.git
+   cd libbno055-linux
+   mkdir build && cd build
+   cmake .. && make && sudo make install
+   ```
+3. **Use in your C++ code** (`main.cpp`):
+   ```cpp
+   #include <libbno055-linux/bno055.hpp>
+   #include <iostream>
+
+   int main() {
+       bno055lib::BNO055 imu(0x28, "/dev/i2c-1");
+       if (imu.begin()) {
+           auto quat = imu.getQuaternionOrDefault();
+           std::cout << "w:" << quat.w << " x:" << quat.x << " y:" << quat.y << " z:" << quat.z << "\n";
+       }
+   }
+   ```
+4. **Compile & Run:**
+   ```bash
+   g++ main.cpp -lbno055-linux -o main
+   ./main
+   ```
 
 ---
 
