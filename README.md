@@ -342,57 +342,92 @@ namespace bno055lib {
     using LoggerCallback = std::function<void(LogLevel level, std::string_view message)>;
 }
 ```
-
 ### Class BNO055
 
 All functions in the `BNO055` class are thread-safe and protect access to the underlying I2C bus using internal mutexes.
 
 #### Lifecycle
+
 *   **explicit BNO055(uint8_t i2c_address = 0x28, std::string_view i2c_device = "/dev/i2c-1")**
     *   *Parameters*:
-        *   `i2c_address`: The I2C address of the BNO055 sensor (typically `0x28` or `0x29`).
-        *   `i2c_device`: The path to the Linux I2C device node (e.g., `/dev/i2c-1`).
-    *   *Description*: Creates a BNO055 instance. If compiled on a non-Linux platform (like macOS or Windows), it automatically activates the built-in mock simulation mode using the virtual device name (e.g., `/dev/i2c-mock`).
+        *   `i2c_address`: `uint8_t`. The I2C slave address of the BNO055 (typically `0x28` or `0x29`).
+        *   `i2c_device`: `std::string_view`. The Linux file path to the I2C adapter (e.g., `/dev/i2c-1`).
+    *   *Returns*: None (Constructor).
+    *   *Description*: Creates a BNO055 handler. If compiled on macOS/Windows, it falls back to the mock mode and accepts any mock device name.
 *   **bool begin(OpMode mode = OpMode::NDOF)**
     *   *Parameters*:
-        *   `mode`: The initial operating mode of the sensor.
-    *   *Returns*: `true` on successful initialization; `false` on communication failure or boot timeout.
-    *   *Description*: Power-cycles the sensor to software-reset it, waits for the system to boot (timeout 1000ms), verifies the chip ID, configures units to SI metrics (m/s^2, rad/s, Celsius), sets the default axis remap, and transitions into the specified operating mode. Also spawns the background auto-recovery thread.
+        *   `mode`: `OpMode`. The target operation mode to start in.
+    *   *Returns*: `bool`. `true` if initialization, self-test verification, and mode transition succeeded; `false` on boot timeouts or I2C failures.
+    *   *Description*: Power-cycles the sensor, verifies the Chip ID, configures default Axis Maps and Unit settings, and spawns the background auto-recovery thread.
 
 #### Configuration
+
 *   **void setMode(OpMode mode)**
-    *   *Description*: Switches the operating mode. Temporarily enters CONFIG mode if necessary, writes the mode register, and waits the required datasheet transition time (30ms). Throws `IMUError` on communication loss.
+    *   *Parameters*:
+        *   `mode`: `OpMode`. The target operation mode to switch into.
+    *   *Returns*: `void`.
+    *   *Exceptions*: Throws `bno055lib::IMUError` on permanent I2C communication failures.
+    *   *Description*: Switches the operating mode of the sensor. Handles transition delay requirements automatically.
 *   **OpMode getMode()**
-    *   *Returns*: The current operating mode read from the sensor's `OPR_MODE` register. Throws `IMUError` on communication loss.
+    *   *Parameters*: None.
+    *   *Returns*: `OpMode`. The active operation mode currently registered on the sensor.
+    *   *Exceptions*: Throws `bno055lib::IMUError` on I2C failure.
 *   **void setAxisRemap(AxisMapConfig config)**
-    *   *Description*: Changes the axis mapping based on the mounting orientation of the sensor. Internally enters CONFIG mode to apply. Throws `IMUError` on communication loss.
+    *   *Parameters*:
+        *   `config`: `AxisMapConfig`. The remap configuration matching the sensor's mounting orientation.
+    *   *Returns*: `void`.
+    *   *Exceptions*: Throws `bno055lib::IMUError` on I2C failure.
 *   **void setAxisSign(AxisMapSign sign)**
-    *   *Description*: Modifies the axis signs (direction of positive rotation/acceleration) for custom orientations. Throws `IMUError` on communication loss.
+    *   *Parameters*:
+        *   `sign`: `AxisMapSign`. The axis sign configuration to adjust rotation/acceleration directions.
+    *   *Returns*: `void`.
+    *   *Exceptions*: Throws `bno055lib::IMUError` on I2C failure.
 *   **void setExtCrystalUse(bool use_xtal)**
-    *   *Description*: Tells the sensor whether to use an external crystal oscillator. Highly recommended for accurate fusion integration. Throws `IMUError` on communication loss.
+    *   *Parameters*:
+        *   `use_xtal`: `bool`. Set to `true` to use the external 32.768kHz crystal oscillator for enhanced fusion stability.
+    *   *Returns*: `void`.
+    *   *Exceptions*: Throws `bno055lib::IMUError` on I2C failure.
 
 #### Sensor Data (Throwing APIs)
-These functions query registers, convert the raw binary data to standard physical SI units, and return the structure. They throw `bno055lib::IMUError` if the bus communication fails permanently.
+
+These functions query raw data registers and convert them to SI units. They throw `bno055lib::IMUError` on permanent I2C communication loss.
 
 *   **Vector3 getAccelerometer()**
-    *   *Units*: Meters per second squared (m/s^2).
+    *   *Parameters*: None.
+    *   *Returns*: `Vector3`. 3-axis acceleration in meters per second squared (m/s^2).
+    *   *Exceptions*: Throws `bno055lib::IMUError`.
 *   **Vector3 getMagnetometer()**
-    *   *Units*: Microteslas (uT).
+    *   *Parameters*: None.
+    *   *Returns*: `Vector3`. 3-axis magnetic field strength in microteslas (uT).
+    *   *Exceptions*: Throws `bno055lib::IMUError`.
 *   **Vector3 getGyroscope()**
-    *   *Units*: Radians per second (rad/s).
+    *   *Parameters*: None.
+    *   *Returns*: `Vector3`. 3-axis angular velocity in radians per second (rad/s).
+    *   *Exceptions*: Throws `bno055lib::IMUError`.
 *   **Vector3 getEulerAngles()**
-    *   *Units*: Radians (rad). Return order is `x` = Roll, `y` = Pitch, `z` = Yaw (Heading).
+    *   *Parameters*: None.
+    *   *Returns*: `Vector3`. Roll, Pitch, Yaw in radians (rad). Mapping: `x` = Roll, `y` = Pitch, `z` = Yaw.
+    *   *Exceptions*: Throws `bno055lib::IMUError`.
 *   **Vector3 getLinearAcceleration()**
-    *   *Units*: Meters per second squared (m/s^2). Acceleration of the sensor excluding gravity.
+    *   *Parameters*: None.
+    *   *Returns*: `Vector3`. 3-axis linear acceleration (accelerometer excluding gravity) in m/s^2.
+    *   *Exceptions*: Throws `bno055lib::IMUError`.
 *   **Vector3 getGravity()**
-    *   *Units*: Meters per second squared (m/s^2). Gravity acceleration vector.
+    *   *Parameters*: None.
+    *   *Returns*: `Vector3`. 3-axis gravity vector in m/s^2.
+    *   *Exceptions*: Throws `bno055lib::IMUError`.
 *   **Quaternion getQuaternion()**
-    *   *Units*: Normalized Unit Quaternion ($w^2 + x^2 + y^2 + z^2 \approx 1.0$).
+    *   *Parameters*: None.
+    *   *Returns*: `Quaternion`. Normalized 3D orientation unit quaternion (w, x, y, z).
+    *   *Exceptions*: Throws `bno055lib::IMUError`.
 *   **int8_t getTemperature()**
-    *   *Units*: Degrees Celsius ($^\circ C$).
+    *   *Parameters*: None.
+    *   *Returns*: `int8_t`. Chip temperature in degrees Celsius (C).
+    *   *Exceptions*: Throws `bno055lib::IMUError`.
 
 #### Sensor Data (Exception-free / noexcept APIs)
-These functions provide the exact same functionality as the throwing APIs above but are declared `noexcept` and will **never throw exceptions**.
+
+These companion APIs perform the exact same register queries and conversions but never throw exceptions.
 
 *   **std::optional\<Vector3\> getAccelerometerNoexcept() noexcept**
 *   **std::optional\<Vector3\> getMagnetometerNoexcept() noexcept**
@@ -402,35 +437,68 @@ These functions provide the exact same functionality as the throwing APIs above 
 *   **std::optional\<Vector3\> getGravityNoexcept() noexcept**
 *   **std::optional\<Quaternion\> getQuaternionNoexcept() noexcept**
 *   **std::optional\<int8_t\> getTemperatureNoexcept() noexcept**
-    *   *Returns*: `std::optional` containing the data structure on success; `std::nullopt` on communication dropout.
-    *   *Description*: Safely increments the internal `Diagnostics` counter if I2C failures occur.
+    *   *Parameters*: None.
+    *   *Returns*: `std::optional<T>`. Contains the requested struct on success; `std::nullopt` on communication failure.
+    *   *Description*: Safety-hardened read path that increments I2C diagnostic counters upon failure without generating CPU exceptions.
 
 #### Diagnostics & Calibration
+
 *   **Diagnostics getDiagnostics() const noexcept**
-    *   *Returns*: A copy of the current error/recovery counters.
+    *   *Parameters*: None.
+    *   *Returns*: `Diagnostics`. The telemetry diagnostic struct containing I2C read/write error counts and reconnection attempts.
 *   **CalibrationStatus getCalibrationStatus()**
-    *   *Returns*: The current system calibration status structure. Throws `IMUError` on communication loss.
+    *   *Parameters*: None.
+    *   *Returns*: `CalibrationStatus`. Current calibration state values (0 to 3) for the system, gyro, accelerometer, and magnetometer.
+    *   *Exceptions*: Throws `bno055lib::IMUError` on I2C failure.
 *   **bool getSensorOffsets(Offsets& offsets)**
+    *   *Parameters*:
+        *   `offsets`: `Offsets&` (output). Structure to store the retrieved calibration offsets.
+    *   *Returns*: `bool`. `true` if offsets were read and stored successfully; `false` on I2C failure.
 *   **bool getSensorOffsets(std::array<uint8_t, 22>& calib_data)**
-    *   *Returns*: `true` if offsets were read successfully; `false` otherwise.
-    *   *Description*: Reads the 22-byte calibration profiles (offsets and radiuses) from the sensor's EEPROM-like register bank.
+    *   *Parameters*:
+        *   `calib_data`: `std::array<uint8_t, 22>&` (output). Raw byte array to store the 22 bytes of offsets.
+    *   *Returns*: `bool`. `true` if read succeeded; `false` on failure.
 *   **void setSensorOffsets(const Offsets& offsets)**
+    *   *Parameters*:
+        *   `offsets`: `const Offsets&`. Calibration offset parameters to load into the sensor registers.
+    *   *Returns*: `void`.
+    *   *Exceptions*: Throws `bno055lib::IMUError` on failure.
+    *   *Description*: Writes offsets using a single-batch sequential I2C write transaction to minimize bus occupation.
 *   **void setSensorOffsets(const std::array<uint8_t, 22>& calib_data)**
-    *   *Description*: Writes the 22-byte calibration profiles into the sensor. Internally optimized using single-batch I2C sequential writes (`writeLen`) to minimize bus occupation. Throws `IMUError` on failure.
+    *   *Parameters*:
+        *   `calib_data`: `const std::array<uint8_t, 22>&`. Raw 22-byte array containing calibration offsets.
+    *   *Returns*: `void`.
+    *   *Exceptions*: Throws `bno055lib::IMUError` on failure.
 *   **bool saveCalibrationFile(std::string_view filepath)**
-    *   *Description*: Reads offsets from the sensor and saves them as a 22-byte binary profile to the host filesystem. Returns `true` on success.
+    *   *Parameters*:
+        *   `filepath`: `std::string_view`. Destination file path to save the 22-byte profile (e.g., `calib.bin`).
+    *   *Returns*: `bool`. `true` if offsets were read and successfully written to disk; `false` on I2C or file I/O errors.
 *   **bool loadCalibrationFile(std::string_view filepath)**
-    *   *Description*: Loads a 22-byte binary profile from the filesystem, writes it to the sensor, and saves it in the memory cache for automatic reconnect state restoration. Returns `true` on success.
+    *   *Parameters*:
+        *   `filepath`: `std::string_view`. Source path of the 22-byte binary profile.
+    *   *Returns*: `bool`. `true` if file read, register upload, and cache storage succeeded; `false` on file I/O or I2C errors.
+    *   *Description*: Uploads calibration to the sensor and caches it locally so it can be automatically restored during an I2C hot-reconnect recovery.
 
 #### Power Management
+
 *   **void enterSuspendMode()**
-    *   *Description*: Puts the sensor into low-power sleep mode (accelerometer, gyroscope, and magnetometer suspended).
+    *   *Parameters*: None.
+    *   *Returns*: `void`.
+    *   *Exceptions*: Throws `bno055lib::IMUError` on failure.
+    *   *Description*: Places the sensor into suspend mode to reduce power consumption. Suspends accelerometer, gyroscope, and magnetometer blocks.
 *   **void enterNormalMode()**
-    *   *Description*: Resumes the sensor to active operating mode.
+    *   *Parameters*: None.
+    *   *Returns*: `void`.
+    *   *Exceptions*: Throws `bno055lib::IMUError` on failure.
+    *   *Description*: Awakes the sensor from suspend mode back to active normal operation.
 
 #### Logging
+
 *   **void setLogger(LoggerCallback callback)**
-    *   *Description*: Registers a user-defined logging callback (such as logging to ROS 2 logger `RCLCPP_INFO` or `std::cout`) to capture internal warnings, debug events, and recovery traces.
+    *   *Parameters*:
+        *   `callback`: `LoggerCallback`. Callback function of signature `void(LogLevel level, std::string_view message)`.
+    *   *Returns*: `void`.
+    *   *Description*: Hooks a custom logging function (such as `std::cout` or ROS 2 logging macros) to direct library diagnostics, warnings, and reconnect traces.
 
 ---
 
