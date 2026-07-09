@@ -1,5 +1,22 @@
 # libbno055-linux API Reference
 
+<details>
+<summary><strong>Table of Contents</strong></summary>
+
+- [Namespaces & Types](#namespaces--types)
+- [Class BNO055](#class-bno055)
+  - [Lifecycle](#lifecycle)
+  - [Configuration](#configuration)
+  - [Sensor Data (Throwing APIs)](#sensor-data-throwing-apis)
+  - [Sensor Data (Exception-free / noexcept APIs)](#sensor-data-exception-free--noexcept-apis)
+  - [Sensor Data (Beginner-Friendly / OrDefault APIs)](#sensor-data-beginner-friendly--ordefault-apis)
+  - [Diagnostics & Calibration](#diagnostics--calibration)
+  - [Power Management](#power-management)
+  - [Logging](#logging)
+- [Utilities (Class-External)](#utilities-class-external)
+
+</details>
+
 ## Namespaces & Types
 
 ```cpp
