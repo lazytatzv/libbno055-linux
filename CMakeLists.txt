@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.10)
-project(bno055lib VERSION 1.0.0 LANGUAGES CXX)
+project(libbno055-linux VERSION 1.0.0 LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -11,14 +11,17 @@ set(SOURCES
 
 # Header files
 set(HEADERS
-    include/bno055lib/bno055.hpp
+    include/libbno055-linux/bno055.hpp
 )
 
 # Add library
-add_library(bno055lib SHARED ${SOURCES} ${HEADERS})
+add_library(libbno055-linux SHARED ${SOURCES} ${HEADERS})
+
+# Prevent duplicate "lib" prefix (e.g. liblibbno055-linux.so)
+set_target_properties(libbno055-linux PROPERTIES PREFIX "")
 
 # Include directories
-target_include_directories(bno055lib
+target_include_directories(libbno055-linux
     PUBLIC
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
         $<INSTALL_INTERFACE:include>
@@ -26,7 +29,7 @@ target_include_directories(bno055lib
 
 # Compiler flags
 if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
-    target_compile_options(bno055lib PRIVATE -Wall -Wextra -Wpedantic)
+    target_compile_options(libbno055-linux PRIVATE -Wall -Wextra -Wpedantic)
 endif()
 
 # Clang-Tidy static analysis integration
@@ -43,25 +46,25 @@ endif()
 
 # Dependencies
 find_package(Threads REQUIRED)
-target_link_libraries(bno055lib PRIVATE Threads::Threads)
+target_link_libraries(libbno055-linux PRIVATE Threads::Threads)
 
 # Example executables
 add_executable(calibrate_imu examples/calibrate.cpp)
-target_link_libraries(calibrate_imu PRIVATE bno055lib)
+target_link_libraries(calibrate_imu PRIVATE libbno055-linux)
 
 add_executable(read_data_noexcept examples/read_data_noexcept.cpp)
-target_link_libraries(read_data_noexcept PRIVATE bno055lib)
+target_link_libraries(read_data_noexcept PRIVATE libbno055-linux)
 
 add_executable(read_all_data examples/read_all_data.cpp)
-target_link_libraries(read_all_data PRIVATE bno055lib)
+target_link_libraries(read_all_data PRIVATE libbno055-linux)
 
 # Installation definitions
 include(CMakePackageConfigHelpers)
 include(GNUInstallDirs)
 
 # Install targets
-install(TARGETS bno055lib
-    EXPORT bno055libTargets
+install(TARGETS libbno055-linux
+    EXPORT libbno055-linuxTargets
     LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
     ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
     RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
@@ -73,36 +76,36 @@ install(TARGETS calibrate_imu read_data_noexcept read_all_data
 )
 
 # Install headers
-install(DIRECTORY include/bno055lib
+install(DIRECTORY include/libbno055-linux
     DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
 )
 
 # Export targets
-install(EXPORT bno055libTargets
-    FILE bno055libTargets.cmake
-    NAMESPACE bno055lib::
-    DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/bno055lib
+install(EXPORT libbno055-linuxTargets
+    FILE libbno055-linuxTargets.cmake
+    NAMESPACE libbno055-linux::
+    DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/libbno055-linux
 )
 
 # Configure config file
 configure_package_config_file(
-    cmake/bno055libConfig.cmake.in
-    ${CMAKE_CURRENT_BINARY_DIR}/bno055libConfig.cmake
-    INSTALL_DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/bno055lib
+    cmake/libbno055-linuxConfig.cmake.in
+    ${CMAKE_CURRENT_BINARY_DIR}/libbno055-linuxConfig.cmake
+    INSTALL_DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/libbno055-linux
 )
 
 # Write version file
 write_basic_package_version_file(
-    ${CMAKE_CURRENT_BINARY_DIR}/bno055libConfigVersion.cmake
+    ${CMAKE_CURRENT_BINARY_DIR}/libbno055-linuxConfigVersion.cmake
     VERSION ${PROJECT_VERSION}
     COMPATIBILITY AnyNewerVersion
 )
 
 # Install config files
 install(FILES
-    ${CMAKE_CURRENT_BINARY_DIR}/bno055libConfig.cmake
-    ${CMAKE_CURRENT_BINARY_DIR}/bno055libConfigVersion.cmake
-    DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/bno055lib
+    ${CMAKE_CURRENT_BINARY_DIR}/libbno055-linuxConfig.cmake
+    ${CMAKE_CURRENT_BINARY_DIR}/libbno055-linuxConfigVersion.cmake
+    DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/libbno055-linux
 )
 
 # Testing
@@ -119,14 +122,14 @@ if(BUILD_TESTING)
 
     enable_testing()
 
-    add_executable(bno055lib_tests
+    add_executable(libbno055-linux_tests
         tests/test_bno055.cpp
     )
-    target_link_libraries(bno055lib_tests
+    target_link_libraries(libbno055-linux_tests
         PRIVATE
-            bno055lib
+            libbno055-linux
             gtest_main
     )
     include(GoogleTest)
-    gtest_discover_tests(bno055lib_tests)
+    gtest_discover_tests(libbno055-linux_tests)
 endif()
