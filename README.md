@@ -318,7 +318,7 @@ int main() {
 
 ## API Reference
 
-The full API reference has been moved to a separate document. Please see [API_REFERENCE.md](API_REFERENCE.md) for complete details on classes, structs, and available functions.
+The full API reference has been moved to a separate document. Please see [API_REFERENCE.md](docs/API_REFERENCE.md) for complete details on classes, structs, and available functions.
 
 
 ## License
