@@ -182,6 +182,12 @@ Runs the interactive calibration utility to align the accelerometer, gyroscope, 
 ./build/calibrate_imu /dev/i2c-1 bno055_calib.bin
 ```
 
+### 4. ROS 2 Publisher Node (Optional)
+If a ROS 2 environment is detected during compilation, the library compiles a standalone ROS 2 publisher node that reads IMU data and publishes it to the `/imu/data` topic as a `sensor_msgs/msg/Imu` message.
+```bash
+./build/bno055_publisher_node --ros-args -p device:="/dev/i2c-1" -p publish_rate:=50.0
+```
+
 ### Troubleshooting Permission Denied
 If you see "Failed to open I2C device" or permission errors, run with sudo or ensure your user belongs to the i2c group as described in the Prerequisites section:
 ```bash

@@ -58,6 +58,24 @@ target_link_libraries(read_data_noexcept PRIVATE libbno055-linux)
 add_executable(read_all_data examples/read_all_data.cpp)
 target_link_libraries(read_all_data PRIVATE libbno055-linux)
 
+# Optional ROS 2 integration (conditional build of ROS 2 publisher sample)
+find_package(rclcpp QUIET)
+find_package(sensor_msgs QUIET)
+
+if(rclcpp_FOUND AND sensor_msgs_FOUND)
+    message(STATUS "ROS 2 environment detected. Building ROS 2 publisher node sample.")
+    add_executable(bno055_publisher_node examples/ros2_publisher_node.cpp)
+    target_link_libraries(bno055_publisher_node PRIVATE libbno055-linux)
+    target_link_libraries(bno055_publisher_node PRIVATE rclcpp::rclcpp sensor_msgs::sensor_msgs)
+    
+    install(TARGETS bno055_publisher_node
+        RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+    )
+else()
+    message(STATUS "ROS 2 not found. Skipping ROS 2 publisher node sample.")
+endif()
+
+
 # Installation definitions
 include(CMakePackageConfigHelpers)
 include(GNUInstallDirs)
