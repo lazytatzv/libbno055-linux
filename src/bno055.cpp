@@ -276,10 +276,10 @@ public:
     bool writeLen_raw(uint8_t reg, const uint8_t* buffer, uint8_t len) {
         if (i2c_fd < 0) return false;
 #ifdef __linux__
-        std::vector<uint8_t> write_buf(len + 1);
+        uint8_t write_buf[32]; // Stack allocation instead of vector
         write_buf[0] = reg;
-        std::memcpy(write_buf.data() + 1, buffer, len);
-        return ::write(i2c_fd, write_buf.data(), len + 1) == len + 1;
+        std::memcpy(write_buf + 1, buffer, len);
+        return ::write(i2c_fd, write_buf, len + 1) == len + 1;
 #else
         (void)reg; (void)buffer; (void)len;
         return true;
@@ -342,9 +342,9 @@ public:
 
     bool writeLen(uint8_t reg, const uint8_t* buffer, uint8_t len, int retries = 3) {
         std::lock_guard<std::mutex> lock(mutex_);
-        std::vector<uint8_t> write_buf(len + 1);
+        uint8_t write_buf[32]; // Stack allocation instead of vector
         write_buf[0] = reg;
-        std::memcpy(write_buf.data() + 1, buffer, len);
+        std::memcpy(write_buf + 1, buffer, len);
 
         for (int i = 0; i < retries; ++i) {
             if (i2c_fd < 0 && !open_i2c()) {
@@ -352,7 +352,7 @@ public:
                 continue;
             }
 #ifdef __linux__
-            if (::write(i2c_fd, write_buf.data(), len + 1) == len + 1) {
+            if (::write(i2c_fd, write_buf, len + 1) == len + 1) {
                 return true;
             }
 #else
@@ -365,7 +365,7 @@ public:
 
         if (reconnect()) {
 #ifdef __linux__
-            if (::write(i2c_fd, write_buf.data(), len + 1) == len + 1) {
+            if (::write(i2c_fd, write_buf, len + 1) == len + 1) {
                 return true;
             }
 #else
