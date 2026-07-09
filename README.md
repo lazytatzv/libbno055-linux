@@ -3,8 +3,12 @@
 ![C++17](https://img.shields.io/badge/C%2B%2B-17-blue.svg)
 ![ROS 2](https://img.shields.io/badge/ROS%202-Compatible-22314E.svg)
 ![Linux](https://img.shields.io/badge/OS-Linux-FCC624.svg)
-![License](https://img.shields.io/badge/License-MIT-green.svg)
+![CMake](https://img.shields.io/badge/CMake-3.10%2B-064F8C.svg)
 ![CI](https://github.com/lazytatzv/libbno055-linux/actions/workflows/ci.yml/badge.svg)
+![Issues](https://img.shields.io/github/issues/lazytatzv/libbno055-linux.svg)
+![Pull Requests](https://img.shields.io/github/issues-pr/lazytatzv/libbno055-linux.svg)
+![Repo Size](https://img.shields.io/github/repo-size/lazytatzv/libbno055-linux.svg)
+![License](https://img.shields.io/badge/License-MIT-green.svg)
 
 A robust, thread-safe, and dependency-free C++17 library for the BNO055 sensor over I2C on Linux.
 
