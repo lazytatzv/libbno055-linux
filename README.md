@@ -15,6 +15,37 @@ sudo make install
 
 ---
 
+## Integration (CMake & ROS 2)
+
+### Standard CMake Integration
+If installed to your system, find and link the library in your `CMakeLists.txt`:
+
+```cmake
+find_package(bno055lib REQUIRED)
+target_link_libraries(your_target PRIVATE bno055lib::bno055lib)
+```
+
+Include in your C++ code:
+```cpp
+#include <bno055lib/bno055.hpp>
+```
+
+### ROS 2 (colcon) Integration
+Place the `bno055lib` directory directly inside your ROS 2 workspace's `src` folder alongside other packages. `colcon` will automatically build it as a pure CMake package.
+
+To use it from another ROS 2 package:
+1. Add dependency to `package.xml`:
+   ```xml
+   <depend>bno055lib</depend>
+   ```
+2. Find and link in `CMakeLists.txt`:
+   ```cmake
+   find_package(bno055lib REQUIRED)
+   ament_target_dependencies(your_node_target bno055lib)
+   ```
+
+---
+
 ## Usage
 
 ```cpp
