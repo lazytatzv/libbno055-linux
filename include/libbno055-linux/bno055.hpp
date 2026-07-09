@@ -186,6 +186,16 @@ public:
     std::optional<Quaternion> getQuaternionNoexcept() noexcept;
     std::optional<int8_t> getTemperatureNoexcept() noexcept;
 
+    // Beginner-friendly data getters (returns zero/default values on failure, no exceptions, no optionals)
+    Vector3 getAccelerometerOrDefault() noexcept;
+    Vector3 getMagnetometerOrDefault() noexcept;
+    Vector3 getGyroscopeOrDefault() noexcept;
+    Vector3 getEulerAnglesOrDefault() noexcept;
+    Vector3 getLinearAccelerationOrDefault() noexcept;
+    Vector3 getGravityOrDefault() noexcept;
+    Quaternion getQuaternionOrDefault() noexcept;
+    int8_t getTemperatureOrDefault() noexcept;
+
     // Diagnostics getter
     Diagnostics getDiagnostics() const noexcept;
 
@@ -211,6 +221,10 @@ private:
     class Impl;
     std::unique_ptr<Impl> impl_;
 };
+
+// Utility function to convert Quaternion representation to Euler Angles (Roll, Pitch, Yaw) in degrees.
+// Mapping: x = Roll (-180 to 180), y = Pitch (-90 to 90), z = Yaw (0 to 360).
+Vector3 toEulerDegrees(const Quaternion& q) noexcept;
 
 } // namespace bno055lib
 

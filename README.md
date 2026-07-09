@@ -272,6 +272,42 @@ int main() {
 }
 ```
 
+### 3. Beginner-Friendly Integration (No Optionals, No Exceptions)
+Designed for hobbyists, students, or rapid prototyping where you want to read data with minimal code.
+
+```cpp
+#include <libbno055-linux/bno055.hpp>
+#include <iostream>
+#include <thread>
+#include <chrono>
+
+int main() {
+    bno055lib::BNO055 imu(0x28, "/dev/i2c-1");
+
+    // Simple initialization
+    if (!imu.begin(bno055lib::OpMode::IMUPlus)) {
+        std::cerr << "Sensor not found." << std::endl;
+        return 1;
+    }
+
+    while (true) {
+        // Read directly without try-catch or std::optional handling.
+        // Returns the last cached valid value (or 0) if a temporary I2C dropout occurs.
+        bno055lib::Quaternion quat = imu.getQuaternionOrDefault();
+        
+        // Convert to human-readable Euler angles in degrees
+        bno055lib::Vector3 euler = bno055lib::toEulerDegrees(quat);
+        
+        std::cout << "Roll: " << euler.x 
+                  << " | Pitch: " << euler.y 
+                  << " | Yaw: " << euler.z << " degrees" << std::endl;
+
+        std::this_thread::sleep_for(std::chrono::milliseconds(100));
+    }
+    return 0;
+}
+```
+
 ---
 
 ## API Reference
@@ -441,6 +477,21 @@ These companion APIs perform the exact same register queries and conversions but
     *   *Returns*: `std::optional<T>`. Contains the requested struct on success; `std::nullopt` on communication failure.
     *   *Description*: Safety-hardened read path that increments I2C diagnostic counters upon failure without generating CPU exceptions.
 
+#### Sensor Data (Beginner-Friendly / OrDefault APIs)
+
+These functions return sensor readings directly. They never throw exceptions and never return optionals. If an I2C communication failure occurs, they automatically return the last cached valid value (or zero/identity values on startup).
+
+*   **Vector3 getAccelerometerOrDefault() noexcept**
+*   **Vector3 getMagnetometerOrDefault() noexcept**
+*   **Vector3 getGyroscopeOrDefault() noexcept**
+*   **Vector3 getEulerAnglesOrDefault() noexcept**
+*   **Vector3 getLinearAccelerationOrDefault() noexcept**
+*   **Vector3 getGravityOrDefault() noexcept**
+*   **Quaternion getQuaternionOrDefault() noexcept**
+*   **int8_t getTemperatureOrDefault() noexcept**
+    *   *Parameters*: None.
+    *   *Returns*: The requested struct directly (`Vector3`, `Quaternion`, or `int8_t`). On temporary bus drops, returns the last cached valid frame (or zero/identity).
+
 #### Diagnostics & Calibration
 
 *   **Diagnostics getDiagnostics() const noexcept**
@@ -499,6 +550,14 @@ These companion APIs perform the exact same register queries and conversions but
         *   `callback`: `LoggerCallback`. Callback function of signature `void(LogLevel level, std::string_view message)`.
     *   *Returns*: `void`.
     *   *Description*: Hooks a custom logging function (such as `std::cout` or ROS 2 logging macros) to direct library diagnostics, warnings, and reconnect traces.
+
+### Utilities (Class-External)
+
+*   **Vector3 toEulerDegrees(const Quaternion& q) noexcept**
+    *   *Parameters*:
+        *   `q`: `const Quaternion&`. The normalized unit quaternion representation of orientation.
+    *   *Returns*: `Vector3`. Roll, Pitch, and Yaw in degrees (Mapping: `x` = Roll `[-180, 180]`, `y` = Pitch `[-90, 90]`, `z` = Yaw `[0, 360)`).
+    *   *Description*: Utility function to convert Quaternion orientation into human-readable Euler angles in degrees.
 
 ---
 
