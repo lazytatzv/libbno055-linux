@@ -54,32 +54,101 @@ Most existing BNO055 libraries for Linux are either simple ports of Arduino code
 
 ## Quick Start
 
-1. **Install tools:** `sudo apt install build-essential cmake`
-2. **Build & Install:**
-   ```bash
-   git clone https://github.com/lazytatzv/libbno055-linux.git
-   cd libbno055-linux
-   mkdir build && cd build
-   cmake .. && make && sudo make install
-   ```
-3. **Use in your C++ code** (`main.cpp`):
-   ```cpp
-   #include <libbno055-linux/bno055.hpp>
-   #include <iostream>
+Whether you are building a standard C++ application or a ROS 2 robot controller, here is how to get the IMU data streaming in less than 5 minutes.
 
-   int main() {
-       bno055lib::BNO055 imu(0x28, "/dev/i2c-1");
-       if (imu.begin()) {
-           auto quat = imu.getQuaternionOrDefault();
-           std::cout << "w:" << quat.w << " x:" << quat.x << " y:" << quat.y << " z:" << quat.z << "\n";
-       }
-   }
-   ```
-4. **Compile & Run:**
-   ```bash
-   g++ main.cpp -lbno055-linux -o main
-   ./main
-   ```
+### A. No-ROS (Pure C++ / Raspberry Pi)
+
+Follow these steps to run a standalone C++ program using a system installation of the library.
+
+#### 1. Build and Install the Library
+```bash
+sudo apt update && sudo apt install -y build-essential cmake
+git clone https://github.com/lazytatzv/libbno055-linux.git
+cd libbno055-linux && mkdir build && cd build
+cmake .. -DBUILD_TESTING=OFF
+make -j$(nproc)
+sudo make install
+```
+
+#### 2. Write your code (`main.cpp`)
+```cpp
+#include <libbno055-linux/bno055.hpp>
+#include <iostream>
+#include <thread>
+#include <chrono>
+
+int main() {
+    // 0x28 is default I2C address, /dev/i2c-1 is default RPi I2C port
+    bno055lib::BNO055 imu(0x28, "/dev/i2c-1");
+
+    // Initialize in NDOF fusion mode (accelerometer + gyroscope + magnetometer)
+    if (!imu.begin(bno055lib::OpMode::NDOF)) {
+        std::cerr << "Failed to find BNO055 sensor over I2C!" << std::endl;
+        return 1;
+    }
+
+    std::cout << "Streaming BNO055 Quaternion orientation (w, x, y, z)..." << std::endl;
+    for (int i = 0; i < 20; ++i) {
+        auto q = imu.getQuaternionOrDefault();
+        std::cout << "w: " << q.w << " | x: " << q.x << " | y: " << q.y << " | z: " << q.z << std::endl;
+        std::this_thread::sleep_for(std::chrono::milliseconds(100));
+    }
+    return 0;
+}
+```
+
+#### 3. Compile and Run
+```bash
+g++ -std=c++17 main.cpp -lbno055-linux -o imu_demo
+./imu_demo
+```
+
+---
+
+### B. ROS 2 (colcon workspace)
+
+Follow these steps to integrate and run the BNO055 publisher nodes directly inside your robot's ROS 2 workspace.
+
+#### 1. Setup and Build Workspace
+Make sure your ROS 2 environment is sourced (e.g., Humble, Jazzy):
+```bash
+# 1. Navigate to your ROS 2 workspace src directory
+cd ~/ros2_ws/src
+
+# 2. Clone this library directly inside src
+git clone https://github.com/lazytatzv/libbno055-linux.git
+
+# 3. Build using colcon
+cd ~/ros2_ws
+rosdep install --from-paths src --ignore-src -y
+colcon build --packages-select libbno055_linux
+source install/setup.bash
+```
+
+#### 2. Launch the Nodes
+
+*   **Option 1: Standard Standalone Node (Recommended for quick testing)**
+    ```bash
+    ros2 run libbno055_linux bno055_publisher_node
+    ```
+*   **Option 2: High-Performance Zero-Copy Node (Recommended for Composable Components)**
+    ```bash
+    ros2 run libbno055_linux bno055_perf_publisher_node
+    ```
+*   **Option 3: Lifecycle Managed Node (Recommended for production AMR/AGV stacks)**
+    ```bash
+    # Terminal 1: Run the node
+    ros2 run libbno055_linux bno055_lifecycle_publisher_node
+    
+    # Terminal 2: Trigger state transitions to start publishing
+    ros2 lifecycle set /bno055_lifecycle_publisher_node configure
+    ros2 lifecycle set /bno055_lifecycle_publisher_node activate
+    ```
+
+#### 3. Verify Topic Stream
+```bash
+ros2 topic echo /imu/data
+```
 
 ---
 
