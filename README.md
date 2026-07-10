@@ -127,15 +127,39 @@ source install/setup.bash
 
 #### 2. Launch the Nodes
 
-*   **Option 1: Standard Standalone Node (Recommended for quick testing)**
+You can launch and configure the nodes using the provided launch file and parameters YAML file.
+
+##### Method A: Launching via Launch File (Recommended)
+You can launch any of the three node types (`standard`, `perf`, or `lifecycle`) and customize their parameters using the ROS 2 Launch system.
+
+*   **Standard Node (Default)**:
+    ```bash
+    ros2 launch libbno055_linux bno055_launch.py node_type:=standard
+    ```
+*   **High-Performance Node**:
+    ```bash
+    ros2 launch libbno055_linux bno055_launch.py node_type:=perf
+    ```
+*   **Lifecycle Node**:
+    ```bash
+    ros2 launch libbno055_linux bno055_launch.py node_type:=lifecycle
+    ```
+
+To customize parameters, copy and edit the installed template `config/bno055_params.yaml`, then load it via launch:
+```bash
+ros2 launch libbno055_linux bno055_launch.py params_file:=/path/to/your/custom_params.yaml
+```
+
+##### Method B: Direct Command Line (Alternative)
+*   **Standard Standalone Node**:
     ```bash
     ros2 run libbno055_linux bno055_publisher_node
     ```
-*   **Option 2: High-Performance Zero-Copy Node (Recommended for Composable Components)**
+*   **High-Performance Zero-Copy Node**:
     ```bash
     ros2 run libbno055_linux bno055_perf_publisher_node
     ```
-*   **Option 3: Lifecycle Managed Node (Recommended for production AMR/AGV stacks)**
+*   **Lifecycle Managed Node**:
     ```bash
     # Terminal 1: Run the node
     ros2 run libbno055_linux bno055_lifecycle_publisher_node

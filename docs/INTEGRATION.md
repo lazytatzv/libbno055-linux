@@ -185,40 +185,52 @@ Since this repository contains a `package.xml`, it is compatible with `colcon` a
 
 ### 4.3. Running the Nodes
 
-#### Standard Standalone Node
-Run the standard publisher node:
+You can launch and configure the nodes using the provided launch file and parameters YAML file.
+
+#### A. Launching via Launch File (Recommended)
+You can launch any of the three node types (`standard`, `perf`, or `lifecycle`) and customize their parameters using the ROS 2 Launch system.
+
+*   **Standard Node (Default)**:
+    ```bash
+    ros2 launch libbno055_linux bno055_launch.py node_type:=standard
+    ```
+*   **High-Performance Node**:
+    ```bash
+    ros2 launch libbno055_linux bno055_launch.py node_type:=perf
+    ```
+*   **Lifecycle Node**:
+    ```bash
+    ros2 launch libbno055_linux bno055_launch.py node_type:=lifecycle
+    ```
+
+To customize parameters, copy and edit the installed template `config/bno055_params.yaml`, then load it via launch:
 ```bash
-ros2 run libbno055_linux bno055_publisher_node
-```
-You can pass ROS 2 parameters to override the default I2C device and address:
-```bash
-ros2 run libbno055_linux bno055_publisher_node --ros-args -p device:="/dev/i2c-2" -p address:=40
+ros2 launch libbno055_linux bno055_launch.py params_file:=/path/to/your/custom_params.yaml
 ```
 
-#### High-Performance Node
-This node uses `std::unique_ptr` and `std::move` during publishing to enable zero-copy intra-process transport. Run it with:
-```bash
-ros2 run libbno055_linux bno055_perf_publisher_node
-```
-
-#### Lifecycle Node (Managed Node)
-The Lifecycle node remains in the `Unconfigured` state upon startup and does not publish immediately. You must command state transitions externally.
-
-1. **Start the node:**
-   ```bash
-   ros2 run libbno055_linux bno055_lifecycle_publisher_node
-   ```
-2. **Transition states (from another terminal):**
-   ```bash
-   # Configure: Boot the sensor and put it into low-power suspend mode
-   ros2 lifecycle set /bno055_lifecycle_publisher_node configure
-
-   # Activate: Wake the sensor up and start high-rate IMU publishing
-   ros2 lifecycle set /bno055_lifecycle_publisher_node activate
-
-   # Deactivate: Pause publishing and suspend the sensor
-   ros2 lifecycle set /bno055_lifecycle_publisher_node deactivate
-   ```
+#### B. Direct Command Line (Alternative)
+*   **Standard Standalone Node**:
+    ```bash
+    ros2 run libbno055_linux bno055_publisher_node
+    ```
+    You can override parameters directly via CLI:
+    ```bash
+    ros2 run libbno055_linux bno055_publisher_node --ros-args -p device:="/dev/i2c-2" -p address:=40
+    ```
+*   **High-Performance Zero-Copy Node**:
+    ```bash
+    ros2 run libbno055_linux bno055_perf_publisher_node
+    ```
+*   **Lifecycle Managed Node**:
+    ```bash
+    # Terminal 1: Run the node
+    ros2 run libbno055_linux bno055_lifecycle_publisher_node
+    
+    # Terminal 2: Trigger state transitions to start publishing
+    ros2 lifecycle set /bno055_lifecycle_publisher_node configure
+    ros2 lifecycle set /bno055_lifecycle_publisher_node activate
+    ros2 lifecycle set /bno055_lifecycle_publisher_node deactivate
+    ```
 
 ### 4.4. Verification
 

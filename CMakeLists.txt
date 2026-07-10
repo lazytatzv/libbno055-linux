@@ -93,6 +93,11 @@ if(rclcpp_FOUND AND sensor_msgs_FOUND)
             RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
         )
     endif()
+
+    # Install ROS 2 configuration and launch files
+    install(DIRECTORY config launch
+        DESTINATION share/libbno055_linux
+    )
 else()
     message(STATUS "ROS 2 not found. Skipping ROS 2 publisher node sample.")
 endif()
