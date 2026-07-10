@@ -69,6 +69,9 @@ public:
 
 private:
     void timer_callback() {
+        // Record timestamp immediately before I2C communication starts to minimize jitter
+        auto stamp = this->now();
+
         // Exception-free (noexcept) read path ensures no CPU overhead on communication drops
         auto quat = imu_.getQuaternionNoexcept();
         auto gyro = imu_.getGyroscopeNoexcept();
@@ -83,7 +86,7 @@ private:
         }
 
         auto message = sensor_msgs::msg::Imu();
-        message.header.stamp = this->now();
+        message.header.stamp = stamp;
         message.header.frame_id = frame_id_;
 
         // Fill Orientation

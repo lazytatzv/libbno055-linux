@@ -75,6 +75,9 @@ public:
 
 private:
     void timer_callback() {
+        // Record timestamp immediately before I2C communication starts to minimize jitter
+        auto stamp = this->now();
+
         // High-performance exception-free (noexcept) reads
         auto quat = imu_.getQuaternionNoexcept();
         auto gyro = imu_.getGyroscopeNoexcept();
@@ -92,7 +95,7 @@ private:
         // When running in a single process container, ROS 2 bypasses serialization and passes this pointer directly.
         auto message = std::make_unique<sensor_msgs::msg::Imu>();
 
-        message->header.stamp = this->now();
+        message->header.stamp = stamp;
         message->header.frame_id = frame_id_;
 
         // Fill dynamic orientation
