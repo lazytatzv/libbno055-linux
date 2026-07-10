@@ -1,0 +1,25 @@
+var searchData=
+[
+  ['savecalibrationfile_0',['saveCalibrationFile',['../classbno055lib_1_1BNO055.html#a0df8cb7aba5ee1e86734377f15979769',1,'bno055lib::BNO055']]],
+  ['sensor_20calibration_1',['Sensor Calibration',['../md_docs_2SENSOR__OVERVIEW.html#autotoc_md15',1,'']]],
+  ['sensor_20data_20beginner_20friendly_20ordefault_20apis_2',['Sensor Data (Beginner-Friendly / OrDefault APIs)',['../md_docs_2API__REFERENCE.html#autotoc_md7',1,'']]],
+  ['sensor_20data_20exception_20free_20noexcept_20apis_3',['Sensor Data (Exception-free / noexcept APIs)',['../md_docs_2API__REFERENCE.html#autotoc_md6',1,'']]],
+  ['sensor_20data_20standard_20api_4',['1. Read All Sensor Data (Standard API)',['../index.html#autotoc_md39',1,'']]],
+  ['sensor_20data_20throwing_20apis_5',['Sensor Data (Throwing APIs)',['../md_docs_2API__REFERENCE.html#autotoc_md5',1,'']]],
+  ['sensor_20overview_20and_20operation_20modes_6',['sensor overview and operation modes',['../index.html#autotoc_md23',1,'Sensor Overview and Operation Modes'],['../md_docs_2SENSOR__OVERVIEW.html',1,'Sensor Overview and Operation Modes']]],
+  ['sensor_5foverview_2emd_7',['SENSOR_OVERVIEW.md',['../SENSOR__OVERVIEW_8md.html',1,'']]],
+  ['set_20permissions_8',['2. Set Permissions',['../index.html#autotoc_md27',1,'']]],
+  ['setaxisremap_9',['setAxisRemap',['../classbno055lib_1_1BNO055.html#af6224caed18863fb23a3a5a186bc5385',1,'bno055lib::BNO055']]],
+  ['setaxissign_10',['setAxisSign',['../classbno055lib_1_1BNO055.html#ac3863c90648cd3baf75009a5c9a8bb59',1,'bno055lib::BNO055']]],
+  ['setextcrystaluse_11',['setExtCrystalUse',['../classbno055lib_1_1BNO055.html#a0fde8807330ba10a760a86c1fa6ae359',1,'bno055lib::BNO055']]],
+  ['setlogger_12',['setLogger',['../classbno055lib_1_1BNO055.html#a245a9ca0002985a8d0f4df928358f9d1',1,'bno055lib::BNO055']]],
+  ['setmode_13',['setMode',['../classbno055lib_1_1BNO055.html#a09da3823f87e42b0383330a05713e358',1,'bno055lib::BNO055']]],
+  ['setsensoroffsets_14',['setsensoroffsets',['../classbno055lib_1_1BNO055.html#a4e48a36cb79f8a7f4e9c441d8b3b991b',1,'bno055lib::BNO055::setSensorOffsets(const std::array&lt; uint8_t, 22 &gt; &amp;calib_data)'],['../classbno055lib_1_1BNO055.html#a7ed8ec6881f3c89cbcc2a800cb373289',1,'bno055lib::BNO055::setSensorOffsets(const Offsets &amp;offsets)']]],
+  ['setup_15',['Prerequisites (Linux / Raspberry Pi Setup)',['../index.html#autotoc_md25',1,'']]],
+  ['standard_20api_16',['1. Read All Sensor Data (Standard API)',['../index.html#autotoc_md39',1,'']]],
+  ['standard_20cmake_20integration_20with_20system_20installation_17',['Standard CMake Integration (With System Installation)',['../index.html#autotoc_md32',1,'']]],
+  ['start_18',['Quick Start',['../index.html#autotoc_md21',1,'']]],
+  ['sys_19',['sys',['../structbno055lib_1_1CalibrationStatus.html#a31654b067de3401412e0d39d7e3fbf8f',1,'bno055lib::CalibrationStatus']]],
+  ['system_20installation_20',['system installation',['../index.html#autotoc_md33',1,'Local CMake Integration (Without System Installation)'],['../index.html#autotoc_md32',1,'Standard CMake Integration (With System Installation)']]],
+  ['system_20wide_21',['Build &amp; Install (System-wide)',['../index.html#autotoc_md29',1,'']]]
+];
