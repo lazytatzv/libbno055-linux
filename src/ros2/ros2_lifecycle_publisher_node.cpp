@@ -1,9 +1,9 @@
 /**
  * @file ros2_lifecycle_publisher_node.cpp
  * @brief Managed Lifecycle (State Machine) ROS 2 node for the BNO055 sensor.
- * 
+ *
  * This node implements rclcpp_lifecycle::LifecycleNode to fit into managed
- * robot startup and shutdown sequences. It maps the physical states of the 
+ * robot startup and shutdown sequences. It maps the physical states of the
  * BNO055 hardware to ROS 2 lifecycle states:
  * - on_configure: Boot the sensor and put it into low-power suspend mode.
  * - on_activate: Wake up the sensor to normal mode and start the timer/publisher.
@@ -11,13 +11,13 @@
  * - on_cleanup: Release I2C file descriptors and reset resources.
  */
 
+#include <algorithm>
 #include <chrono>
 #include <memory>
-#include <utility>
-#include <algorithm>
 #include <rclcpp/rclcpp.hpp>
 #include <rclcpp_lifecycle/lifecycle_node.hpp>
 #include <sensor_msgs/msg/imu.hpp>
+#include <utility>
 
 #include "libbno055-linux/bno055.hpp"
 
@@ -26,8 +26,7 @@ namespace bno055_ros2 {
 class BNO055LifecyclePublisherNode : public rclcpp_lifecycle::LifecycleNode {
 public:
     explicit BNO055LifecyclePublisherNode(const rclcpp::NodeOptions& options)
-        : LifecycleNode("bno055_lifecycle_publisher_node", options), imu_(0x28, "/dev/i2c-1") 
-    {
+        : LifecycleNode("bno055_lifecycle_publisher_node", options), imu_(0x28, "/dev/i2c-1") {
         // Declare parameters (allowed in constructor or on_configure)
         this->declare_parameter<std::string>("device", "/dev/i2c-1");
         this->declare_parameter<int>("address", 0x28);
@@ -50,10 +49,18 @@ public:
         // Redirect internal logs into ROS 2 RCLCPP
         imu_.setLogger([this](bno055lib::LogLevel level, std::string_view message) {
             switch (level) {
-                case bno055lib::LogLevel::Debug: RCLCPP_DEBUG(this->get_logger(), "%s", message.data()); break;
-                case bno055lib::LogLevel::Info: RCLCPP_INFO(this->get_logger(), "%s", message.data()); break;
-                case bno055lib::LogLevel::Warning: RCLCPP_WARN(this->get_logger(), "%s", message.data()); break;
-                case bno055lib::LogLevel::Error: RCLCPP_ERROR(this->get_logger(), "%s", message.data()); break;
+                case bno055lib::LogLevel::Debug:
+                    RCLCPP_DEBUG(this->get_logger(), "%s", message.data());
+                    break;
+                case bno055lib::LogLevel::Info:
+                    RCLCPP_INFO(this->get_logger(), "%s", message.data());
+                    break;
+                case bno055lib::LogLevel::Warning:
+                    RCLCPP_WARN(this->get_logger(), "%s", message.data());
+                    break;
+                case bno055lib::LogLevel::Error:
+                    RCLCPP_ERROR(this->get_logger(), "%s", message.data());
+                    break;
             }
         });
 
@@ -72,7 +79,7 @@ public:
         // Setup timer
         auto interval = std::chrono::duration<double>(1.0 / rate_hz);
         timer_ = this->create_wall_timer(interval, std::bind(&BNO055LifecyclePublisherNode::timer_callback, this));
-        
+
         // Explicitly cancel the timer so it doesn't run until active
         timer_->cancel();
 
@@ -84,7 +91,7 @@ public:
     CallbackReturn on_activate(const rclcpp_lifecycle::State& state) override {
         (void)state;
         RCLCPP_INFO(this->get_logger(), "Activating BNO055...");
-        
+
         // Wake up BNO055 sensor
         imu_.enterNormalMode();
 
@@ -133,7 +140,7 @@ public:
     CallbackReturn on_shutdown(const rclcpp_lifecycle::State& state) override {
         (void)state;
         RCLCPP_INFO(this->get_logger(), "Shutting down BNO055 Node...");
-        
+
         // Ensure device is suspended
         imu_.enterSuspendMode();
 
@@ -160,7 +167,7 @@ private:
 
         // Allocate std::unique_ptr for zero-copy intra-process support
         auto message = std::make_unique<sensor_msgs::msg::Imu>();
-        
+
         message->header.stamp = this->now();
         message->header.frame_id = frame_id_;
 
@@ -195,7 +202,7 @@ private:
     rclcpp::TimerBase::SharedPtr timer_;
 };
 
-} // namespace bno055_ros2
+}  // namespace bno055_ros2
 
 #ifndef ROS2_NODE_TESTING
 int main(int argc, char* argv[]) {
