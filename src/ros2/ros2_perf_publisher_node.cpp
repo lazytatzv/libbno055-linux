@@ -1,7 +1,7 @@
 /**
  * @file ros2_perf_publisher_node.cpp
  * @brief High-performance ROS 2 publisher node optimized for low-latency and zero-copy transport.
- * 
+ *
  * This node is tailored for resource-constrained embedded Linux systems.
  * It uses ROS 2 intra-process communication features and passes message pointers
  * via std::unique_ptr and std::move. In a single-process composable container,
@@ -9,12 +9,12 @@
  * It also uses exception-free (noexcept) APIs to maintain deterministic cycle times.
  */
 
+#include <algorithm>
 #include <chrono>
 #include <memory>
-#include <utility>
-#include <algorithm>
 #include <rclcpp/rclcpp.hpp>
 #include <sensor_msgs/msg/imu.hpp>
+#include <utility>
 
 #include "libbno055-linux/bno055.hpp"
 
@@ -23,8 +23,7 @@ namespace bno055_ros2 {
 class BNO055PerfPublisherNode : public rclcpp::Node {
 public:
     explicit BNO055PerfPublisherNode(const rclcpp::NodeOptions& options)
-        : Node("bno055_perf_publisher_node", options), imu_(0x28, "/dev/i2c-1") 
-    {
+        : Node("bno055_perf_publisher_node", options), imu_(0x28, "/dev/i2c-1") {
         // Declare parameters for runtime configuration
         this->declare_parameter<std::string>("device", "/dev/i2c-1");
         this->declare_parameter<int>("address", 0x28);
@@ -36,17 +35,26 @@ public:
         frame_id_ = this->get_parameter("frame_id").as_string();
         double rate_hz = this->get_parameter("publish_rate").as_double();
 
-        RCLCPP_INFO(this->get_logger(), "Initializing High-Performance BNO055 Node on %s (address: 0x%02X)", device.c_str(), address);
+        RCLCPP_INFO(this->get_logger(), "Initializing High-Performance BNO055 Node on %s (address: 0x%02X)",
+                    device.c_str(), address);
 
         imu_ = bno055lib::BNO055(address, device);
 
         // Redirect internal logs into ROS 2 RCLCPP
         imu_.setLogger([this](bno055lib::LogLevel level, std::string_view message) {
             switch (level) {
-                case bno055lib::LogLevel::Debug: RCLCPP_DEBUG(this->get_logger(), "%s", message.data()); break;
-                case bno055lib::LogLevel::Info: RCLCPP_INFO(this->get_logger(), "%s", message.data()); break;
-                case bno055lib::LogLevel::Warning: RCLCPP_WARN(this->get_logger(), "%s", message.data()); break;
-                case bno055lib::LogLevel::Error: RCLCPP_ERROR(this->get_logger(), "%s", message.data()); break;
+                case bno055lib::LogLevel::Debug:
+                    RCLCPP_DEBUG(this->get_logger(), "%s", message.data());
+                    break;
+                case bno055lib::LogLevel::Info:
+                    RCLCPP_INFO(this->get_logger(), "%s", message.data());
+                    break;
+                case bno055lib::LogLevel::Warning:
+                    RCLCPP_WARN(this->get_logger(), "%s", message.data());
+                    break;
+                case bno055lib::LogLevel::Error:
+                    RCLCPP_ERROR(this->get_logger(), "%s", message.data());
+                    break;
             }
         });
 
@@ -70,7 +78,7 @@ private:
         // High-performance exception-free (noexcept) reads
         auto quat = imu_.getQuaternionNoexcept();
         auto gyro = imu_.getGyroscopeNoexcept();
-        auto accel = imu_.getLinearAccelerationNoexcept(); // Acceleration excluding gravity
+        auto accel = imu_.getLinearAccelerationNoexcept();  // Acceleration excluding gravity
 
         if (!quat || !gyro || !accel) {
             RCLCPP_WARN_THROTTLE(this->get_logger(), *this->get_clock(), 1000,
@@ -83,7 +91,7 @@ private:
         // Allocate standard message dynamically as a unique_ptr to enable zero-copy intra-process transport.
         // When running in a single process container, ROS 2 bypasses serialization and passes this pointer directly.
         auto message = std::make_unique<sensor_msgs::msg::Imu>();
-        
+
         message->header.stamp = this->now();
         message->header.frame_id = frame_id_;
 
@@ -118,7 +126,7 @@ private:
     rclcpp::TimerBase::SharedPtr timer_;
 };
 
-} // namespace bno055_ros2
+}  // namespace bno055_ros2
 
 #ifndef ROS2_NODE_TESTING
 int main(int argc, char* argv[]) {

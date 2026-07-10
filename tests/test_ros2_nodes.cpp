@@ -1,26 +1,23 @@
 #define ROS2_NODE_TESTING
 #include <gtest/gtest.h>
+
+#include <chrono>
 #include <rclcpp/rclcpp.hpp>
 #include <rclcpp_lifecycle/lifecycle_node.hpp>
 #include <sensor_msgs/msg/imu.hpp>
 #include <thread>
-#include <chrono>
 
 // Include the source files directly to compile and test the node classes.
 // Note that main() in these files is guarded by #ifndef ROS2_NODE_TESTING.
-#include "../src/ros2/ros2_publisher_node.cpp"
-#include "../src/ros2/ros2_perf_publisher_node.cpp"
 #include "../src/ros2/ros2_lifecycle_publisher_node.cpp"
+#include "../src/ros2/ros2_perf_publisher_node.cpp"
+#include "../src/ros2/ros2_publisher_node.cpp"
 
 class ROS2NodeTest : public ::testing::Test {
 protected:
-    static void SetUpTestSuite() {
-        rclcpp::init(0, nullptr);
-    }
+    static void SetUpTestSuite() { rclcpp::init(0, nullptr); }
 
-    static void TearDownTestSuite() {
-        rclcpp::shutdown();
-    }
+    static void TearDownTestSuite() { rclcpp::shutdown(); }
 };
 
 TEST_F(ROS2NodeTest, TestStandardPublisherNodeMock) {
@@ -35,12 +32,10 @@ TEST_F(ROS2NodeTest, TestStandardPublisherNodeMock) {
     bool msg_received = false;
     auto sub_node = std::make_shared<rclcpp::Node>("test_sub_node");
     auto sub = sub_node->create_subscription<sensor_msgs::msg::Imu>(
-        "imu/data", 10,
-        [&msg_received](const sensor_msgs::msg::Imu::SharedPtr msg) {
+        "imu/data", 10, [&msg_received](const sensor_msgs::msg::Imu::SharedPtr msg) {
             (void)msg;
             msg_received = true;
-        }
-    );
+        });
 
     rclcpp::executors::SingleThreadedExecutor executor;
     executor.add_node(node);
@@ -67,12 +62,10 @@ TEST_F(ROS2NodeTest, TestPerfPublisherNodeMock) {
     bool msg_received = false;
     auto sub_node = std::make_shared<rclcpp::Node>("test_sub_node_perf");
     auto sub = sub_node->create_subscription<sensor_msgs::msg::Imu>(
-        "imu/data", 10,
-        [&msg_received](const sensor_msgs::msg::Imu::SharedPtr msg) {
+        "imu/data", 10, [&msg_received](const sensor_msgs::msg::Imu::SharedPtr msg) {
             (void)msg;
             msg_received = true;
-        }
-    );
+        });
 
     rclcpp::executors::SingleThreadedExecutor executor;
     executor.add_node(node);
@@ -99,12 +92,10 @@ TEST_F(ROS2NodeTest, TestLifecyclePublisherNodeMock) {
     bool msg_received = false;
     auto sub_node = std::make_shared<rclcpp::Node>("test_sub_node_lifecycle");
     auto sub = sub_node->create_subscription<sensor_msgs::msg::Imu>(
-        "imu/data", 10,
-        [&msg_received](const sensor_msgs::msg::Imu::SharedPtr msg) {
+        "imu/data", 10, [&msg_received](const sensor_msgs::msg::Imu::SharedPtr msg) {
             (void)msg;
             msg_received = true;
-        }
-    );
+        });
 
     rclcpp::executors::SingleThreadedExecutor executor;
     executor.add_node(node->get_node_base_interface());
@@ -119,8 +110,7 @@ TEST_F(ROS2NodeTest, TestLifecyclePublisherNodeMock) {
     EXPECT_FALSE(msg_received);
 
     // 2. Trigger configure transition -> state should become Inactive
-    auto state = node->trigger_transition(
-        lifecycle_msgs::msg::Transition::TRANSITION_CONFIGURE);
+    auto state = node->trigger_transition(lifecycle_msgs::msg::Transition::TRANSITION_CONFIGURE);
     ASSERT_EQ(state.id(), lifecycle_msgs::msg::State::STATE_INACTIVE);
 
     // 3. Verify Inactive state (should not publish)
@@ -132,8 +122,7 @@ TEST_F(ROS2NodeTest, TestLifecyclePublisherNodeMock) {
     EXPECT_FALSE(msg_received);
 
     // 4. Trigger activate transition -> state should become Active
-    state = node->trigger_transition(
-        lifecycle_msgs::msg::Transition::TRANSITION_ACTIVATE);
+    state = node->trigger_transition(lifecycle_msgs::msg::Transition::TRANSITION_ACTIVATE);
     ASSERT_EQ(state.id(), lifecycle_msgs::msg::State::STATE_ACTIVE);
 
     // 5. Verify Active state (should start publishing)
@@ -148,8 +137,7 @@ TEST_F(ROS2NodeTest, TestLifecyclePublisherNodeMock) {
     msg_received = false;
 
     // 6. Trigger deactivate transition -> state should become Inactive
-    state = node->trigger_transition(
-        lifecycle_msgs::msg::Transition::TRANSITION_DEACTIVATE);
+    state = node->trigger_transition(lifecycle_msgs::msg::Transition::TRANSITION_DEACTIVATE);
     ASSERT_EQ(state.id(), lifecycle_msgs::msg::State::STATE_INACTIVE);
 
     // 7. Verify Inactive state again (should stop publishing)
