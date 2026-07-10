@@ -1,3 +1,13 @@
+/**
+ * @file ros2_publisher_node.cpp
+ * @brief Standard standalone ROS 2 publisher node for the BNO055 IMU sensor.
+ * 
+ * This node initializes the BNO055 sensor in IMUPlus fusion mode (6-axis),
+ * declares standard ROS 2 parameters for runtime configuration, redirects
+ * internal library logs to RCLCPP, and publishes IMU telemetry data 
+ * (sensor_msgs/msg/Imu) at a configurable frequency.
+ */
+
 #include <chrono>
 #include <rclcpp/rclcpp.hpp>
 #include <sensor_msgs/msg/imu.hpp>

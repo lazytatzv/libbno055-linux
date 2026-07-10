@@ -1,3 +1,16 @@
+/**
+ * @file ros2_lifecycle_publisher_node.cpp
+ * @brief Managed Lifecycle (State Machine) ROS 2 node for the BNO055 sensor.
+ * 
+ * This node implements rclcpp_lifecycle::LifecycleNode to fit into managed
+ * robot startup and shutdown sequences. It maps the physical states of the 
+ * BNO055 hardware to ROS 2 lifecycle states:
+ * - on_configure: Boot the sensor and put it into low-power suspend mode.
+ * - on_activate: Wake up the sensor to normal mode and start the timer/publisher.
+ * - on_deactivate: Stop publishing and put the hardware back to suspend mode.
+ * - on_cleanup: Release I2C file descriptors and reset resources.
+ */
+
 #include <chrono>
 #include <memory>
 #include <utility>

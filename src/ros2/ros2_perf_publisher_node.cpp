@@ -1,3 +1,14 @@
+/**
+ * @file ros2_perf_publisher_node.cpp
+ * @brief High-performance ROS 2 publisher node optimized for low-latency and zero-copy transport.
+ * 
+ * This node is tailored for resource-constrained embedded Linux systems.
+ * It uses ROS 2 intra-process communication features and passes message pointers
+ * via std::unique_ptr and std::move. In a single-process composable container,
+ * this design completely bypasses message serialization and copy overhead.
+ * It also uses exception-free (noexcept) APIs to maintain deterministic cycle times.
+ */
+
 #include <chrono>
 #include <memory>
 #include <utility>
