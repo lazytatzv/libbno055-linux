@@ -244,200 +244,112 @@
 <img alt="CMake" src="https://img.shields.io/badge/CMake-3.10%2B-064F8C.svg" />
 <a class="reference external" href="https://lazytatzv.github.io/libbno055-linux/"><img alt="Docs" src="https://img.shields.io/badge/docs-GitHub%20Pages-blue.svg" /></a>
 <img alt="CI" src="https://github.com/lazytatzv/libbno055-linux/actions/workflows/ci.yml/badge.svg" />
-<img alt="Repo Size" src="https://img.shields.io/github/repo-size/lazytatzv/libbno055-linux.svg" />
 <img alt="License" src="https://img.shields.io/badge/License-MIT-green.svg" /></p>
 <p>A robust, thread-safe, and dependency-free C++17 library for the BNO055 sensor over I2C on Linux.</p>
 <p><strong><a class="reference external" href="https://lazytatzv.github.io/libbno055-linux/">View the Official Web Documentation (API, Architecture, Integration Guides)</a></strong></p>
-<p>Designed for robotic control systems, autonomous vehicles, and ROS 2 deployments that demand high reliability, automatic error recovery, and deterministic (noexcept) execution.</p>
-<details>
-<summary><strong>Table of Contents</strong></summary>
-<ul class="simple">
-<li><p><a class="reference internal" href="#why-libbno055-linux"><span class="xref myst">Why libbno055-linux?</span></a></p></li>
-<li><p><a class="reference internal" href="#compatibility"><span class="xref myst">Compatibility</span></a></p></li>
-<li><p><a class="reference internal" href="#quick-start"><span class="xref myst">Quick Start</span></a></p></li>
-<li><p><a class="reference internal" href="#sensor-overview-and-operation-modes"><span class="xref myst">Sensor Overview and Operation Modes</span></a></p></li>
-<li><p><a class="reference internal" href="#prerequisites-linux--raspberry-pi-setup"><span class="xref myst">Prerequisites (Linux / Raspberry Pi Setup)</span></a></p></li>
-<li><p><a class="reference internal" href="#build--install-system-wide"><span class="xref myst">Build &amp; Install (System-wide)</span></a></p></li>
-<li><p><a class="reference internal" href="#integration-cmake--ros-2"><span class="xref myst">Integration (CMake &amp; ROS 2)</span></a></p></li>
-<li><p><a class="reference internal" href="#running-the-examples"><span class="xref myst">Running the Examples</span></a></p></li>
-<li><p><a class="reference internal" href="#usage-examples"><span class="xref myst">Usage Examples</span></a></p></li>
-<li><p><a class="reference internal" href="#api-reference"><span class="xref myst">API Reference</span></a></p></li>
-<li><p><a class="reference internal" href="#license"><span class="xref myst">License</span></a></p></li>
-</ul>
-</details>
-<section id="compatibility">
-<h2>Compatibility<a class="headerlink" href="#compatibility" title="Link to this heading">¶</a></h2>
-<ul class="simple">
-<li><p><strong>C++ Version</strong>: C++17 or newer.</p></li>
-<li><p><strong>ROS 2 Distributions</strong>: Compatible with all ROS 2 active and LTS distributions (including Foxy, Humble, Iron, Jazzy, and Rolling) as a pure CMake package built via colcon.</p>
-<ul>
-<li><p><em>Note on Older ROS 2 Distributions (e.g., Foxy, Galactic)</em>: These older distributions default to C++14. You must explicitly enable C++17 in your consuming ROS 2 package’s <code class="docutils literal notranslate"><span class="pre">CMakeLists.txt</span></code> by adding <code class="docutils literal notranslate"><span class="pre">set(CMAKE_CXX_STANDARD</span> <span class="pre">17)</span></code> to avoid compilation failures.</p></li>
-</ul>
-</li>
-<li><p><strong>Operating Systems</strong>: Linux (e.g., Ubuntu, Raspberry Pi OS) for hardware execution. macOS and Windows are supported for compilation and simulation via the built-in I2C mock mode.</p></li>
-</ul>
-</section>
+<p>Designed for robotic control systems, autonomous vehicles, and ROS 2 deployments that demand high reliability, automatic error recovery, and deterministic (<code class="docutils literal notranslate"><span class="pre">noexcept</span></code>) execution.</p>
 <hr class="docutils" />
-<section id="why-libbno055-linux">
-<h2>Why libbno055-linux?<a class="headerlink" href="#why-libbno055-linux" title="Link to this heading">¶</a></h2>
-<p>Most existing BNO055 libraries for Linux are either simple ports of Arduino code or lack the robustness required for production robotics. This library is designed differently:</p>
+<section id="key-features">
+<h2>Key Features<a class="headerlink" href="#key-features" title="Link to this heading">¶</a></h2>
 <ul class="simple">
-<li><p><strong>Self-Healing (Auto-Recovery)</strong>: The BNO055 on Raspberry Pi is notorious for I2C lockups due to hardware clock stretching. Existing libraries crash; this library transparently catches <code class="docutils literal notranslate"><span class="pre">EIO</span></code> faults, flushes the bus, and automatically initiates a recovery sequence to restore sensor state.</p></li>
-<li><p><strong>Real-Time Safe</strong>: Zero heap allocations (<code class="docutils literal notranslate"><span class="pre">std::vector</span></code> is avoided in hot paths) and exception-free (<code class="docutils literal notranslate"><span class="pre">noexcept</span></code>) APIs guarantee bounded, zero-jitter execution for ROS 2 hardware controllers.</p></li>
-<li><p><strong>Modern &amp; Native</strong>: Written in pure C++17. No Arduino <code class="docutils literal notranslate"><span class="pre">Wire.h</span></code> hacks, no heavy frameworks, and zero external dependencies.</p></li>
-<li><p><strong>CI/CD Ready</strong>: Includes an automatic Mock Mode. You can compile your ROS 2 nodes on macOS or Windows laptops without physical I2C hardware.</p></li>
+<li><p><strong>Self-Healing (Auto-Recovery)</strong>: BNO055 is notorious for I2C lockups on Raspberry Pi due to clock stretching. This library transparently catches <code class="docutils literal notranslate"><span class="pre">EIO</span></code> faults, flushes the bus, and recovers sensor state automatically without crashing your application.</p></li>
+<li><p><strong>Real-Time Safe</strong>: Zero heap allocations in hot paths and exception-free (<code class="docutils literal notranslate"><span class="pre">noexcept</span></code>) APIs guarantee bounded, zero-jitter execution time for high-frequency control loops.</p></li>
+<li><p><strong>Modern &amp; Lightweight</strong>: Pure C++17 implementation. Zero external dependencies, no Arduino wrappers.</p></li>
+<li><p><strong>CI/CD Ready</strong>: Cross-platform compilation support with built-in I2C Mocking. Compile and test natively on macOS/Windows without physical hardware.</p></li>
 </ul>
 </section>
 <hr class="docutils" />
 <section id="quick-start">
 <h2>Quick Start<a class="headerlink" href="#quick-start" title="Link to this heading">¶</a></h2>
-<p>Whether you are building a standard C++ application or a ROS 2 robot controller, here is how to get the IMU data streaming in less than 5 minutes.</p>
-<section id="a-no-ros-pure-c-raspberry-pi">
-<h3>A. No-ROS (Pure C++ / Raspberry Pi)<a class="headerlink" href="#a-no-ros-pure-c-raspberry-pi" title="Link to this heading">¶</a></h3>
-<p>Follow these steps to run a standalone C++ program using a system installation of the library.</p>
-<section id="build-and-install-the-library">
-<h4>1. Build and Install the Library<a class="headerlink" href="#build-and-install-the-library" title="Link to this heading">¶</a></h4>
+<section id="a-standalone-c-no-ros">
+<h3>A. Standalone C++ (No-ROS)<a class="headerlink" href="#a-standalone-c-no-ros" title="Link to this heading">¶</a></h3>
+<ol class="arabic">
+<li><p><strong>Build and Install</strong>:</p>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>sudo<span class="w"> </span>apt<span class="w"> </span>update<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>sudo<span class="w"> </span>apt<span class="w"> </span>install<span class="w"> </span>-y<span class="w"> </span>build-essential<span class="w"> </span>cmake
 git<span class="w"> </span>clone<span class="w"> </span>https://github.com/lazytatzv/libbno055-linux.git
 <span class="nb">cd</span><span class="w"> </span>libbno055-linux<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>mkdir<span class="w"> </span>build<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="nb">cd</span><span class="w"> </span>build
 cmake<span class="w"> </span>..<span class="w"> </span>-DBUILD_TESTING<span class="o">=</span>OFF
-make<span class="w"> </span>-j<span class="k">$(</span>nproc<span class="k">)</span>
-sudo<span class="w"> </span>make<span class="w"> </span>install
+make<span class="w"> </span>-j<span class="k">$(</span>nproc<span class="k">)</span><span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>sudo<span class="w"> </span>make<span class="w"> </span>install
 </pre></div>
 </div>
-</section>
-<section id="write-your-code-main-cpp">
-<h4>2. Write your code (<code class="docutils literal notranslate"><span class="pre">main.cpp</span></code>)<a class="headerlink" href="#write-your-code-main-cpp" title="Link to this heading">¶</a></h4>
+</li>
+<li><p><strong>Write your code (<code class="docutils literal notranslate"><span class="pre">main.cpp</span></code>)</strong>:</p>
 <div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="cp">#include</span><span class="w"> </span><span class="cpf">&lt;libbno055-linux/bno055.hpp&gt;</span>
 <span class="cp">#include</span><span class="w"> </span><span class="cpf">&lt;iostream&gt;</span>
 <span class="cp">#include</span><span class="w"> </span><span class="cpf">&lt;thread&gt;</span>
-<span class="cp">#include</span><span class="w"> </span><span class="cpf">&lt;chrono&gt;</span>
 
 <span class="kt">int</span><span class="w"> </span><span class="nf">main</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
-<span class="w">    </span><span class="c1">// 0x28 is default I2C address, /dev/i2c-1 is default RPi I2C port</span>
+<span class="w">    </span><span class="c1">// 0x28 is default address, /dev/i2c-1 is default port</span>
 <span class="w">    </span><span class="n">bno055lib</span><span class="o">::</span><span class="n">BNO055</span><span class="w"> </span><span class="n">imu</span><span class="p">(</span><span class="mh">0x28</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;/dev/i2c-1&quot;</span><span class="p">);</span>
 
-<span class="w">    </span><span class="c1">// Initialize in NDOF fusion mode (accelerometer + gyroscope + magnetometer)</span>
+<span class="w">    </span><span class="c1">// Initialize in NDOF fusion mode</span>
 <span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="o">!</span><span class="n">imu</span><span class="p">.</span><span class="n">begin</span><span class="p">(</span><span class="n">bno055lib</span><span class="o">::</span><span class="n">OpMode</span><span class="o">::</span><span class="n">NDOF</span><span class="p">))</span><span class="w"> </span><span class="p">{</span>
-<span class="w">        </span><span class="n">std</span><span class="o">::</span><span class="n">cerr</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="s">&quot;Failed to find BNO055 sensor over I2C!&quot;</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">endl</span><span class="p">;</span>
+<span class="w">        </span><span class="n">std</span><span class="o">::</span><span class="n">cerr</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="s">&quot;Sensor initialization failed!&quot;</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">endl</span><span class="p">;</span>
 <span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="mi">1</span><span class="p">;</span>
 <span class="w">    </span><span class="p">}</span>
 
-<span class="w">    </span><span class="n">std</span><span class="o">::</span><span class="n">cout</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="s">&quot;Streaming BNO055 Quaternion orientation (w, x, y, z)...&quot;</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">endl</span><span class="p">;</span>
-<span class="w">    </span><span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="kt">int</span><span class="w"> </span><span class="n">i</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"> </span><span class="n">i</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="mi">20</span><span class="p">;</span><span class="w"> </span><span class="o">++</span><span class="n">i</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="kt">int</span><span class="w"> </span><span class="n">i</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"> </span><span class="n">i</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="mi">10</span><span class="p">;</span><span class="w"> </span><span class="o">++</span><span class="n">i</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
 <span class="w">        </span><span class="k">auto</span><span class="w"> </span><span class="n">q</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">imu</span><span class="p">.</span><span class="n">getQuaternionOrDefault</span><span class="p">();</span>
-<span class="w">        </span><span class="n">std</span><span class="o">::</span><span class="n">cout</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="s">&quot;w: &quot;</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="n">q</span><span class="p">.</span><span class="n">w</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="s">&quot; | x: &quot;</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="n">q</span><span class="p">.</span><span class="n">x</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="s">&quot; | y: &quot;</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="n">q</span><span class="p">.</span><span class="n">y</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="s">&quot; | z: &quot;</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="n">q</span><span class="p">.</span><span class="n">z</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">endl</span><span class="p">;</span>
+<span class="w">        </span><span class="n">std</span><span class="o">::</span><span class="n">cout</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="s">&quot;w: &quot;</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="n">q</span><span class="p">.</span><span class="n">w</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="s">&quot; x: &quot;</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="n">q</span><span class="p">.</span><span class="n">x</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="s">&quot; y: &quot;</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="n">q</span><span class="p">.</span><span class="n">y</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="s">&quot; z: &quot;</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="n">q</span><span class="p">.</span><span class="n">z</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">endl</span><span class="p">;</span>
 <span class="w">        </span><span class="n">std</span><span class="o">::</span><span class="n">this_thread</span><span class="o">::</span><span class="n">sleep_for</span><span class="p">(</span><span class="n">std</span><span class="o">::</span><span class="n">chrono</span><span class="o">::</span><span class="n">milliseconds</span><span class="p">(</span><span class="mi">100</span><span class="p">));</span>
 <span class="w">    </span><span class="p">}</span>
 <span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span>
 <span class="p">}</span>
 </pre></div>
 </div>
-</section>
-<section id="compile-and-run">
-<h4>3. Compile and Run<a class="headerlink" href="#compile-and-run" title="Link to this heading">¶</a></h4>
+</li>
+<li><p><strong>Compile and Run</strong>:</p>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>g++<span class="w"> </span>-std<span class="o">=</span>c++17<span class="w"> </span>main.cpp<span class="w"> </span>-lbno055-linux<span class="w"> </span>-o<span class="w"> </span>imu_demo
 ./imu_demo
 </pre></div>
 </div>
-</section>
+</li>
+</ol>
 </section>
 <hr class="docutils" />
 <section id="b-ros-2-colcon-workspace">
 <h3>B. ROS 2 (colcon workspace)<a class="headerlink" href="#b-ros-2-colcon-workspace" title="Link to this heading">¶</a></h3>
-<p>Follow these steps to integrate and run the BNO055 publisher nodes directly inside your robot’s ROS 2 workspace.</p>
-<section id="setup-and-build-workspace">
-<h4>1. Setup and Build Workspace<a class="headerlink" href="#setup-and-build-workspace" title="Link to this heading">¶</a></h4>
-<p>Make sure your ROS 2 environment is sourced (e.g., Humble, Jazzy):</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># 1. Navigate to your ROS 2 workspace src directory</span>
+<ol class="arabic">
+<li><p><strong>Clone and Build</strong>:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Clone inside your ROS 2 workspace src directory</span>
 <span class="nb">cd</span><span class="w"> </span>~/ros2_ws/src
-
-<span class="c1"># 2. Clone this library directly inside src</span>
 git<span class="w"> </span>clone<span class="w"> </span>https://github.com/lazytatzv/libbno055-linux.git
 
-<span class="c1"># 3. Build using colcon</span>
+<span class="c1"># Resolve dependencies and build</span>
 <span class="nb">cd</span><span class="w"> </span>~/ros2_ws
 rosdep<span class="w"> </span>install<span class="w"> </span>--from-paths<span class="w"> </span>src<span class="w"> </span>--ignore-src<span class="w"> </span>-y
 colcon<span class="w"> </span>build<span class="w"> </span>--packages-select<span class="w"> </span>libbno055_linux
 <span class="nb">source</span><span class="w"> </span>install/setup.bash
 </pre></div>
 </div>
-</section>
-<section id="launch-the-nodes">
-<h4>2. Launch the Nodes<a class="headerlink" href="#launch-the-nodes" title="Link to this heading">¶</a></h4>
-<p>You can launch and configure the nodes using the provided launch file and parameters YAML file.</p>
-<section id="method-a-launching-via-launch-file-recommended">
-<h5>Method A: Launching via Launch File (Recommended)<a class="headerlink" href="#method-a-launching-via-launch-file-recommended" title="Link to this heading">¶</a></h5>
-<p>You can launch any of the three node types (<code class="docutils literal notranslate"><span class="pre">standard</span></code>, <code class="docutils literal notranslate"><span class="pre">perf</span></code>, or <code class="docutils literal notranslate"><span class="pre">lifecycle</span></code>) and customize their parameters using the ROS 2 Launch system.</p>
-<ul>
-<li><p><strong>Standard Node (Default)</strong>:</p>
+</li>
+<li><p><strong>Launch with Parameters</strong>:
+Launch standard, performance (zero-copy), or lifecycle nodes:</p>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>ros2<span class="w"> </span>launch<span class="w"> </span>libbno055_linux<span class="w"> </span>bno055_launch.py<span class="w"> </span>node_type:<span class="o">=</span>standard
 </pre></div>
 </div>
 </li>
-<li><p><strong>High-Performance Node</strong>:</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>ros2<span class="w"> </span>launch<span class="w"> </span>libbno055_linux<span class="w"> </span>bno055_launch.py<span class="w"> </span>node_type:<span class="o">=</span>perf
-</pre></div>
-</div>
-</li>
-<li><p><strong>Lifecycle Node</strong>:</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>ros2<span class="w"> </span>launch<span class="w"> </span>libbno055_linux<span class="w"> </span>bno055_launch.py<span class="w"> </span>node_type:<span class="o">=</span>lifecycle
-</pre></div>
-</div>
-</li>
-</ul>
-<p>To customize parameters, copy and edit the installed template <code class="docutils literal notranslate"><span class="pre">config/bno055_params.yaml</span></code>, then load it via launch:</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>ros2<span class="w"> </span>launch<span class="w"> </span>libbno055_linux<span class="w"> </span>bno055_launch.py<span class="w"> </span>params_file:<span class="o">=</span>/path/to/your/custom_params.yaml
-</pre></div>
-</div>
-</section>
-<section id="method-b-direct-command-line-alternative">
-<h5>Method B: Direct Command Line (Alternative)<a class="headerlink" href="#method-b-direct-command-line-alternative" title="Link to this heading">¶</a></h5>
-<ul>
-<li><p><strong>Standard Standalone Node</strong>:</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>ros2<span class="w"> </span>run<span class="w"> </span>libbno055_linux<span class="w"> </span>bno055_publisher_node
-</pre></div>
-</div>
-</li>
-<li><p><strong>High-Performance Zero-Copy Node</strong>:</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>ros2<span class="w"> </span>run<span class="w"> </span>libbno055_linux<span class="w"> </span>bno055_perf_publisher_node
-</pre></div>
-</div>
-</li>
-<li><p><strong>Lifecycle Managed Node</strong>:</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Terminal 1: Run the node</span>
-ros2<span class="w"> </span>run<span class="w"> </span>libbno055_linux<span class="w"> </span>bno055_lifecycle_publisher_node
-
-<span class="c1"># Terminal 2: Trigger state transitions to start publishing</span>
-ros2<span class="w"> </span>lifecycle<span class="w"> </span><span class="nb">set</span><span class="w"> </span>/bno055_lifecycle_publisher_node<span class="w"> </span>configure
-ros2<span class="w"> </span>lifecycle<span class="w"> </span><span class="nb">set</span><span class="w"> </span>/bno055_lifecycle_publisher_node<span class="w"> </span>activate
-</pre></div>
-</div>
-</li>
-</ul>
-</section>
-</section>
-<section id="verify-topic-stream">
-<h4>3. Verify Topic Stream<a class="headerlink" href="#verify-topic-stream" title="Link to this heading">¶</a></h4>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>ros2<span class="w"> </span>topic<span class="w"> </span><span class="nb">echo</span><span class="w"> </span>/imu/data
-</pre></div>
-</div>
-</section>
+</ol>
 </section>
 </section>
 <hr class="docutils" />
-<section id="sensor-overview-and-operation-modes">
-<h2>Sensor Overview and Operation Modes<a class="headerlink" href="#sensor-overview-and-operation-modes" title="Link to this heading">¶</a></h2>
-<p>Detailed information about the BNO055’s fusion modes (NDOF, IMUPlus, etc.), orientation formats (Quaternions vs Euler Angles), and calibration procedures has been moved to a separate document.</p>
-<p>Please see the <a class="reference internal" href="#docs/SENSOR_OVERVIEW.md"><span class="xref myst">Sensor Overview &amp; Calibration Guide</span></a> for full details.</p>
+<section id="detailed-project-documentation">
+<h2>Detailed Project Documentation<a class="headerlink" href="#detailed-project-documentation" title="Link to this heading">¶</a></h2>
+<p>For advanced configuration, integration, and detailed specifications, please refer to the dedicated markdown files in the <code class="docutils literal notranslate"><span class="pre">docs/</span></code> directory or view the <a class="reference external" href="https://lazytatzv.github.io/libbno055-linux/">Official Web Documentation</a>.</p>
+<ul class="simple">
+<li><p><strong><a class="reference internal" href="#docs/API_REFERENCE.md"><span class="xref myst">API Reference</span></a></strong>: Full class, struct, and function reference for <code class="docutils literal notranslate"><span class="pre">bno055lib::BNO055</span></code>.</p></li>
+<li><p><strong><a class="reference internal" href="#docs/INTEGRATION.md"><span class="xref myst">Advanced Integration Guide</span></a></strong>: Detailed instructions for CMake integration (FetchContent, add_subdirectory), custom ROS 2 parameters YAML, launch configurations, and QoS profiles.</p></li>
+<li><p><strong><a class="reference internal" href="#docs/ARCHITECTURE.md"><span class="xref myst">Architecture &amp; Design Decisions</span></a></strong>: Details on PIMPL compilation firewall, thread safety, auto-recovery state machine, and zero-copy intra-process transport.</p></li>
+<li><p><strong><a class="reference internal" href="#docs/SENSOR_OVERVIEW.md"><span class="xref myst">Sensor Overview &amp; Calibration</span></a></strong>: Detailed specs on BNO055 fusion modes, sensor coordinate systems, and saving/restoring calibration offsets.</p></li>
+<li><p><strong><a class="reference internal" href="#docs/TROUBLESHOOTING.md"><span class="xref myst">Troubleshooting &amp; FAQ</span></a></strong>: Solutions for I2C permission denied, Raspberry Pi clock stretching lockups, and indoor magnetic interference.</p></li>
+</ul>
 </section>
 <hr class="docutils" />
-<section id="prerequisites-linux-raspberry-pi-setup">
-<h2>Prerequisites (Linux / Raspberry Pi Setup)<a class="headerlink" href="#prerequisites-linux-raspberry-pi-setup" title="Link to this heading">¶</a></h2>
-<p>Before using the library, you must wire the sensor, enable the I2C interface, and ensure your user has permissions.</p>
-<section id="hardware-wiring-raspberry-pi">
-<h3>1. Hardware Wiring (Raspberry Pi)<a class="headerlink" href="#hardware-wiring-raspberry-pi" title="Link to this heading">¶</a></h3>
-<p>Connect the BNO055 sensor to the Raspberry Pi’s standard I2C pins:</p>
+<section id="hardware-configuration-prerequisites">
+<h2>Hardware Configuration (Prerequisites)<a class="headerlink" href="#hardware-configuration-prerequisites" title="Link to this heading">¶</a></h2>
+<p>Ensure the physical sensor is wired correctly and I2C permissions are set up on your Linux machine.</p>
+<section id="wiring-raspberry-pi-example">
+<h3>1. Wiring (Raspberry Pi Example)<a class="headerlink" href="#wiring-raspberry-pi-example" title="Link to this heading">¶</a></h3>
 <div class="table-wrapper colwidths-auto docutils container">
 <table class="docutils align-default">
 <thead>
@@ -449,7 +361,7 @@ ros2<span class="w"> </span>lifecycle<span class="w"> </span><span class="nb">se
 <tbody>
 <tr class="row-even"><td class="text-left"><p><strong>Vin</strong></p></td>
 <td class="text-left"><p><code class="docutils literal notranslate"><span class="pre">3.3V</span></code> (Pin 1 or 17)</p></td>
-<td class="text-left"><p>Power supply (do not use 5V if the breakout lacks a regulator)</p></td>
+<td class="text-left"><p>Power supply</p></td>
 </tr>
 <tr class="row-odd"><td class="text-left"><p><strong>GND</strong></p></td>
 <td class="text-left"><p><code class="docutils literal notranslate"><span class="pre">GND</span></code> (Pin 6 or 9)</p></td>
@@ -463,307 +375,31 @@ ros2<span class="w"> </span>lifecycle<span class="w"> </span><span class="nb">se
 <td class="text-left"><p><code class="docutils literal notranslate"><span class="pre">GPIO</span> <span class="pre">3</span></code> (Pin 5)</p></td>
 <td class="text-left"><p>I2C Clock</p></td>
 </tr>
-<tr class="row-even"><td class="text-left"><p><strong>ADR</strong> (Optional)</p></td>
+<tr class="row-even"><td class="text-left"><p><strong>ADR</strong></p></td>
 <td class="text-left"><p><code class="docutils literal notranslate"><span class="pre">GND</span></code> (or open)</p></td>
-<td class="text-left"><p>Sets I2C Address to <code class="docutils literal notranslate"><span class="pre">0x28</span></code> (Default). Tie to <code class="docutils literal notranslate"><span class="pre">3.3V</span></code> for <code class="docutils literal notranslate"><span class="pre">0x29</span></code>.</p></td>
+<td class="text-left"><p>Sets address to <code class="docutils literal notranslate"><span class="pre">0x28</span></code>. Connect to <code class="docutils literal notranslate"><span class="pre">3.3V</span></code> for <code class="docutils literal notranslate"><span class="pre">0x29</span></code>.</p></td>
 </tr>
 </tbody>
 </table>
 </div>
 </section>
-<section id="enable-i2c">
-<h3>2. Enable I2C<a class="headerlink" href="#enable-i2c" title="Link to this heading">¶</a></h3>
-<p>On Raspberry Pi OS:</p>
-<ol class="arabic simple">
-<li><p>Run sudo raspi-config.</p></li>
-<li><p>Navigate to Interface Options -&gt; I2C and select Yes to enable it.</p></li>
-<li><p>Reboot your Raspberry Pi.</p></li>
-</ol>
-<p>Alternatively, add/uncomment the following line in /boot/config.txt (or /boot/firmware/config.txt on newer OS versions) and reboot:</p>
-<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>dtparam=i2c_arm=on
-</pre></div>
-</div>
-</section>
-<section id="set-permissions">
-<h3>2. Set Permissions<a class="headerlink" href="#set-permissions" title="Link to this heading">¶</a></h3>
-<p>By default, access to I2C devices (/dev/i2c-*) requires root privileges. To run your program as a non-root user, add your user to the i2c group:</p>
+<section id="permissions-i2c-enable">
+<h3>2. Permissions &amp; I2C Enable<a class="headerlink" href="#permissions-i2c-enable" title="Link to this heading">¶</a></h3>
+<ol class="arabic">
+<li><p>Enable the I2C interface via <code class="docutils literal notranslate"><span class="pre">sudo</span> <span class="pre">raspi-config</span></code> (Interface Options -&gt; I2C).</p></li>
+<li><p>Add your user to the <code class="docutils literal notranslate"><span class="pre">i2c</span></code> group to run programs without <code class="docutils literal notranslate"><span class="pre">sudo</span></code>:</p>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>sudo<span class="w"> </span>usermod<span class="w"> </span>-aG<span class="w"> </span>i2c<span class="w"> </span><span class="nv">$USER</span>
 </pre></div>
 </div>
-<p><em>Note: You must log out and log back in for the group changes to take effect.</em></p>
-</section>
-</section>
-<hr class="docutils" />
-<section id="build-install-system-wide">
-<h2>Build &amp; Install (System-wide)<a class="headerlink" href="#build-install-system-wide" title="Link to this heading">¶</a></h2>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>mkdir<span class="w"> </span>build<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="nb">cd</span><span class="w"> </span>build
-cmake<span class="w"> </span>..
-make
-sudo<span class="w"> </span>make<span class="w"> </span>install
-</pre></div>
-</div>
-</section>
-<hr class="docutils" />
-<section id="integration-cmake-ros-2">
-<h2>Integration (CMake &amp; ROS 2)<a class="headerlink" href="#integration-cmake-ros-2" title="Link to this heading">¶</a></h2>
-<section id="standard-cmake-integration-with-system-installation">
-<h3>Standard CMake Integration (With System Installation)<a class="headerlink" href="#standard-cmake-integration-with-system-installation" title="Link to this heading">¶</a></h3>
-<p>If installed globally on your system, find and link the library in your CMakeLists.txt:</p>
-<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nb">find_package</span><span class="p">(</span><span class="s">libbno055-linux</span><span class="w"> </span><span class="s">REQUIRED</span><span class="p">)</span>
-<span class="nb">target_link_libraries</span><span class="p">(</span><span class="s">your_target</span><span class="w"> </span><span class="s">PRIVATE</span><span class="w"> </span><span class="s">libbno055-linux::libbno055-linux</span><span class="p">)</span>
-</pre></div>
-</div>
-<p>Include in your C++ code:</p>
-<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="cp">#include</span><span class="w"> </span><span class="cpf">&lt;libbno055-linux/bno055.hpp&gt;</span>
-</pre></div>
-</div>
-</section>
-<section id="local-cmake-integration-without-system-installation">
-<h3>Local CMake Integration (Without System Installation)<a class="headerlink" href="#local-cmake-integration-without-system-installation" title="Link to this heading">¶</a></h3>
-<p>If you do not want to install the library system-wide, integrate it locally:</p>
-<section id="method-a-add-subdirectory">
-<h4>Method A: add_subdirectory<a class="headerlink" href="#method-a-add-subdirectory" title="Link to this heading">¶</a></h4>
-<p>Place the libbno055-linux directory inside your project (e.g., under third_party/) and add it in your CMakeLists.txt:</p>
-<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nb">add_subdirectory</span><span class="p">(</span><span class="s">third_party/libbno055-linux</span><span class="p">)</span>
-<span class="nb">target_link_libraries</span><span class="p">(</span><span class="s">your_target</span><span class="w"> </span><span class="s">PRIVATE</span><span class="w"> </span><span class="s">libbno055-linux</span><span class="p">)</span>
-</pre></div>
-</div>
-</section>
-<section id="method-b-fetchcontent-cmake-3-11">
-<h4>Method B: FetchContent (CMake 3.11+)<a class="headerlink" href="#method-b-fetchcontent-cmake-3-11" title="Link to this heading">¶</a></h4>
-<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nb">include</span><span class="p">(</span><span class="s">FetchContent</span><span class="p">)</span>
-
-<span class="nb">FetchContent_Declare</span><span class="p">(</span>
-<span class="w">  </span><span class="s">libbno055-linux</span>
-<span class="w">  </span><span class="s">GIT_REPOSITORY</span><span class="w"> </span><span class="s">https://github.com/lazytatzv/libbno055-linux.git</span>
-<span class="w">  </span><span class="s">GIT_TAG</span><span class="w">        </span><span class="s">main</span>
-<span class="p">)</span>
-<span class="nb">FetchContent_MakeAvailable</span><span class="p">(</span><span class="s">libbno055-linux</span><span class="p">)</span>
-
-<span class="nb">target_link_libraries</span><span class="p">(</span><span class="s">your_target</span><span class="w"> </span><span class="s">PRIVATE</span><span class="w"> </span><span class="s">libbno055-linux</span><span class="p">)</span>
-</pre></div>
-</div>
-</section>
-</section>
-<section id="ros-2-colcon-integration">
-<h3>ROS 2 (colcon) Integration<a class="headerlink" href="#ros-2-colcon-integration" title="Link to this heading">¶</a></h3>
-<p>Place the libbno055-linux directory directly inside your ROS 2 workspace’s src folder. colcon will build it as a pure CMake package.</p>
-<p><strong>Workspace Directory Structure:</strong></p>
-<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>your_ros2_ws/
-└── src/
-    ├── libbno055-linux/   # &lt;--- Place this library here (Pure CMake package)
-    │   ├── CMakeLists.txt
-    │   └── ...
-    └── your_ros_package/  # Your ROS 2 node package (Ament CMake package)
-        ├── CMakeLists.txt
-        ├── package.xml
-        └── ...
-</pre></div>
-</div>
-<p>To use it from another ROS 2 package:</p>
-<ol class="arabic">
-<li><p>Add dependency to package.xml:</p>
-<div class="highlight-xml notranslate"><div class="highlight"><pre><span></span><span class="nt">&lt;depend&gt;</span>libbno055-linux<span class="nt">&lt;/depend&gt;</span>
-</pre></div>
-</div>
-</li>
-<li><p>Find and link in CMakeLists.txt:</p>
-<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nb">find_package</span><span class="p">(</span><span class="s">libbno055-linux</span><span class="w"> </span><span class="s">REQUIRED</span><span class="p">)</span>
-<span class="nb">ament_target_dependencies</span><span class="p">(</span><span class="s">your_node_target</span><span class="w"> </span><span class="s">libbno055-linux</span><span class="p">)</span>
-</pre></div>
-</div>
+<p><em>Note: Log out and log back in for changes to take effect.</em></p>
 </li>
 </ol>
 </section>
 </section>
 <hr class="docutils" />
-<section id="running-the-examples">
-<h2>Running the Examples<a class="headerlink" href="#running-the-examples" title="Link to this heading">¶</a></h2>
-<p>After building the project, you can run the compiled example binaries directly from the build directory.</p>
-<section id="read-all-sensor-data-standard-api">
-<h3>1. Read All Sensor Data (Standard API)<a class="headerlink" href="#read-all-sensor-data-standard-api" title="Link to this heading">¶</a></h3>
-<p>Displays all 8 physical data types and calibration status at 10Hz.</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>./build/read_all_data
-</pre></div>
-</div>
-<p>To specify a different I2C device (e.g., /dev/i2c-0) and/or operation mode (e.g., imu, amg, gyro):</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>./build/read_all_data<span class="w"> </span>/dev/i2c-0<span class="w"> </span>imu
-</pre></div>
-</div>
-<p>(Supported modes: ndof, imu, amg, gyro. Default is ndof. Selecting “imu” enables IMUPlus mode, which runs 6-axis sensor fusion without the magnetometer, avoiding orientation drift and distortion in indoor environments with magnetic interference.)</p>
-</section>
-<section id="high-frequency-real-time-loop-exception-free-api">
-<h3>2. High-Frequency Real-time Loop (Exception-free API)<a class="headerlink" href="#high-frequency-real-time-loop-exception-free-api" title="Link to this heading">¶</a></h3>
-<p>Reads orientation, angular velocity, and linear acceleration at 20Hz, displays telemetry diagnostics, and safely suspends the sensor on Ctrl+C.</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>./build/read_data_noexcept
-</pre></div>
-</div>
-</section>
-<section id="calibration-utility">
-<h3>3. Calibration Utility<a class="headerlink" href="#calibration-utility" title="Link to this heading">¶</a></h3>
-<p>Runs the interactive calibration utility to align the accelerometer, gyroscope, and magnetometer, and saves the calibrated offsets to a binary file.</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>./build/calibrate_imu<span class="w"> </span>/dev/i2c-1<span class="w"> </span>bno055_calib.bin
-</pre></div>
-</div>
-</section>
-<section id="ros-2-publisher-nodes-optional">
-<h3>4. ROS 2 Publisher Nodes (Optional)<a class="headerlink" href="#ros-2-publisher-nodes-optional" title="Link to this heading">¶</a></h3>
-<p>If a ROS 2 environment is detected during compilation, the library compiles three distinct ROS 2 publisher nodes to support different system integration designs:</p>
-<ul>
-<li><p><strong>Standard Standalone Node (<code class="docutils literal notranslate"><span class="pre">bno055_publisher_node</span></code>)</strong>:</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>ros2<span class="w"> </span>run<span class="w"> </span>libbno055_linux<span class="w"> </span>bno055_publisher_node<span class="w"> </span>--ros-args<span class="w"> </span>-p<span class="w"> </span>device:<span class="o">=</span><span class="s2">&quot;/dev/i2c-1&quot;</span><span class="w"> </span>-p<span class="w"> </span>publish_rate:<span class="o">=</span><span class="m">50</span>.0
-</pre></div>
-</div>
-</li>
-<li><p><strong>High-Performance Zero-Copy Node (<code class="docutils literal notranslate"><span class="pre">bno055_perf_publisher_node</span></code>)</strong>: Optimized using <code class="docutils literal notranslate"><span class="pre">std::unique_ptr</span></code> and <code class="docutils literal notranslate"><span class="pre">std::move</span></code> to allow zero-copy intra-process message passing when composed.</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>ros2<span class="w"> </span>run<span class="w"> </span>libbno055_linux<span class="w"> </span>bno055_perf_publisher_node
-</pre></div>
-</div>
-</li>
-<li><p><strong>Managed Lifecycle Node (<code class="docutils literal notranslate"><span class="pre">bno055_lifecycle_publisher_node</span></code>)</strong>: Integrates with ROS 2 Lifecycle management to handle state transitions (configure, activate, deactivate, cleanup) and syncs hardware low-power states.</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>ros2<span class="w"> </span>run<span class="w"> </span>libbno055_linux<span class="w"> </span>bno055_lifecycle_publisher_node
-</pre></div>
-</div>
-</li>
-</ul>
-</section>
-<section id="troubleshooting-permission-denied">
-<h3>Troubleshooting Permission Denied<a class="headerlink" href="#troubleshooting-permission-denied" title="Link to this heading">¶</a></h3>
-<p>If you see “Failed to open I2C device” or permission errors, run with sudo or ensure your user belongs to the i2c group as described in the Prerequisites section:</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>sudo<span class="w"> </span>./build/read_all_data
-</pre></div>
-</div>
-</section>
-</section>
-<hr class="docutils" />
-<section id="usage-examples">
-<h2>Usage Examples<a class="headerlink" href="#usage-examples" title="Link to this heading">¶</a></h2>
-<section id="robust-real-time-loop-exceptions-free-telemetry">
-<h3>1. Robust Real-time Loop (Exceptions-Free &amp; Telemetry)<a class="headerlink" href="#robust-real-time-loop-exceptions-free-telemetry" title="Link to this heading">¶</a></h3>
-<p>Highly recommended for real-time controllers (like ROS 2 control nodes) where exceptions are prohibited.</p>
-<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="cp">#include</span><span class="w"> </span><span class="cpf">&lt;libbno055-linux/bno055.hpp&gt;</span>
-<span class="cp">#include</span><span class="w"> </span><span class="cpf">&lt;iostream&gt;</span>
-<span class="cp">#include</span><span class="w"> </span><span class="cpf">&lt;thread&gt;</span>
-<span class="cp">#include</span><span class="w"> </span><span class="cpf">&lt;chrono&gt;</span>
-
-<span class="kt">int</span><span class="w"> </span><span class="nf">main</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
-<span class="w">    </span><span class="c1">// 1. Initialize sensor (uses Mock mode automatically on non-Linux platforms)</span>
-<span class="w">    </span><span class="n">bno055lib</span><span class="o">::</span><span class="n">BNO055</span><span class="w"> </span><span class="n">imu</span><span class="p">(</span><span class="mh">0x28</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;/dev/i2c-1&quot;</span><span class="p">);</span>
-
-<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="o">!</span><span class="n">imu</span><span class="p">.</span><span class="n">begin</span><span class="p">(</span><span class="n">bno055lib</span><span class="o">::</span><span class="n">OpMode</span><span class="o">::</span><span class="n">NDOF</span><span class="p">))</span><span class="w"> </span><span class="p">{</span>
-<span class="w">        </span><span class="n">std</span><span class="o">::</span><span class="n">cerr</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="s">&quot;Initialization failed!&quot;</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">endl</span><span class="p">;</span>
-<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="mi">1</span><span class="p">;</span>
-<span class="w">    </span><span class="p">}</span>
-
-<span class="w">    </span><span class="n">std</span><span class="o">::</span><span class="n">cout</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="s">&quot;IMU started successfully in exception-free mode.&quot;</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">endl</span><span class="p">;</span>
-
-<span class="w">    </span><span class="k">while</span><span class="w"> </span><span class="p">(</span><span class="nb">true</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
-<span class="w">        </span><span class="c1">// 2. Fetch data without exceptions using Noexcept API</span>
-<span class="w">        </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="k">auto</span><span class="w"> </span><span class="n">gyro</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">imu</span><span class="p">.</span><span class="n">getGyroscopeNoexcept</span><span class="p">())</span><span class="w"> </span><span class="p">{</span>
-<span class="w">            </span><span class="n">std</span><span class="o">::</span><span class="n">cout</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="s">&quot;</span><span class="se">\r</span><span class="s">Gyro: X=&quot;</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="n">gyro</span><span class="o">-&gt;</span><span class="n">x</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="s">&quot; Y=&quot;</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="n">gyro</span><span class="o">-&gt;</span><span class="n">y</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="s">&quot; Z=&quot;</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="n">gyro</span><span class="o">-&gt;</span><span class="n">z</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">flush</span><span class="p">;</span>
-<span class="w">        </span><span class="p">}</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="p">{</span>
-<span class="w">            </span><span class="n">std</span><span class="o">::</span><span class="n">cerr</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="s">&quot;</span><span class="se">\n</span><span class="s">[Warning] Temporary communication dropout.&quot;</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">endl</span><span class="p">;</span>
-<span class="w">        </span><span class="p">}</span>
-
-<span class="w">        </span><span class="c1">// 3. Monitor Telemetry / Diagnostics periodically</span>
-<span class="w">        </span><span class="k">static</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">loops</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span>
-<span class="w">        </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="o">++</span><span class="n">loops</span><span class="w"> </span><span class="o">%</span><span class="w"> </span><span class="mi">20</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="mi">0</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
-<span class="w">            </span><span class="k">auto</span><span class="w"> </span><span class="n">diag</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">imu</span><span class="p">.</span><span class="n">getDiagnostics</span><span class="p">();</span>
-<span class="w">            </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">diag</span><span class="p">.</span><span class="n">reconnect_attempts</span><span class="w"> </span><span class="o">&gt;</span><span class="w"> </span><span class="mi">0</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
-<span class="w">                </span><span class="n">std</span><span class="o">::</span><span class="n">cout</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="s">&quot;</span><span class="se">\n</span><span class="s">[DIAG] I2C errors: RxErr=&quot;</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="n">diag</span><span class="p">.</span><span class="n">read_failures</span><span class="w"> </span>
-<span class="w">                          </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="s">&quot;, TxErr=&quot;</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="n">diag</span><span class="p">.</span><span class="n">write_failures</span><span class="w"> </span>
-<span class="w">                          </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="s">&quot;, Reconnects=&quot;</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="n">diag</span><span class="p">.</span><span class="n">reconnect_attempts</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">endl</span><span class="p">;</span>
-<span class="w">            </span><span class="p">}</span>
-<span class="w">        </span><span class="p">}</span>
-
-<span class="w">        </span><span class="n">std</span><span class="o">::</span><span class="n">this_thread</span><span class="o">::</span><span class="n">sleep_for</span><span class="p">(</span><span class="n">std</span><span class="o">::</span><span class="n">chrono</span><span class="o">::</span><span class="n">milliseconds</span><span class="p">(</span><span class="mi">50</span><span class="p">));</span>
-<span class="w">    </span><span class="p">}</span>
-<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span>
-<span class="p">}</span>
-</pre></div>
-</div>
-</section>
-<section id="quaternion-retrieval-with-exception-handling">
-<h3>2. Quaternion Retrieval (With Exception Handling)<a class="headerlink" href="#quaternion-retrieval-with-exception-handling" title="Link to this heading">¶</a></h3>
-<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="cp">#include</span><span class="w"> </span><span class="cpf">&lt;libbno055-linux/bno055.hpp&gt;</span>
-<span class="cp">#include</span><span class="w"> </span><span class="cpf">&lt;iostream&gt;</span>
-
-<span class="kt">int</span><span class="w"> </span><span class="nf">main</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
-<span class="w">    </span><span class="n">bno055lib</span><span class="o">::</span><span class="n">BNO055</span><span class="w"> </span><span class="n">imu</span><span class="p">(</span><span class="mh">0x28</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;/dev/i2c-1&quot;</span><span class="p">);</span>
-
-<span class="w">    </span><span class="c1">// Standard 6-axis IMU mode for indoor robotics</span>
-<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="o">!</span><span class="n">imu</span><span class="p">.</span><span class="n">begin</span><span class="p">(</span><span class="n">bno055lib</span><span class="o">::</span><span class="n">OpMode</span><span class="o">::</span><span class="n">IMUPlus</span><span class="p">))</span><span class="w"> </span><span class="p">{</span>
-<span class="w">        </span><span class="n">std</span><span class="o">::</span><span class="n">cerr</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="s">&quot;Initialization failed!&quot;</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">endl</span><span class="p">;</span>
-<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="mi">1</span><span class="p">;</span>
-<span class="w">    </span><span class="p">}</span>
-
-<span class="w">    </span><span class="n">imu</span><span class="p">.</span><span class="n">loadCalibrationFile</span><span class="p">(</span><span class="s">&quot;bno055_calib.bin&quot;</span><span class="p">);</span>
-
-<span class="w">    </span><span class="k">try</span><span class="w"> </span><span class="p">{</span>
-<span class="w">        </span><span class="c1">// Read unit quaternion (w, x, y, z) for 3D orientation.</span>
-<span class="w">        </span><span class="c1">// Directly compatible with ROS 2 geometry_msgs/msg/Quaternion.</span>
-<span class="w">        </span><span class="k">auto</span><span class="w"> </span><span class="n">quat</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">imu</span><span class="p">.</span><span class="n">getQuaternion</span><span class="p">();</span><span class="w"> </span><span class="c1">// Throws bno055lib::IMUError on permanent I2C loss</span>
-<span class="w">        </span>
-<span class="w">        </span><span class="n">std</span><span class="o">::</span><span class="n">cout</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="s">&quot;Quaternion orientation: &quot;</span>
-<span class="w">                  </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="s">&quot;w=&quot;</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="n">quat</span><span class="p">.</span><span class="n">w</span><span class="w"> </span>
-<span class="w">                  </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="s">&quot; x=&quot;</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="n">quat</span><span class="p">.</span><span class="n">x</span><span class="w"> </span>
-<span class="w">                  </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="s">&quot; y=&quot;</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="n">quat</span><span class="p">.</span><span class="n">y</span><span class="w"> </span>
-<span class="w">                  </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="s">&quot; z=&quot;</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="n">quat</span><span class="p">.</span><span class="n">z</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">endl</span><span class="p">;</span>
-<span class="w">                  </span>
-<span class="w">    </span><span class="p">}</span><span class="w"> </span><span class="k">catch</span><span class="w"> </span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="n">bno055lib</span><span class="o">::</span><span class="n">IMUError</span><span class="o">&amp;</span><span class="w"> </span><span class="n">e</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
-<span class="w">        </span><span class="n">std</span><span class="o">::</span><span class="n">cerr</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="s">&quot;Sensor read failed: &quot;</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="n">e</span><span class="p">.</span><span class="n">what</span><span class="p">()</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">endl</span><span class="p">;</span>
-<span class="w">    </span><span class="p">}</span>
-
-<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span>
-<span class="p">}</span>
-</pre></div>
-</div>
-</section>
-<section id="beginner-friendly-integration-no-optionals-no-exceptions">
-<h3>3. Beginner-Friendly Integration (No Optionals, No Exceptions)<a class="headerlink" href="#beginner-friendly-integration-no-optionals-no-exceptions" title="Link to this heading">¶</a></h3>
-<p>Designed for hobbyists, students, or rapid prototyping where you want to read data with minimal code.</p>
-<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="cp">#include</span><span class="w"> </span><span class="cpf">&lt;libbno055-linux/bno055.hpp&gt;</span>
-<span class="cp">#include</span><span class="w"> </span><span class="cpf">&lt;iostream&gt;</span>
-<span class="cp">#include</span><span class="w"> </span><span class="cpf">&lt;thread&gt;</span>
-<span class="cp">#include</span><span class="w"> </span><span class="cpf">&lt;chrono&gt;</span>
-
-<span class="kt">int</span><span class="w"> </span><span class="nf">main</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
-<span class="w">    </span><span class="n">bno055lib</span><span class="o">::</span><span class="n">BNO055</span><span class="w"> </span><span class="n">imu</span><span class="p">(</span><span class="mh">0x28</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;/dev/i2c-1&quot;</span><span class="p">);</span>
-
-<span class="w">    </span><span class="c1">// Simple initialization</span>
-<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="o">!</span><span class="n">imu</span><span class="p">.</span><span class="n">begin</span><span class="p">(</span><span class="n">bno055lib</span><span class="o">::</span><span class="n">OpMode</span><span class="o">::</span><span class="n">IMUPlus</span><span class="p">))</span><span class="w"> </span><span class="p">{</span>
-<span class="w">        </span><span class="n">std</span><span class="o">::</span><span class="n">cerr</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="s">&quot;Sensor not found.&quot;</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">endl</span><span class="p">;</span>
-<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="mi">1</span><span class="p">;</span>
-<span class="w">    </span><span class="p">}</span>
-
-<span class="w">    </span><span class="k">while</span><span class="w"> </span><span class="p">(</span><span class="nb">true</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
-<span class="w">        </span><span class="c1">// Read directly without try-catch or std::optional handling.</span>
-<span class="w">        </span><span class="c1">// Returns the last cached valid value (or 0) if a temporary I2C dropout occurs.</span>
-<span class="w">        </span><span class="n">bno055lib</span><span class="o">::</span><span class="n">Quaternion</span><span class="w"> </span><span class="n">quat</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">imu</span><span class="p">.</span><span class="n">getQuaternionOrDefault</span><span class="p">();</span>
-<span class="w">        </span>
-<span class="w">        </span><span class="c1">// Convert to human-readable Euler angles in degrees</span>
-<span class="w">        </span><span class="n">bno055lib</span><span class="o">::</span><span class="n">Vector3</span><span class="w"> </span><span class="n">euler</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">bno055lib</span><span class="o">::</span><span class="n">toEulerDegrees</span><span class="p">(</span><span class="n">quat</span><span class="p">);</span>
-<span class="w">        </span>
-<span class="w">        </span><span class="n">std</span><span class="o">::</span><span class="n">cout</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="s">&quot;Roll: &quot;</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="n">euler</span><span class="p">.</span><span class="n">x</span><span class="w"> </span>
-<span class="w">                  </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="s">&quot; | Pitch: &quot;</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="n">euler</span><span class="p">.</span><span class="n">y</span><span class="w"> </span>
-<span class="w">                  </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="s">&quot; | Yaw: &quot;</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="n">euler</span><span class="p">.</span><span class="n">z</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="s">&quot; degrees&quot;</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">endl</span><span class="p">;</span>
-
-<span class="w">        </span><span class="n">std</span><span class="o">::</span><span class="n">this_thread</span><span class="o">::</span><span class="n">sleep_for</span><span class="p">(</span><span class="n">std</span><span class="o">::</span><span class="n">chrono</span><span class="o">::</span><span class="n">milliseconds</span><span class="p">(</span><span class="mi">100</span><span class="p">));</span>
-<span class="w">    </span><span class="p">}</span>
-<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span>
-<span class="p">}</span>
-</pre></div>
-</div>
-</section>
-</section>
-<hr class="docutils" />
-<section id="api-reference">
-<h2>API Reference<a class="headerlink" href="#api-reference" title="Link to this heading">¶</a></h2>
-<p>The full API reference has been moved to a separate document. Please see <a class="reference internal" href="#docs/API_REFERENCE.md"><span class="xref myst">API_REFERENCE.md</span></a> for complete details on classes, structs, and available functions.</p>
-</section>
 <section id="license">
 <h2>License<a class="headerlink" href="#license" title="Link to this heading">¶</a></h2>
-<p>MIT License.</p>
+<p>This project is licensed under the MIT License - see the <a class="reference internal" href="#LICENSE"><span class="xref myst">LICENSE</span></a> file for details.</p>
 </section>
 </section>
 
@@ -823,60 +459,18 @@ sudo<span class="w"> </span>make<span class="w"> </span>install
           <div class="toc-tree">
             <ul>
 <li><a class="reference internal" href="#">libbno055-linux</a><ul>
-<li><a class="reference internal" href="#compatibility">Compatibility</a></li>
-<li><a class="reference internal" href="#why-libbno055-linux">Why libbno055-linux?</a></li>
+<li><a class="reference internal" href="#key-features">Key Features</a></li>
 <li><a class="reference internal" href="#quick-start">Quick Start</a><ul>
-<li><a class="reference internal" href="#a-no-ros-pure-c-raspberry-pi">A. No-ROS (Pure C++ / Raspberry Pi)</a><ul>
-<li><a class="reference internal" href="#build-and-install-the-library">1. Build and Install the Library</a></li>
-<li><a class="reference internal" href="#write-your-code-main-cpp">2. Write your code (<code class="docutils literal notranslate"><span class="pre">main.cpp</span></code>)</a></li>
-<li><a class="reference internal" href="#compile-and-run">3. Compile and Run</a></li>
+<li><a class="reference internal" href="#a-standalone-c-no-ros">A. Standalone C++ (No-ROS)</a></li>
+<li><a class="reference internal" href="#b-ros-2-colcon-workspace">B. ROS 2 (colcon workspace)</a></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#b-ros-2-colcon-workspace">B. ROS 2 (colcon workspace)</a><ul>
-<li><a class="reference internal" href="#setup-and-build-workspace">1. Setup and Build Workspace</a></li>
-<li><a class="reference internal" href="#launch-the-nodes">2. Launch the Nodes</a><ul>
-<li><a class="reference internal" href="#method-a-launching-via-launch-file-recommended">Method A: Launching via Launch File (Recommended)</a></li>
-<li><a class="reference internal" href="#method-b-direct-command-line-alternative">Method B: Direct Command Line (Alternative)</a></li>
+<li><a class="reference internal" href="#detailed-project-documentation">Detailed Project Documentation</a></li>
+<li><a class="reference internal" href="#hardware-configuration-prerequisites">Hardware Configuration (Prerequisites)</a><ul>
+<li><a class="reference internal" href="#wiring-raspberry-pi-example">1. Wiring (Raspberry Pi Example)</a></li>
+<li><a class="reference internal" href="#permissions-i2c-enable">2. Permissions &amp; I2C Enable</a></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#verify-topic-stream">3. Verify Topic Stream</a></li>
-</ul>
-</li>
-</ul>
-</li>
-<li><a class="reference internal" href="#sensor-overview-and-operation-modes">Sensor Overview and Operation Modes</a></li>
-<li><a class="reference internal" href="#prerequisites-linux-raspberry-pi-setup">Prerequisites (Linux / Raspberry Pi Setup)</a><ul>
-<li><a class="reference internal" href="#hardware-wiring-raspberry-pi">1. Hardware Wiring (Raspberry Pi)</a></li>
-<li><a class="reference internal" href="#enable-i2c">2. Enable I2C</a></li>
-<li><a class="reference internal" href="#set-permissions">2. Set Permissions</a></li>
-</ul>
-</li>
-<li><a class="reference internal" href="#build-install-system-wide">Build &amp; Install (System-wide)</a></li>
-<li><a class="reference internal" href="#integration-cmake-ros-2">Integration (CMake &amp; ROS 2)</a><ul>
-<li><a class="reference internal" href="#standard-cmake-integration-with-system-installation">Standard CMake Integration (With System Installation)</a></li>
-<li><a class="reference internal" href="#local-cmake-integration-without-system-installation">Local CMake Integration (Without System Installation)</a><ul>
-<li><a class="reference internal" href="#method-a-add-subdirectory">Method A: add_subdirectory</a></li>
-<li><a class="reference internal" href="#method-b-fetchcontent-cmake-3-11">Method B: FetchContent (CMake 3.11+)</a></li>
-</ul>
-</li>
-<li><a class="reference internal" href="#ros-2-colcon-integration">ROS 2 (colcon) Integration</a></li>
-</ul>
-</li>
-<li><a class="reference internal" href="#running-the-examples">Running the Examples</a><ul>
-<li><a class="reference internal" href="#read-all-sensor-data-standard-api">1. Read All Sensor Data (Standard API)</a></li>
-<li><a class="reference internal" href="#high-frequency-real-time-loop-exception-free-api">2. High-Frequency Real-time Loop (Exception-free API)</a></li>
-<li><a class="reference internal" href="#calibration-utility">3. Calibration Utility</a></li>
-<li><a class="reference internal" href="#ros-2-publisher-nodes-optional">4. ROS 2 Publisher Nodes (Optional)</a></li>
-<li><a class="reference internal" href="#troubleshooting-permission-denied">Troubleshooting Permission Denied</a></li>
-</ul>
-</li>
-<li><a class="reference internal" href="#usage-examples">Usage Examples</a><ul>
-<li><a class="reference internal" href="#robust-real-time-loop-exceptions-free-telemetry">1. Robust Real-time Loop (Exceptions-Free &amp; Telemetry)</a></li>
-<li><a class="reference internal" href="#quaternion-retrieval-with-exception-handling">2. Quaternion Retrieval (With Exception Handling)</a></li>
-<li><a class="reference internal" href="#beginner-friendly-integration-no-optionals-no-exceptions">3. Beginner-Friendly Integration (No Optionals, No Exceptions)</a></li>
-</ul>
-</li>
-<li><a class="reference internal" href="#api-reference">API Reference</a></li>
 <li><a class="reference internal" href="#license">License</a></li>
 </ul>
 </li>
