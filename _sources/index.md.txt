@@ -1,0 +1,12 @@
+# libbno055-linux Official Documentation
+
+Welcome to the documentation for **libbno055-linux**, a robust, thread-safe, and dependency-free C++17 library for the BNO055 sensor over I2C on Linux.
+
+```{toctree}
+:maxdepth: 2
+:caption: Contents:
+
+README
+SENSOR_OVERVIEW
+API_REFERENCE
+```
