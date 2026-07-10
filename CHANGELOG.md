@@ -10,7 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - Robust, thread-safe, and dependency-free BNO055 library for Linux.
 - Simplified API for beginners and visual debugging features.
-- ROS 2 publisher node example.
+- ROS 2 publisher node examples (including a standard publisher, a high-performance zero-copy/intra-process node, and a managed LifecycleNode).
 - `vcpkg` and `Conan` integration support.
 - Comprehensive Sphinx-based documentation (using Furo theme) including architecture, integration, and troubleshooting guides.
 - GitHub Actions CI workflows and contribution guidelines (`CONTRIBUTING.md`).
