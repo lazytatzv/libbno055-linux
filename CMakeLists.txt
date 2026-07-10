@@ -65,12 +65,12 @@ find_package(sensor_msgs QUIET)
 
 if(rclcpp_FOUND AND sensor_msgs_FOUND)
     message(STATUS "ROS 2 environment detected. Building ROS 2 publisher node sample.")
-    add_executable(bno055_publisher_node examples/ros2_publisher_node.cpp)
+    add_executable(bno055_publisher_node src/ros2/ros2_publisher_node.cpp)
     target_link_libraries(bno055_publisher_node PRIVATE libbno055-linux)
     target_link_libraries(bno055_publisher_node PRIVATE rclcpp::rclcpp sensor_msgs::sensor_msgs)
     
     # High-Performance Node (Zero-copy, Intra-process)
-    add_executable(bno055_perf_publisher_node examples/ros2_perf_publisher_node.cpp)
+    add_executable(bno055_perf_publisher_node src/ros2/ros2_perf_publisher_node.cpp)
     target_link_libraries(bno055_perf_publisher_node PRIVATE libbno055-linux)
     target_link_libraries(bno055_perf_publisher_node PRIVATE rclcpp::rclcpp sensor_msgs::sensor_msgs)
 
@@ -81,7 +81,7 @@ if(rclcpp_FOUND AND sensor_msgs_FOUND)
     if(rclcpp_lifecycle_FOUND)
         message(STATUS "ROS 2 Lifecycle detected. Building Lifecycle Node sample.")
         # Lifecycle Node (Managed Node)
-        add_executable(bno055_lifecycle_publisher_node examples/ros2_lifecycle_publisher_node.cpp)
+        add_executable(bno055_lifecycle_publisher_node src/ros2/ros2_lifecycle_publisher_node.cpp)
         target_link_libraries(bno055_lifecycle_publisher_node PRIVATE libbno055-linux)
         target_link_libraries(bno055_lifecycle_publisher_node PRIVATE
             rclcpp::rclcpp
