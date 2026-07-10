@@ -373,6 +373,103 @@ For high-frequency sensor streams (like IMUs running at 100Hz), using the defaul
 </div>
 <p>When users run <code class="docutils literal notranslate"><span class="pre">rosdep</span> <span class="pre">install</span> <span class="pre">--from-paths</span> <span class="pre">src</span> <span class="pre">-y</span></code>, <code class="docutils literal notranslate"><span class="pre">rosdep</span></code> will automatically fetch and install this library via <code class="docutils literal notranslate"><span class="pre">vcpkg</span></code>, <code class="docutils literal notranslate"><span class="pre">apt</span></code>, or source, depending on how you distribute your final software stack.</p>
 </section>
+<hr class="docutils" />
+<section id="building-and-running-the-ros-2-examples">
+<h2>4. Building and Running the ROS 2 Examples<a class="headerlink" href="#building-and-running-the-ros-2-examples" title="Link to this heading">¶</a></h2>
+<p>The library comes with three pre-built ROS 2 node examples in the <code class="docutils literal notranslate"><span class="pre">examples/</span></code> directory:</p>
+<ul class="simple">
+<li><p><strong><code class="docutils literal notranslate"><span class="pre">bno055_publisher_node</span></code></strong>: A standard standalone ROS 2 publisher node.</p></li>
+<li><p><strong><code class="docutils literal notranslate"><span class="pre">bno055_perf_publisher_node</span></code></strong>: An optimized high-performance node designed for zero-copy intra-process communication.</p></li>
+<li><p><strong><code class="docutils literal notranslate"><span class="pre">bno055_lifecycle_publisher_node</span></code></strong>: A managed LifecycleNode that supports state transitions and low-power hardware state mapping.</p></li>
+</ul>
+<section id="prerequisites">
+<h3>4.1. Prerequisites<a class="headerlink" href="#prerequisites" title="Link to this heading">¶</a></h3>
+<p>Ensure you have ROS 2 (e.g., Humble, Jazzy) installed and sourced in your terminal:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="nb">source</span><span class="w"> </span>/opt/ros/humble/setup.bash
+</pre></div>
+</div>
+</section>
+<section id="building-inside-a-ros-2-workspace">
+<h3>4.2. Building inside a ROS 2 Workspace<a class="headerlink" href="#building-inside-a-ros-2-workspace" title="Link to this heading">¶</a></h3>
+<p>Since this repository contains a <code class="docutils literal notranslate"><span class="pre">package.xml</span></code>, it is compatible with <code class="docutils literal notranslate"><span class="pre">colcon</span></code> and can be built directly inside a ROS 2 workspace.</p>
+<ol class="arabic">
+<li><p>Create a workspace directory (if you do not have one):</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>mkdir<span class="w"> </span>-p<span class="w"> </span>~/ros2_ws/src
+<span class="nb">cd</span><span class="w"> </span>~/ros2_ws/src
+</pre></div>
+</div>
+</li>
+<li><p>Clone or symlink this repository into <code class="docutils literal notranslate"><span class="pre">~/ros2_ws/src/</span></code>.</p></li>
+<li><p>Resolve dependencies using <code class="docutils literal notranslate"><span class="pre">rosdep</span></code>:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="nb">cd</span><span class="w"> </span>~/ros2_ws
+rosdep<span class="w"> </span>install<span class="w"> </span>--from-paths<span class="w"> </span>src<span class="w"> </span>--ignore-src<span class="w"> </span>-y
+</pre></div>
+</div>
+</li>
+<li><p>Build the package:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>colcon<span class="w"> </span>build<span class="w"> </span>--packages-select<span class="w"> </span>libbno055_linux
+</pre></div>
+</div>
+</li>
+<li><p>Source the workspace:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="nb">source</span><span class="w"> </span>install/setup.bash
+</pre></div>
+</div>
+</li>
+</ol>
+</section>
+<section id="running-the-nodes">
+<h3>4.3. Running the Nodes<a class="headerlink" href="#running-the-nodes" title="Link to this heading">¶</a></h3>
+<section id="standard-standalone-node">
+<h4>Standard Standalone Node<a class="headerlink" href="#standard-standalone-node" title="Link to this heading">¶</a></h4>
+<p>Run the standard publisher node:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>ros2<span class="w"> </span>run<span class="w"> </span>libbno055_linux<span class="w"> </span>bno055_publisher_node
+</pre></div>
+</div>
+<p>You can pass ROS 2 parameters to override the default I2C device and address:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>ros2<span class="w"> </span>run<span class="w"> </span>libbno055_linux<span class="w"> </span>bno055_publisher_node<span class="w"> </span>--ros-args<span class="w"> </span>-p<span class="w"> </span>device:<span class="o">=</span><span class="s2">&quot;/dev/i2c-2&quot;</span><span class="w"> </span>-p<span class="w"> </span>address:<span class="o">=</span><span class="m">40</span>
+</pre></div>
+</div>
+</section>
+<section id="high-performance-node">
+<h4>High-Performance Node<a class="headerlink" href="#high-performance-node" title="Link to this heading">¶</a></h4>
+<p>This node uses <code class="docutils literal notranslate"><span class="pre">std::unique_ptr</span></code> and <code class="docutils literal notranslate"><span class="pre">std::move</span></code> during publishing to enable zero-copy intra-process transport. Run it with:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>ros2<span class="w"> </span>run<span class="w"> </span>libbno055_linux<span class="w"> </span>bno055_perf_publisher_node
+</pre></div>
+</div>
+</section>
+<section id="lifecycle-node-managed-node">
+<h4>Lifecycle Node (Managed Node)<a class="headerlink" href="#lifecycle-node-managed-node" title="Link to this heading">¶</a></h4>
+<p>The Lifecycle node remains in the <code class="docutils literal notranslate"><span class="pre">Unconfigured</span></code> state upon startup and does not publish immediately. You must command state transitions externally.</p>
+<ol class="arabic">
+<li><p><strong>Start the node:</strong></p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>ros2<span class="w"> </span>run<span class="w"> </span>libbno055_linux<span class="w"> </span>bno055_lifecycle_publisher_node
+</pre></div>
+</div>
+</li>
+<li><p><strong>Transition states (from another terminal):</strong></p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Configure: Boot the sensor and put it into low-power suspend mode</span>
+ros2<span class="w"> </span>lifecycle<span class="w"> </span><span class="nb">set</span><span class="w"> </span>/bno055_lifecycle_publisher_node<span class="w"> </span>configure
+
+<span class="c1"># Activate: Wake the sensor up and start high-rate IMU publishing</span>
+ros2<span class="w"> </span>lifecycle<span class="w"> </span><span class="nb">set</span><span class="w"> </span>/bno055_lifecycle_publisher_node<span class="w"> </span>activate
+
+<span class="c1"># Deactivate: Pause publishing and suspend the sensor</span>
+ros2<span class="w"> </span>lifecycle<span class="w"> </span><span class="nb">set</span><span class="w"> </span>/bno055_lifecycle_publisher_node<span class="w"> </span>deactivate
+</pre></div>
+</div>
+</li>
+</ol>
+</section>
+</section>
+<section id="verification">
+<h3>4.4. Verification<a class="headerlink" href="#verification" title="Link to this heading">¶</a></h3>
+<p>Verify that the IMU data is streaming correctly:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>ros2<span class="w"> </span>topic<span class="w"> </span><span class="nb">echo</span><span class="w"> </span>/imu/data
+</pre></div>
+</div>
+</section>
+</section>
 </section>
 
         </article>
@@ -434,6 +531,18 @@ For high-frequency sensor streams (like IMUs running at 100Hz), using the defaul
 <li><a class="reference internal" href="#the-lifecycle-node-state-machine-approach">1. The Lifecycle Node (State Machine) Approach</a></li>
 <li><a class="reference internal" href="#sensordata-qos-quality-of-service">2. SensorData QoS (Quality of Service)</a></li>
 <li><a class="reference internal" href="#registering-with-rosdep">3. Registering with rosdep</a></li>
+<li><a class="reference internal" href="#building-and-running-the-ros-2-examples">4. Building and Running the ROS 2 Examples</a><ul>
+<li><a class="reference internal" href="#prerequisites">4.1. Prerequisites</a></li>
+<li><a class="reference internal" href="#building-inside-a-ros-2-workspace">4.2. Building inside a ROS 2 Workspace</a></li>
+<li><a class="reference internal" href="#running-the-nodes">4.3. Running the Nodes</a><ul>
+<li><a class="reference internal" href="#standard-standalone-node">Standard Standalone Node</a></li>
+<li><a class="reference internal" href="#high-performance-node">High-Performance Node</a></li>
+<li><a class="reference internal" href="#lifecycle-node-managed-node">Lifecycle Node (Managed Node)</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#verification">4.4. Verification</a></li>
+</ul>
+</li>
 </ul>
 </li>
 </ul>
