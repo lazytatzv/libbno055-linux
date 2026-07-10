@@ -4,11 +4,14 @@
 ![ROS 2](https://img.shields.io/badge/ROS%202-Compatible-22314E.svg)
 ![Linux](https://img.shields.io/badge/OS-Linux-FCC624.svg)
 ![CMake](https://img.shields.io/badge/CMake-3.10%2B-064F8C.svg)
+[![Docs](https://img.shields.io/badge/docs-GitHub%20Pages-blue.svg)](https://lazytatzv.github.io/libbno055-linux/)
 ![CI](https://github.com/lazytatzv/libbno055-linux/actions/workflows/ci.yml/badge.svg)
 ![Repo Size](https://img.shields.io/github/repo-size/lazytatzv/libbno055-linux.svg)
 ![License](https://img.shields.io/badge/License-MIT-green.svg)
 
 A robust, thread-safe, and dependency-free C++17 library for the BNO055 sensor over I2C on Linux.
+
+📖 **[View the Official Web Documentation (API, Architecture, Integration Guides)](https://lazytatzv.github.io/libbno055-linux/)**
 
 Designed for robotic control systems, autonomous vehicles, and ROS 2 deployments that demand high reliability, automatic error recovery, and zero-latency (noexcept) capabilities.
 
