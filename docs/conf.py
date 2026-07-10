@@ -5,6 +5,7 @@ release = '1.0.0'
 
 extensions = [
     'myst_parser',
+    'sphinxcontrib.mermaid',
 ]
 
 source_suffix = {

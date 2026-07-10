@@ -1,25 +1,93 @@
 # Architecture and Design Decisions
 
-The `libbno055-linux` library was built from the ground up for use in production-grade robotics. This document outlines the core technical decisions that differentiate this library from hobbyist Arduino ports.
+The `libbno055-linux` library is not a simple port of an Arduino hobbyist script. It was engineered from the ground up for **production-grade robotics**, autonomous vehicles, and strict real-time control loops (such as ROS 2 hardware interfaces). 
+
+This document outlines the core technical philosophies, low-level trade-offs, and architectural decisions that guarantee its reliability.
+
+---
 
 ## 1. Zero-Allocation & Exception-Free Hot Paths
-In hard real-time systems (such as robot balancers or drone flight controllers), latency spikes caused by heap allocation or exception unwinding are unacceptable.
-- **Fixed-size Stack Buffers**: All I2C read/write operations utilize pre-allocated `uint8_t` stack arrays (e.g., `uint8_t[32]`). We strictly avoid `std::vector` inside the sensor read loops.
-- **Noexcept API**: The hot-path retrieval functions (e.g., `getQuaternionNoexcept()`) are marked `noexcept` and return `std::optional<T>` rather than throwing `std::runtime_error`. This guarantees deterministic execution time.
+
+In hard real-time systems, non-deterministic latency spikes caused by heap memory fragmentation or C++ exception unwinding are strictly forbidden.
+
+### Stack-Allocated I2C Buffers
+Standard C++ libraries often rely on `std::vector` or `std::string` for dynamic byte buffers. `libbno055-linux` strictly utilizes fixed-size stack arrays (e.g., `uint8_t buffer[32]`) for all I2C `read()` and `write()` operations. 
+* **Benefit**: Zero heap allocation (`malloc`/`new`) during the sensor polling loop. This ensures perfect cache locality and strictly bounded $O(1)$ execution time.
+
+### The `noexcept` API Surface
+Instead of throwing `std::runtime_error` when an I2C cable is temporarily disconnected, the library provides a parallel `noexcept` API returning `std::optional<T>`.
+```cpp
+// ❌ Traditional blocking/throwing API (Unsafe for RTOS)
+bno055lib::Quaternion q = imu.getQuaternion(); // Might throw bno055lib::IMUError!
+
+// ✅ Deterministic, real-time safe API
+if (auto q = imu.getQuaternionNoexcept()) {
+    control_loop.update(*q);
+} else {
+    control_loop.coast(); // Handle hardware drop gracefully
+}
+```
+
+---
 
 ## 2. The PIMPL Idiom (Pointer to Implementation)
-To guarantee Application Binary Interface (ABI) stability across different ROS 2 workspaces and compiler versions, the library utilizes the PIMPL idiom.
-- **Fast Compilation**: Consumers of `bno055.hpp` do not need to include `<linux/i2c-dev.h>`, `<mutex>`, or any other system headers. 
-- **Encapsulation**: All internal file descriptors, mutexes, and mock states are entirely hidden within `bno055.cpp`.
 
-## 3. I2C Clock Stretching & Auto-Recovery
-The Bosch BNO055 has a known hardware quirk: it heavily utilizes I2C clock stretching, which Linux I2C drivers (especially on the Broadcom SoC used in Raspberry Pi) occasionally fail to handle correctly, leading to bus lockups.
-- **Diagnostic Telemetry**: The library tracks `read_failures`, `write_failures`, and `reconnect_attempts`.
-- **Transparent Reconnection**: If the kernel returns `EIO` (Input/Output Error), the library safely closes the file descriptor, flushes the bus, re-opens the connection, and re-initializes the sensor mode. This happens transparently within milliseconds, preventing node crashes.
+To guarantee **Application Binary Interface (ABI) stability** across different ROS 2 distributions (Foxy to Jazzy) and compiler versions, the library extensively utilizes the PIMPL (Compiler Firewall) idiom.
 
-## 4. Thread Safety
-A single `BNO055` instance might be read by a high-frequency control thread while simultaneously being polled by a low-frequency telemetry/diagnostics thread.
-- All internal I2C operations are protected by a `std::mutex` ensuring atomic register accesses.
+### Encapsulation
+If you inspect `include/libbno055-linux/bno055.hpp`, you will not find any Linux-specific headers (`<linux/i2c-dev.h>`, `<sys/ioctl.h>`) or threading primitives (`<mutex>`). 
+* All internal file descriptors, mutexes, and mock states are hidden behind a forward-declared `Impl` pointer.
+* **Benefit**: Including this library in your colossal ROS 2 project will not pollute your global namespace with Linux POSIX macros, and it dramatically reduces compilation time.
 
-## 5. Cross-Platform Mocking
-For Continuous Integration (CI) and offline development, the library automatically falls back to a Mock Mode when compiled on non-Linux platforms (Windows, macOS) or when the target I2C device does not exist. This allows developers to compile and test their ROS 2 nodes on their MacBooks without physical hardware.
+---
+
+## 3. I2C Clock Stretching & The Auto-Recovery Engine
+
+### The Hardware Flaw
+The Bosch BNO055 has a known hardware quirk: it heavily utilizes **I2C clock stretching** while its internal Cortex-M0 processor computes sensor fusion math. Many Linux single-board computers (specifically the Broadcom SoC on the Raspberry Pi) possess a silicon bug that fails to handle prolonged clock stretching, causing the I2C bus to physically lock up and return `EIO` (Input/Output Error) to the kernel driver.
+
+### The Self-Healing State Machine
+To combat this, `libbno055-linux` implements a robust self-healing state machine. When the kernel reports an I2C timeout or physical disconnect, the library does not crash.
+
+```mermaid
+stateDiagram-v2
+    [*] --> Idle
+    Idle --> ReadI2C : High-Frequency Polling
+    ReadI2C --> DataReady : Success
+    ReadI2C --> HardwareFault : EIO / Timeout (Clock Stretch)
+    
+    HardwareFault --> Diagnostics : Log Failure
+    Diagnostics --> AutoRecovery : Trigger Threshold Met
+    
+    state AutoRecovery {
+        [*] --> CloseFD : Release File Descriptor
+        CloseFD --> FlushBus : Wait for Bus Clear
+        FlushBus --> OpenFD : Re-acquire /dev/i2c-*
+        OpenFD --> ReInit : Push cached Config (Mode, Offsets)
+    }
+    
+    AutoRecovery --> Idle : Recovery Success
+    AutoRecovery --> HardwareFault : Physical Wire Broken
+```
+
+When `AutoRecovery` triggers, the library transparently resets the file descriptor and pushes your previously configured `OpMode` and calibration offsets back into the sensor registers within milliseconds.
+
+---
+
+## 4. Thread Safety & Concurrency
+
+A single `BNO055` instance is often accessed by multiple threads in a modern robotics stack:
+1. **Control Thread (100Hz)**: Reading `getQuaternionNoexcept()`.
+2. **Telemetry Thread (1Hz)**: Reading `getDiagnostics()` to monitor I2C health.
+3. **Service Callbacks**: Saving calibration profiles on demand.
+
+The internal `Impl` struct is protected by a lightweight `std::mutex`, ensuring that multi-byte I2C register reads (which require sequential `write` (register address) followed by `read` (data)) are strictly atomic and cannot be interleaved by the Linux scheduler.
+
+---
+
+## 5. Cross-Platform Mocking (CI/CD Ready)
+
+Modern C++ development relies heavily on Continuous Integration (GitHub Actions, GitLab CI). If a library strictly requires `<linux/i2c-dev.h>`, it cannot be compiled on macOS or Windows, breaking the CI pipeline for developers working on MacBooks.
+
+`libbno055-linux` detects the host OS at compile time via CMake. If compiled on a non-Linux platform, it automatically swaps the internal `Impl` to a **Mocked I2C Interface**.
+* **Result**: You can compile your ROS 2 packages natively on macOS/Windows, write GTest unit tests against the IMU logic, and verify your math without needing a physical Raspberry Pi or sensor.
