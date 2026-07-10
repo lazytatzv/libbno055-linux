@@ -39,3 +39,43 @@ Do not use `NDOF` mode indoors. Switch to `IMUPlus` mode:
 imu.begin(bno055lib::OpMode::IMUPlus);
 ```
 `IMUPlus` mode ignores the magnetometer and provides a relative heading using only the high-precision gyroscope and accelerometer.
+
+---
+
+## ROS 2 Specific Troubleshooting
+
+### ROS 2 Launch fails to find package share directory
+**Error**: `package 'libbno055_linux' not found` or similar.
+**Cause**: The workspace has not been sourced, or the package has not been built using `colcon`.
+**Solution**:
+1. Verify that your terminal has sourced the workspace setup script:
+   ```bash
+   source ~/ros2_ws/install/setup.bash
+   ```
+2. Re-build the workspace and ensure `colcon` successfully builds the package:
+   ```bash
+   colcon build --packages-select libbno055_linux
+   ```
+
+### Intra-Process Zero-Copy Communication is not taking effect
+**Error**: High CPU/Memory overhead still present; pointers are not being passed directly.
+**Cause**: For ROS 2 to optimize message passing via zero-copy, the publishing node and the subscribing node must:
+1. Be loaded into the **same component container** (single process).
+2. Utilize `std::unique_ptr` and `std::move()` for publishing (which `bno055_perf_publisher_node` does).
+3. Both have `use_intra_process_comms` option enabled.
+**Solution**:
+When creating your pipeline, compose the BNO055 component and your subscriber component inside a single container executable (using `rclcpp_components`) and set `use_intra_process_comms` to `True` in the launch parameters.
+
+### Lifecycle Node fails to publish data immediately
+**Error**: The lifecycle node starts up, but `ros2 topic echo /imu/data` outputs nothing.
+**Cause**: ROS 2 Lifecycle Nodes start in the `Unconfigured` state. They do not start the timer or open hardware connections until transitioned.
+**Solution**:
+Trigger the state transitions using the ROS 2 lifecycle CLI:
+```bash
+ros2 lifecycle set /bno055_lifecycle_publisher_node configure
+ros2 lifecycle set /bno055_lifecycle_publisher_node activate
+```
+You can verify the current node state with:
+```bash
+ros2 lifecycle get /bno055_lifecycle_publisher_node
+```

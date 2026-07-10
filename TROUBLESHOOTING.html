@@ -285,6 +285,55 @@ Do not use <code class="docutils literal notranslate"><span class="pre">NDOF</sp
 </div>
 <p><code class="docutils literal notranslate"><span class="pre">IMUPlus</span></code> mode ignores the magnetometer and provides a relative heading using only the high-precision gyroscope and accelerometer.</p>
 </section>
+<hr class="docutils" />
+<section id="ros-2-specific-troubleshooting">
+<h2>ROS 2 Specific Troubleshooting<a class="headerlink" href="#ros-2-specific-troubleshooting" title="Link to this heading">¶</a></h2>
+<section id="ros-2-launch-fails-to-find-package-share-directory">
+<h3>ROS 2 Launch fails to find package share directory<a class="headerlink" href="#ros-2-launch-fails-to-find-package-share-directory" title="Link to this heading">¶</a></h3>
+<p><strong>Error</strong>: <code class="docutils literal notranslate"><span class="pre">package</span> <span class="pre">'libbno055_linux'</span> <span class="pre">not</span> <span class="pre">found</span></code> or similar.
+<strong>Cause</strong>: The workspace has not been sourced, or the package has not been built using <code class="docutils literal notranslate"><span class="pre">colcon</span></code>.
+<strong>Solution</strong>:</p>
+<ol class="arabic">
+<li><p>Verify that your terminal has sourced the workspace setup script:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="nb">source</span><span class="w"> </span>~/ros2_ws/install/setup.bash
+</pre></div>
+</div>
+</li>
+<li><p>Re-build the workspace and ensure <code class="docutils literal notranslate"><span class="pre">colcon</span></code> successfully builds the package:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>colcon<span class="w"> </span>build<span class="w"> </span>--packages-select<span class="w"> </span>libbno055_linux
+</pre></div>
+</div>
+</li>
+</ol>
+</section>
+<section id="intra-process-zero-copy-communication-is-not-taking-effect">
+<h3>Intra-Process Zero-Copy Communication is not taking effect<a class="headerlink" href="#intra-process-zero-copy-communication-is-not-taking-effect" title="Link to this heading">¶</a></h3>
+<p><strong>Error</strong>: High CPU/Memory overhead still present; pointers are not being passed directly.
+<strong>Cause</strong>: For ROS 2 to optimize message passing via zero-copy, the publishing node and the subscribing node must:</p>
+<ol class="arabic simple">
+<li><p>Be loaded into the <strong>same component container</strong> (single process).</p></li>
+<li><p>Utilize <code class="docutils literal notranslate"><span class="pre">std::unique_ptr</span></code> and <code class="docutils literal notranslate"><span class="pre">std::move()</span></code> for publishing (which <code class="docutils literal notranslate"><span class="pre">bno055_perf_publisher_node</span></code> does).</p></li>
+<li><p>Both have <code class="docutils literal notranslate"><span class="pre">use_intra_process_comms</span></code> option enabled.
+<strong>Solution</strong>:
+When creating your pipeline, compose the BNO055 component and your subscriber component inside a single container executable (using <code class="docutils literal notranslate"><span class="pre">rclcpp_components</span></code>) and set <code class="docutils literal notranslate"><span class="pre">use_intra_process_comms</span></code> to <code class="docutils literal notranslate"><span class="pre">True</span></code> in the launch parameters.</p></li>
+</ol>
+</section>
+<section id="lifecycle-node-fails-to-publish-data-immediately">
+<h3>Lifecycle Node fails to publish data immediately<a class="headerlink" href="#lifecycle-node-fails-to-publish-data-immediately" title="Link to this heading">¶</a></h3>
+<p><strong>Error</strong>: The lifecycle node starts up, but <code class="docutils literal notranslate"><span class="pre">ros2</span> <span class="pre">topic</span> <span class="pre">echo</span> <span class="pre">/imu/data</span></code> outputs nothing.
+<strong>Cause</strong>: ROS 2 Lifecycle Nodes start in the <code class="docutils literal notranslate"><span class="pre">Unconfigured</span></code> state. They do not start the timer or open hardware connections until transitioned.
+<strong>Solution</strong>:
+Trigger the state transitions using the ROS 2 lifecycle CLI:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>ros2<span class="w"> </span>lifecycle<span class="w"> </span><span class="nb">set</span><span class="w"> </span>/bno055_lifecycle_publisher_node<span class="w"> </span>configure
+ros2<span class="w"> </span>lifecycle<span class="w"> </span><span class="nb">set</span><span class="w"> </span>/bno055_lifecycle_publisher_node<span class="w"> </span>activate
+</pre></div>
+</div>
+<p>You can verify the current node state with:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>ros2<span class="w"> </span>lifecycle<span class="w"> </span>get<span class="w"> </span>/bno055_lifecycle_publisher_node
+</pre></div>
+</div>
+</section>
+</section>
 </section>
 
         </article>
@@ -339,6 +388,12 @@ Do not use <code class="docutils literal notranslate"><span class="pre">NDOF</sp
 <li><a class="reference internal" href="#bno055-clock-stretching-i2c-lockups-on-raspberry-pi">BNO055 Clock Stretching (I2C Lockups on Raspberry Pi)</a></li>
 <li><a class="reference internal" href="#sensor-calibration-is-lost-on-reboot">Sensor Calibration is Lost on Reboot</a></li>
 <li><a class="reference internal" href="#why-isn-t-the-magnetometer-working-indoors">Why isn’t the Magnetometer working indoors?</a></li>
+<li><a class="reference internal" href="#ros-2-specific-troubleshooting">ROS 2 Specific Troubleshooting</a><ul>
+<li><a class="reference internal" href="#ros-2-launch-fails-to-find-package-share-directory">ROS 2 Launch fails to find package share directory</a></li>
+<li><a class="reference internal" href="#intra-process-zero-copy-communication-is-not-taking-effect">Intra-Process Zero-Copy Communication is not taking effect</a></li>
+<li><a class="reference internal" href="#lifecycle-node-fails-to-publish-data-immediately">Lifecycle Node fails to publish data immediately</a></li>
+</ul>
+</li>
 </ul>
 </li>
 </ul>
