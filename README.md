@@ -45,7 +45,7 @@ Designed for robotic control systems, autonomous vehicles, and ROS 2 deployments
 
 Most existing BNO055 libraries for Linux are either simple ports of Arduino code or lack the robustness required for production robotics. This library is designed differently:
 
-*   **Self-Healing (Auto-Recovery)**: The BNO055 on Raspberry Pi is notorious for I2C lockups due to hardware clock stretching. Existing libraries crash; this library transparently catches `EIO` faults, flushes the bus, and restores sensor state within milliseconds.
+*   **Self-Healing (Auto-Recovery)**: The BNO055 on Raspberry Pi is notorious for I2C lockups due to hardware clock stretching. Existing libraries crash; this library transparently catches `EIO` faults, flushes the bus, and automatically initiates a recovery sequence to restore sensor state.
 *   **Real-Time Safe**: Zero heap allocations (`std::vector` is avoided in hot paths) and exception-free (`noexcept`) APIs guarantee bounded, zero-jitter execution for ROS 2 hardware controllers.
 *   **Modern & Native**: Written in pure C++17. No Arduino `Wire.h` hacks, no heavy frameworks, and zero external dependencies.
 *   **CI/CD Ready**: Includes an automatic Mock Mode. You can compile your ROS 2 nodes on macOS or Windows laptops without physical I2C hardware.
