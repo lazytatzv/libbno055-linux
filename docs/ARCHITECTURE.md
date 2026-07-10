@@ -91,3 +91,34 @@ Modern C++ development relies heavily on Continuous Integration (GitHub Actions,
 
 `libbno055-linux` detects the host OS at compile time via CMake. If compiled on a non-Linux platform, it automatically swaps the internal `Impl` to a **Mocked I2C Interface**.
 * **Result**: You can compile your ROS 2 packages natively on macOS/Windows, write GTest unit tests against the IMU logic, and verify your math without needing a physical Raspberry Pi or sensor.
+
+---
+
+## 6. ROS 2 Node Architectures & Zero-Copy Communication
+
+The library includes three ROS 2 node implementations located in the `src/ros2/` directory, designed to cover various robotics system requirements:
+
+### Standard Standalone Node (`bno055_publisher_node`)
+Designed for simplicity and general-purpose robotics. It initializes the sensor, redirects logs to `RCLCPP`, and publishes the IMU message via a standard asynchronous timer.
+
+### High-Performance Zero-Copy Node (`bno055_perf_publisher_node`)
+Optimized for resource-constrained embedded systems and high-rate feedback loops. 
+* **Zero-Copy Message Passing**: Instead of publishing by value, this node allocates a `std::unique_ptr<sensor_msgs::msg::Imu>` and passes ownership using `std::move()`. When executed within a ROS 2 Composable Node Container alongside compatible subscriber nodes, ROS 2 completely bypasses message serialization and memory copying, passing the underlying pointer directly through shared memory.
+* **Deterministic Execution**: Uses `noexcept` APIs to ensure that sensor read failures do not invoke the overhead of C++ stack unwinding in high-frequency control loops.
+
+### Managed Lifecycle Node (`bno055_lifecycle_publisher_node`)
+For production robots requiring strict startup sequences and energy efficiency, the Lifecycle Node maps ROS 2 state transitions directly to BNO055 hardware states:
+
+```mermaid
+stateDiagram-v2
+    [*] --> Unconfigured
+    Unconfigured --> Inactive : on_configure()\n(Init Hardware, Enter Suspend)
+    Inactive --> Active : on_activate()\n(Enter Normal Mode, Start Timer)
+    Active --> Inactive : on_deactivate()\n(Cancel Timer, Enter Suspend)
+    Inactive --> Unconfigured : on_cleanup()\n(Reset resources, Close FD)
+    Active --> Finalized : on_shutdown()
+    Inactive --> Finalized : on_shutdown()
+```
+
+* **Power Efficiency (Suspend Mode)**: In the `Inactive` state (before activation or after deactivation), the node puts the BNO055 sensor into low-power **Suspend Mode** and pauses the high-rate publishing timer. The sensor only wakes up to **Normal Mode** when transitioned to the `Active` state.
+* **Deterministic Initialization**: Avoids racing conditions in robot startup by letting the coordinator configure and test I2C connectivity before active streaming starts.

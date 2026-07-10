@@ -233,11 +233,21 @@ Runs the interactive calibration utility to align the accelerometer, gyroscope, 
 ./build/calibrate_imu /dev/i2c-1 bno055_calib.bin
 ```
 
-### 4. ROS 2 Publisher Node (Optional)
-If a ROS 2 environment is detected during compilation, the library compiles a standalone ROS 2 publisher node that reads IMU data and publishes it to the `/imu/data` topic as a `sensor_msgs/msg/Imu` message.
-```bash
-./build/bno055_publisher_node --ros-args -p device:="/dev/i2c-1" -p publish_rate:=50.0
-```
+### 4. ROS 2 Publisher Nodes (Optional)
+If a ROS 2 environment is detected during compilation, the library compiles three distinct ROS 2 publisher nodes to support different system integration designs:
+
+*   **Standard Standalone Node (`bno055_publisher_node`)**:
+    ```bash
+    ros2 run libbno055_linux bno055_publisher_node --ros-args -p device:="/dev/i2c-1" -p publish_rate:=50.0
+    ```
+*   **High-Performance Zero-Copy Node (`bno055_perf_publisher_node`)**: Optimized using `std::unique_ptr` and `std::move` to allow zero-copy intra-process message passing when composed.
+    ```bash
+    ros2 run libbno055_linux bno055_perf_publisher_node
+    ```
+*   **Managed Lifecycle Node (`bno055_lifecycle_publisher_node`)**: Integrates with ROS 2 Lifecycle management to handle state transitions (configure, activate, deactivate, cleanup) and syncs hardware low-power states.
+    ```bash
+    ros2 run libbno055_linux bno055_lifecycle_publisher_node
+    ```
 
 ### Troubleshooting Permission Denied
 If you see "Failed to open I2C device" or permission errors, run with sudo or ensure your user belongs to the i2c group as described in the Prerequisites section:
