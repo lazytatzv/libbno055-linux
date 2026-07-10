@@ -58,8 +58,9 @@ target_link_libraries(read_data_noexcept PRIVATE libbno055-linux)
 add_executable(read_all_data examples/read_all_data.cpp)
 target_link_libraries(read_all_data PRIVATE libbno055-linux)
 
-# Optional ROS 2 integration (conditional build of ROS 2 publisher sample)
+# Optional ROS 2 integration (conditional build of ROS 2 publisher samples)
 find_package(rclcpp QUIET)
+find_package(rclcpp_lifecycle QUIET)
 find_package(sensor_msgs QUIET)
 
 if(rclcpp_FOUND AND sensor_msgs_FOUND)
@@ -68,9 +69,30 @@ if(rclcpp_FOUND AND sensor_msgs_FOUND)
     target_link_libraries(bno055_publisher_node PRIVATE libbno055-linux)
     target_link_libraries(bno055_publisher_node PRIVATE rclcpp::rclcpp sensor_msgs::sensor_msgs)
     
-    install(TARGETS bno055_publisher_node
+    # High-Performance Node (Zero-copy, Intra-process)
+    add_executable(bno055_perf_publisher_node examples/ros2_perf_publisher_node.cpp)
+    target_link_libraries(bno055_perf_publisher_node PRIVATE libbno055-linux)
+    target_link_libraries(bno055_perf_publisher_node PRIVATE rclcpp::rclcpp sensor_msgs::sensor_msgs)
+
+    install(TARGETS bno055_publisher_node bno055_perf_publisher_node
         RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
     )
+
+    if(rclcpp_lifecycle_FOUND)
+        message(STATUS "ROS 2 Lifecycle detected. Building Lifecycle Node sample.")
+        # Lifecycle Node (Managed Node)
+        add_executable(bno055_lifecycle_publisher_node examples/ros2_lifecycle_publisher_node.cpp)
+        target_link_libraries(bno055_lifecycle_publisher_node PRIVATE libbno055-linux)
+        target_link_libraries(bno055_lifecycle_publisher_node PRIVATE
+            rclcpp::rclcpp
+            rclcpp_lifecycle::rclcpp_lifecycle
+            sensor_msgs::sensor_msgs
+        )
+
+        install(TARGETS bno055_lifecycle_publisher_node
+            RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+        )
+    endif()
 else()
     message(STATUS "ROS 2 not found. Skipping ROS 2 publisher node sample.")
 endif()
