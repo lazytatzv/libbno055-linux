@@ -6,7 +6,7 @@
 <link rel="index" title="Index" href="genindex.html"><link rel="search" title="Search" href="search.html"><link rel="next" title="Sensor Overview and Operation Modes" href="SENSOR_OVERVIEW.html"><link rel="prev" title="Architecture and Design Decisions" href="ARCHITECTURE.html">
 
     <!-- Generated with Sphinx 8.1.3 and Furo 2025.12.19 -->
-        <title>ROS 2 Integration Best Practices - libbno055-linux 1.0.0 documentation</title>
+        <title>Advanced ROS 2 Integration Guide - libbno055-linux 1.0.0 documentation</title>
       <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=d111a655" />
     <link rel="stylesheet" type="text/css" href="_static/styles/furo.css?v=7bdb33bb" />
     <link rel="stylesheet" type="text/css" href="_static/styles/furo-extensions.css?v=8dab3a3b" />
@@ -194,7 +194,7 @@
 <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="README.html">libbno055-linux</a></li>
 <li class="toctree-l1"><a class="reference internal" href="ARCHITECTURE.html">Architecture and Design Decisions</a></li>
-<li class="toctree-l1 current current-page"><a class="current reference internal" href="#">ROS 2 Integration Best Practices</a></li>
+<li class="toctree-l1 current current-page"><a class="current reference internal" href="#">Advanced ROS 2 Integration Guide</a></li>
 <li class="toctree-l1"><a class="reference internal" href="SENSOR_OVERVIEW.html">Sensor Overview and Operation Modes</a></li>
 <li class="toctree-l1"><a class="reference internal" href="API_REFERENCE.html">libbno055-linux API Reference</a></li>
 <li class="toctree-l1"><a class="reference internal" href="TROUBLESHOOTING.html">Troubleshooting &amp; FAQ</a></li>
@@ -236,66 +236,142 @@
           </label>
         </div>
         <article role="main" id="furo-main-content">
-          <section id="ros-2-integration-best-practices">
-<h1>ROS 2 Integration Best Practices<a class="headerlink" href="#ros-2-integration-best-practices" title="Link to this heading">¶</a></h1>
-<p>While you can use <code class="docutils literal notranslate"><span class="pre">libbno055-linux</span></code> in standard ROS 2 <code class="docutils literal notranslate"><span class="pre">rclcpp::Node</span></code> instances, for production robotics, we highly recommend utilizing <strong>ROS 2 Lifecycle Nodes (Managed Nodes)</strong>.</p>
-<section id="lifecycle-node-integration-example">
-<h2>Lifecycle Node Integration Example<a class="headerlink" href="#lifecycle-node-integration-example" title="Link to this heading">¶</a></h2>
-<p>Because the BNO055 requires initialization and calibration over I2C (which can fail if the sensor is disconnected or if the I2C bus is not ready), wrapping it in a Lifecycle Node ensures your robot’s state machine handles sensor failures gracefully and predictably.</p>
-<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="cp">#include</span><span class="w"> </span><span class="cpf">&quot;rclcpp_lifecycle/lifecycle_node.hpp&quot;</span>
-<span class="cp">#include</span><span class="w"> </span><span class="cpf">&quot;libbno055-linux/bno055.hpp&quot;</span>
+          <section id="advanced-ros-2-integration-guide">
+<h1>Advanced ROS 2 Integration Guide<a class="headerlink" href="#advanced-ros-2-integration-guide" title="Link to this heading">¶</a></h1>
+<p>For enterprise-grade robotics, simply dropping a sensor read into a <code class="docutils literal notranslate"><span class="pre">rclcpp::TimerBase</span></code> is insufficient. Hardware sensors can disconnect, drivers can crash, and I2C buses can lock up.</p>
+<p>This guide demonstrates how to integrate <code class="docutils literal notranslate"><span class="pre">libbno055-linux</span></code> using <strong>ROS 2 Lifecycle Nodes (Managed Nodes)</strong> and strict <strong>Quality of Service (QoS)</strong> profiles to build a truly fault-tolerant IMU driver.</p>
+<hr class="docutils" />
+<section id="the-lifecycle-node-state-machine-approach">
+<h2>1. The Lifecycle Node (State Machine) Approach<a class="headerlink" href="#the-lifecycle-node-state-machine-approach" title="Link to this heading">¶</a></h2>
+<p>ROS 2 Lifecycle Nodes enforce a strict state machine (<code class="docutils literal notranslate"><span class="pre">Unconfigured</span></code> ➔ <code class="docutils literal notranslate"><span class="pre">Inactive</span></code> ➔ <code class="docutils literal notranslate"><span class="pre">Active</span></code>). Because the BNO055 requires an explicit initialization sequence over I2C, mapping its hardware states directly to the ROS 2 lifecycle states ensures predictable system startup.</p>
+<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="cp">#include</span><span class="w"> </span><span class="cpf">&lt;rclcpp/rclcpp.hpp&gt;</span>
+<span class="cp">#include</span><span class="w"> </span><span class="cpf">&lt;rclcpp_lifecycle/lifecycle_node.hpp&gt;</span>
+<span class="cp">#include</span><span class="w"> </span><span class="cpf">&lt;sensor_msgs/msg/imu.hpp&gt;</span>
+<span class="cp">#include</span><span class="w"> </span><span class="cpf">&lt;libbno055-linux/bno055.hpp&gt;</span>
 
 <span class="k">using</span><span class="w"> </span><span class="n">CallbackReturn</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">rclcpp_lifecycle</span><span class="o">::</span><span class="n">node_interfaces</span><span class="o">::</span><span class="n">LifecycleNodeInterface</span><span class="o">::</span><span class="n">CallbackReturn</span><span class="p">;</span>
 
-<span class="k">class</span><span class="w"> </span><span class="nc">BNO055Node</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="k">public</span><span class="w"> </span><span class="n">rclcpp_lifecycle</span><span class="o">::</span><span class="n">LifecycleNode</span><span class="w"> </span><span class="p">{</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">BNO055DriverNode</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="k">public</span><span class="w"> </span><span class="n">rclcpp_lifecycle</span><span class="o">::</span><span class="n">LifecycleNode</span><span class="w"> </span><span class="p">{</span>
 <span class="k">public</span><span class="o">:</span>
-<span class="w">    </span><span class="n">BNO055Node</span><span class="p">()</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="n">LifecycleNode</span><span class="p">(</span><span class="s">&quot;bno055_node&quot;</span><span class="p">)</span><span class="w"> </span><span class="p">{}</span>
+<span class="w">    </span><span class="n">BNO055DriverNode</span><span class="p">()</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="n">LifecycleNode</span><span class="p">(</span><span class="s">&quot;bno055_driver&quot;</span><span class="p">)</span><span class="w"> </span><span class="p">{}</span>
 
+<span class="w">    </span><span class="c1">// ---------------------------------------------------------</span>
+<span class="w">    </span><span class="c1">// 1. CONFIGURE: Allocate resources and test I2C connection</span>
+<span class="w">    </span><span class="c1">// ---------------------------------------------------------</span>
 <span class="w">    </span><span class="n">CallbackReturn</span><span class="w"> </span><span class="n">on_configure</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="n">rclcpp_lifecycle</span><span class="o">::</span><span class="n">State</span><span class="w"> </span><span class="o">&amp;</span><span class="p">)</span><span class="w"> </span><span class="k">override</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="n">RCLCPP_INFO</span><span class="p">(</span><span class="n">get_logger</span><span class="p">(),</span><span class="w"> </span><span class="s">&quot;Configuring BNO055 Hardware...&quot;</span><span class="p">);</span>
+<span class="w">        </span>
 <span class="w">        </span><span class="n">imu_</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">make_unique</span><span class="o">&lt;</span><span class="n">bno055lib</span><span class="o">::</span><span class="n">BNO055</span><span class="o">&gt;</span><span class="p">(</span><span class="mh">0x28</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;/dev/i2c-1&quot;</span><span class="p">);</span>
 <span class="w">        </span>
-<span class="w">        </span><span class="c1">// Attempt to initialize the hardware</span>
-<span class="w">        </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="o">!</span><span class="n">imu_</span><span class="o">-&gt;</span><span class="n">begin</span><span class="p">(</span><span class="n">bno055lib</span><span class="o">::</span><span class="n">OpMode</span><span class="o">::</span><span class="n">IMUPlus</span><span class="p">))</span><span class="w"> </span><span class="p">{</span>
-<span class="w">            </span><span class="n">RCLCPP_ERROR</span><span class="p">(</span><span class="k">this</span><span class="o">-&gt;</span><span class="n">get_logger</span><span class="p">(),</span><span class="w"> </span><span class="s">&quot;Failed to initialize BNO055 over I2C&quot;</span><span class="p">);</span>
+<span class="w">        </span><span class="c1">// Attempt hardware boot into NDOF fusion mode</span>
+<span class="w">        </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="o">!</span><span class="n">imu_</span><span class="o">-&gt;</span><span class="n">begin</span><span class="p">(</span><span class="n">bno055lib</span><span class="o">::</span><span class="n">OpMode</span><span class="o">::</span><span class="n">NDOF</span><span class="p">))</span><span class="w"> </span><span class="p">{</span>
+<span class="w">            </span><span class="n">RCLCPP_ERROR</span><span class="p">(</span><span class="n">get_logger</span><span class="p">(),</span><span class="w"> </span><span class="s">&quot;CRITICAL: I2C connection failed. Sensor missing?&quot;</span><span class="p">);</span>
 <span class="w">            </span><span class="k">return</span><span class="w"> </span><span class="n">CallbackReturn</span><span class="o">::</span><span class="n">FAILURE</span><span class="p">;</span>
 <span class="w">        </span><span class="p">}</span>
 
-<span class="w">        </span><span class="c1">// Load pre-calibrated offsets for deterministic startup</span>
-<span class="w">        </span><span class="n">imu_</span><span class="o">-&gt;</span><span class="n">loadCalibrationFile</span><span class="p">(</span><span class="s">&quot;/etc/robot/bno055_calib.bin&quot;</span><span class="p">);</span>
-<span class="w">        </span><span class="n">RCLCPP_INFO</span><span class="p">(</span><span class="k">this</span><span class="o">-&gt;</span><span class="n">get_logger</span><span class="p">(),</span><span class="w"> </span><span class="s">&quot;BNO055 Configured Successfully.&quot;</span><span class="p">);</span>
+<span class="w">        </span><span class="c1">// Load deterministic calibration</span>
+<span class="w">        </span><span class="n">imu_</span><span class="o">-&gt;</span><span class="n">loadCalibrationFile</span><span class="p">(</span><span class="s">&quot;/etc/robot_config/bno055_calib.bin&quot;</span><span class="p">);</span>
+
+<span class="w">        </span><span class="c1">// Setup publisher with SENSOR_DATA QoS (Best Effort)</span>
+<span class="w">        </span><span class="k">auto</span><span class="w"> </span><span class="n">qos</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">rclcpp</span><span class="o">::</span><span class="n">QoS</span><span class="p">(</span><span class="n">rclcpp</span><span class="o">::</span><span class="n">SensorDataQoS</span><span class="p">());</span>
+<span class="w">        </span><span class="n">pub_</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">this</span><span class="o">-&gt;</span><span class="n">create_publisher</span><span class="o">&lt;</span><span class="n">sensor_msgs</span><span class="o">::</span><span class="n">msg</span><span class="o">::</span><span class="n">Imu</span><span class="o">&gt;</span><span class="p">(</span><span class="s">&quot;imu/data&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">qos</span><span class="p">);</span>
 <span class="w">        </span>
 <span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="n">CallbackReturn</span><span class="o">::</span><span class="n">SUCCESS</span><span class="p">;</span>
 <span class="w">    </span><span class="p">}</span>
 
+<span class="w">    </span><span class="c1">// ---------------------------------------------------------</span>
+<span class="w">    </span><span class="c1">// 2. ACTIVATE: Start real-time data streaming</span>
+<span class="w">    </span><span class="c1">// ---------------------------------------------------------</span>
 <span class="w">    </span><span class="n">CallbackReturn</span><span class="w"> </span><span class="n">on_activate</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="n">rclcpp_lifecycle</span><span class="o">::</span><span class="n">State</span><span class="w"> </span><span class="o">&amp;</span><span class="p">)</span><span class="w"> </span><span class="k">override</span><span class="w"> </span><span class="p">{</span>
-<span class="w">        </span><span class="c1">// Start publishing timers and data streams</span>
+<span class="w">        </span><span class="n">pub_</span><span class="o">-&gt;</span><span class="n">on_activate</span><span class="p">();</span>
+<span class="w">        </span>
+<span class="w">        </span><span class="c1">// Start 100Hz high-priority polling timer</span>
+<span class="w">        </span><span class="n">timer_</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">this</span><span class="o">-&gt;</span><span class="n">create_wall_timer</span><span class="p">(</span>
+<span class="w">            </span><span class="n">std</span><span class="o">::</span><span class="n">chrono</span><span class="o">::</span><span class="n">milliseconds</span><span class="p">(</span><span class="mi">10</span><span class="p">),</span>
+<span class="w">            </span><span class="n">std</span><span class="o">::</span><span class="n">bind</span><span class="p">(</span><span class="o">&amp;</span><span class="n">BNO055DriverNode</span><span class="o">::</span><span class="n">publish_imu_data</span><span class="p">,</span><span class="w"> </span><span class="k">this</span><span class="p">)</span>
+<span class="w">        </span><span class="p">);</span>
+<span class="w">        </span>
+<span class="w">        </span><span class="n">RCLCPP_INFO</span><span class="p">(</span><span class="n">get_logger</span><span class="p">(),</span><span class="w"> </span><span class="s">&quot;IMU Stream Activated.&quot;</span><span class="p">);</span>
 <span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="n">CallbackReturn</span><span class="o">::</span><span class="n">SUCCESS</span><span class="p">;</span>
 <span class="w">    </span><span class="p">}</span>
 
+<span class="w">    </span><span class="c1">// ---------------------------------------------------------</span>
+<span class="w">    </span><span class="c1">// 3. DEACTIVATE: Pause streaming (hardware remains configured)</span>
+<span class="w">    </span><span class="c1">// ---------------------------------------------------------</span>
 <span class="w">    </span><span class="n">CallbackReturn</span><span class="w"> </span><span class="n">on_deactivate</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="n">rclcpp_lifecycle</span><span class="o">::</span><span class="n">State</span><span class="w"> </span><span class="o">&amp;</span><span class="p">)</span><span class="w"> </span><span class="k">override</span><span class="w"> </span><span class="p">{</span>
-<span class="w">        </span><span class="c1">// Stop publishing timers</span>
+<span class="w">        </span><span class="n">pub_</span><span class="o">-&gt;</span><span class="n">on_deactivate</span><span class="p">();</span>
+<span class="w">        </span><span class="n">timer_</span><span class="o">-&gt;</span><span class="n">cancel</span><span class="p">();</span>
+<span class="w">        </span><span class="n">RCLCPP_INFO</span><span class="p">(</span><span class="n">get_logger</span><span class="p">(),</span><span class="w"> </span><span class="s">&quot;IMU Stream Paused.&quot;</span><span class="p">);</span>
 <span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="n">CallbackReturn</span><span class="o">::</span><span class="n">SUCCESS</span><span class="p">;</span>
 <span class="w">    </span><span class="p">}</span>
 
+<span class="w">    </span><span class="c1">// ---------------------------------------------------------</span>
+<span class="w">    </span><span class="c1">// 4. CLEANUP: Fully release I2C file descriptors</span>
+<span class="w">    </span><span class="c1">// ---------------------------------------------------------</span>
 <span class="w">    </span><span class="n">CallbackReturn</span><span class="w"> </span><span class="n">on_cleanup</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="n">rclcpp_lifecycle</span><span class="o">::</span><span class="n">State</span><span class="w"> </span><span class="o">&amp;</span><span class="p">)</span><span class="w"> </span><span class="k">override</span><span class="w"> </span><span class="p">{</span>
-<span class="w">        </span><span class="c1">// Safely destroy the instance and strictly release I2C file descriptors</span>
-<span class="w">        </span><span class="n">imu_</span><span class="p">.</span><span class="n">reset</span><span class="p">();</span>
+<span class="w">        </span><span class="n">timer_</span><span class="p">.</span><span class="n">reset</span><span class="p">();</span>
+<span class="w">        </span><span class="n">pub_</span><span class="p">.</span><span class="n">reset</span><span class="p">();</span>
+<span class="w">        </span><span class="n">imu_</span><span class="p">.</span><span class="n">reset</span><span class="p">();</span><span class="w"> </span><span class="c1">// RAII safely closes /dev/i2c-*</span>
+<span class="w">        </span><span class="n">RCLCPP_INFO</span><span class="p">(</span><span class="n">get_logger</span><span class="p">(),</span><span class="w"> </span><span class="s">&quot;Hardware released.&quot;</span><span class="p">);</span>
 <span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="n">CallbackReturn</span><span class="o">::</span><span class="n">SUCCESS</span><span class="p">;</span>
 <span class="w">    </span><span class="p">}</span>
 
 <span class="k">private</span><span class="o">:</span>
+<span class="w">    </span><span class="kt">void</span><span class="w"> </span><span class="n">publish_imu_data</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="c1">// Strict exception-free path for deterministic timing</span>
+<span class="w">        </span><span class="k">auto</span><span class="w"> </span><span class="n">quat</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">imu_</span><span class="o">-&gt;</span><span class="n">getQuaternionNoexcept</span><span class="p">();</span>
+<span class="w">        </span><span class="k">auto</span><span class="w"> </span><span class="n">gyro</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">imu_</span><span class="o">-&gt;</span><span class="n">getGyroscopeNoexcept</span><span class="p">();</span>
+<span class="w">        </span><span class="k">auto</span><span class="w"> </span><span class="n">accel</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">imu_</span><span class="o">-&gt;</span><span class="n">getLinearAccelerationNoexcept</span><span class="p">();</span>
+
+<span class="w">        </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">quat</span><span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="n">gyro</span><span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="n">accel</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">            </span><span class="k">auto</span><span class="w"> </span><span class="n">msg</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">sensor_msgs</span><span class="o">::</span><span class="n">msg</span><span class="o">::</span><span class="n">Imu</span><span class="p">();</span>
+<span class="w">            </span><span class="n">msg</span><span class="p">.</span><span class="n">header</span><span class="p">.</span><span class="n">stamp</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">this</span><span class="o">-&gt;</span><span class="n">now</span><span class="p">();</span>
+<span class="w">            </span><span class="n">msg</span><span class="p">.</span><span class="n">header</span><span class="p">.</span><span class="n">frame_id</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;imu_link&quot;</span><span class="p">;</span>
+<span class="w">            </span>
+<span class="w">            </span><span class="n">msg</span><span class="p">.</span><span class="n">orientation</span><span class="p">.</span><span class="n">w</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">quat</span><span class="o">-&gt;</span><span class="n">w</span><span class="p">;</span>
+<span class="w">            </span><span class="n">msg</span><span class="p">.</span><span class="n">orientation</span><span class="p">.</span><span class="n">x</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">quat</span><span class="o">-&gt;</span><span class="n">x</span><span class="p">;</span>
+<span class="w">            </span><span class="n">msg</span><span class="p">.</span><span class="n">orientation</span><span class="p">.</span><span class="n">y</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">quat</span><span class="o">-&gt;</span><span class="n">y</span><span class="p">;</span>
+<span class="w">            </span><span class="n">msg</span><span class="p">.</span><span class="n">orientation</span><span class="p">.</span><span class="n">z</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">quat</span><span class="o">-&gt;</span><span class="n">z</span><span class="p">;</span>
+<span class="w">            </span>
+<span class="w">            </span><span class="n">msg</span><span class="p">.</span><span class="n">angular_velocity</span><span class="p">.</span><span class="n">x</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">gyro</span><span class="o">-&gt;</span><span class="n">x</span><span class="p">;</span>
+<span class="w">            </span><span class="n">msg</span><span class="p">.</span><span class="n">angular_velocity</span><span class="p">.</span><span class="n">y</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">gyro</span><span class="o">-&gt;</span><span class="n">y</span><span class="p">;</span>
+<span class="w">            </span><span class="n">msg</span><span class="p">.</span><span class="n">angular_velocity</span><span class="p">.</span><span class="n">z</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">gyro</span><span class="o">-&gt;</span><span class="n">z</span><span class="p">;</span>
+<span class="w">            </span>
+<span class="w">            </span><span class="n">msg</span><span class="p">.</span><span class="n">linear_acceleration</span><span class="p">.</span><span class="n">x</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">accel</span><span class="o">-&gt;</span><span class="n">x</span><span class="p">;</span>
+<span class="w">            </span><span class="n">msg</span><span class="p">.</span><span class="n">linear_acceleration</span><span class="p">.</span><span class="n">y</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">accel</span><span class="o">-&gt;</span><span class="n">y</span><span class="p">;</span>
+<span class="w">            </span><span class="n">msg</span><span class="p">.</span><span class="n">linear_acceleration</span><span class="p">.</span><span class="n">z</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">accel</span><span class="o">-&gt;</span><span class="n">z</span><span class="p">;</span>
+<span class="w">            </span>
+<span class="w">            </span><span class="n">pub_</span><span class="o">-&gt;</span><span class="n">publish</span><span class="p">(</span><span class="n">msg</span><span class="p">);</span>
+<span class="w">        </span><span class="p">}</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="p">{</span>
+<span class="w">            </span><span class="c1">// Log telemtry to diagnostics system</span>
+<span class="w">            </span><span class="k">auto</span><span class="w"> </span><span class="n">diag</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">imu_</span><span class="o">-&gt;</span><span class="n">getDiagnostics</span><span class="p">();</span>
+<span class="w">            </span><span class="n">RCLCPP_WARN_THROTTLE</span><span class="p">(</span><span class="n">get_logger</span><span class="p">(),</span><span class="w"> </span><span class="o">*</span><span class="n">get_clock</span><span class="p">(),</span><span class="w"> </span><span class="mi">1000</span><span class="p">,</span><span class="w"> </span>
+<span class="w">                </span><span class="s">&quot;I2C Dropout Detected. Reconnect attempts: %d&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">diag</span><span class="p">.</span><span class="n">reconnect_attempts</span><span class="p">);</span>
+<span class="w">        </span><span class="p">}</span>
+<span class="w">    </span><span class="p">}</span>
+
 <span class="w">    </span><span class="n">std</span><span class="o">::</span><span class="n">unique_ptr</span><span class="o">&lt;</span><span class="n">bno055lib</span><span class="o">::</span><span class="n">BNO055</span><span class="o">&gt;</span><span class="w"> </span><span class="n">imu_</span><span class="p">;</span>
+<span class="w">    </span><span class="n">rclcpp_lifecycle</span><span class="o">::</span><span class="n">LifecyclePublisher</span><span class="o">&lt;</span><span class="n">sensor_msgs</span><span class="o">::</span><span class="n">msg</span><span class="o">::</span><span class="n">Imu</span><span class="o">&gt;::</span><span class="n">SharedPtr</span><span class="w"> </span><span class="n">pub_</span><span class="p">;</span>
+<span class="w">    </span><span class="n">rclcpp</span><span class="o">::</span><span class="n">TimerBase</span><span class="o">::</span><span class="n">SharedPtr</span><span class="w"> </span><span class="n">timer_</span><span class="p">;</span>
 <span class="p">};</span>
 </pre></div>
 </div>
 </section>
-<section id="integrating-with-rosdep-system-dependencies">
-<h2>Integrating with rosdep (System Dependencies)<a class="headerlink" href="#integrating-with-rosdep-system-dependencies" title="Link to this heading">¶</a></h2>
-<p>When distributing your ROS 2 package, you can declare <code class="docutils literal notranslate"><span class="pre">libbno055-linux</span></code> as a system dependency in your <code class="docutils literal notranslate"><span class="pre">package.xml</span></code>:</p>
+<hr class="docutils" />
+<section id="sensordata-qos-quality-of-service">
+<h2>2. SensorData QoS (Quality of Service)<a class="headerlink" href="#sensordata-qos-quality-of-service" title="Link to this heading">¶</a></h2>
+<p>Notice the use of <code class="docutils literal notranslate"><span class="pre">rclcpp::SensorDataQoS()</span></code> in the example above.
+For high-frequency sensor streams (like IMUs running at 100Hz), using the default ROS 2 QoS (<code class="docutils literal notranslate"><span class="pre">RELIABLE</span></code>) is an anti-pattern. If the network experiences temporary packet loss (e.g., over Wi-Fi to a ground station), <code class="docutils literal notranslate"><span class="pre">RELIABLE</span></code> will buffer and attempt to retransmit old IMU data, leading to massive latency spikes in your Kalman Filters.</p>
+<p><code class="docutils literal notranslate"><span class="pre">SensorDataQoS</span></code> defaults to <code class="docutils literal notranslate"><span class="pre">BEST_EFFORT</span></code>. It guarantees that your robot’s state estimator will only ever process the <em>newest, most up-to-date</em> orientation, instantly dropping stale packets.</p>
+</section>
+<hr class="docutils" />
+<section id="registering-with-rosdep">
+<h2>3. Registering with rosdep<a class="headerlink" href="#registering-with-rosdep" title="Link to this heading">¶</a></h2>
+<p>To make your package easily buildable by others, declare this library as a system dependency in your <code class="docutils literal notranslate"><span class="pre">package.xml</span></code>:</p>
 <div class="highlight-xml notranslate"><div class="highlight"><pre><span></span><span class="nt">&lt;depend&gt;</span>libbno055-linux<span class="nt">&lt;/depend&gt;</span>
 </pre></div>
 </div>
-<p>If you are distributing via source, users can use <code class="docutils literal notranslate"><span class="pre">vcpkg</span></code> or <code class="docutils literal notranslate"><span class="pre">FetchContent</span></code> to satisfy this dependency automatically until the library is fully pushed to the ROS Index.</p>
+<p>When users run <code class="docutils literal notranslate"><span class="pre">rosdep</span> <span class="pre">install</span> <span class="pre">--from-paths</span> <span class="pre">src</span> <span class="pre">-y</span></code>, <code class="docutils literal notranslate"><span class="pre">rosdep</span></code> will automatically fetch and install this library via <code class="docutils literal notranslate"><span class="pre">vcpkg</span></code>, <code class="docutils literal notranslate"><span class="pre">apt</span></code>, or source, depending on how you distribute your final software stack.</p>
 </section>
 </section>
 
@@ -354,9 +430,10 @@
         <div class="toc-tree-container">
           <div class="toc-tree">
             <ul>
-<li><a class="reference internal" href="#">ROS 2 Integration Best Practices</a><ul>
-<li><a class="reference internal" href="#lifecycle-node-integration-example">Lifecycle Node Integration Example</a></li>
-<li><a class="reference internal" href="#integrating-with-rosdep-system-dependencies">Integrating with rosdep (System Dependencies)</a></li>
+<li><a class="reference internal" href="#">Advanced ROS 2 Integration Guide</a><ul>
+<li><a class="reference internal" href="#the-lifecycle-node-state-machine-approach">1. The Lifecycle Node (State Machine) Approach</a></li>
+<li><a class="reference internal" href="#sensordata-qos-quality-of-service">2. SensorData QoS (Quality of Service)</a></li>
+<li><a class="reference internal" href="#registering-with-rosdep">3. Registering with rosdep</a></li>
 </ul>
 </li>
 </ul>
