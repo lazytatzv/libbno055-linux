@@ -12,13 +12,12 @@
 #include <algorithm>
 #include <chrono>
 #include <diagnostic_msgs/msg/diagnostic_array.hpp>
-#include <diagnostic_msgs/msg/diagnostic_status.hpp>
-#include <diagnostic_msgs/msg/key_value.hpp>
 #include <memory>
 #include <rclcpp/rclcpp.hpp>
 #include <sensor_msgs/msg/imu.hpp>
 #include <utility>
 
+#include "bno055_ros2_common.hpp"
 #include "libbno055-linux/bno055.hpp"
 
 using namespace std::chrono_literals;
@@ -29,19 +28,8 @@ class BNO055PerfPublisherNode : public rclcpp::Node {
 public:
     explicit BNO055PerfPublisherNode(const rclcpp::NodeOptions& options)
         : Node("bno055_perf_publisher_node", options), imu_(0x28, "/dev/i2c-1") {
-        // Declare parameters for runtime configuration
-        this->declare_parameter<std::string>("device", "/dev/i2c-1");
-        this->declare_parameter<int>("address", 0x28);
-        this->declare_parameter<std::string>("frame_id", "imu_link");
-        this->declare_parameter<double>("publish_rate", 100.0);  // BNO055 Internal Fusion is 100Hz max
-
-        // Advanced ROS 2 & Sensor configurations
-        this->declare_parameter<std::string>("qos_reliability", "best_effort");
-        this->declare_parameter<int>("qos_history_depth", 10);
-        this->declare_parameter<std::string>("calibration_file", "");
-        this->declare_parameter<std::vector<double>>("orientation_covariance", std::vector<double>(9, 0.0));
-        this->declare_parameter<std::vector<double>>("angular_velocity_covariance", std::vector<double>(9, 0.0));
-        this->declare_parameter<std::vector<double>>("linear_acceleration_covariance", std::vector<double>(9, 0.0));
+        // Declare and fetch parameters using common helpers
+        bno055_ros2::declare_common_parameters(this);
 
         std::string device = this->get_parameter("device").as_string();
         int address = this->get_parameter("address").as_int();
@@ -55,22 +43,7 @@ public:
         imu_ = bno055lib::BNO055(address, device);
 
         // Redirect internal logs into ROS 2 RCLCPP
-        imu_.setLogger([this](bno055lib::LogLevel level, std::string_view message) {
-            switch (level) {
-                case bno055lib::LogLevel::Debug:
-                    RCLCPP_DEBUG(this->get_logger(), "%s", message.data());
-                    break;
-                case bno055lib::LogLevel::Info:
-                    RCLCPP_INFO(this->get_logger(), "%s", message.data());
-                    break;
-                case bno055lib::LogLevel::Warning:
-                    RCLCPP_WARN(this->get_logger(), "%s", message.data());
-                    break;
-                case bno055lib::LogLevel::Error:
-                    RCLCPP_ERROR(this->get_logger(), "%s", message.data());
-                    break;
-            }
-        });
+        bno055_ros2::setup_logger_redirection(this, imu);
 
         // Use high-performance NDOF mode (includes sensor fusion)
         if (!imu_.begin(bno055lib::OpMode::NDOF)) {
@@ -126,7 +99,6 @@ private:
         }
 
         // Allocate standard message dynamically as a unique_ptr to enable zero-copy intra-process transport.
-        // When running in a single process container, ROS 2 bypasses serialization and passes this pointer directly.
         auto message = std::make_unique<sensor_msgs::msg::Imu>();
 
         message->header.stamp = stamp;
@@ -148,79 +120,16 @@ private:
         message->linear_acceleration.y = accel->y;
         message->linear_acceleration.z = accel->z;
 
-        // Set covariances from parameters
-        auto ori_cov = this->get_parameter("orientation_covariance").as_double_array();
-        auto gyro_cov = this->get_parameter("angular_velocity_covariance").as_double_array();
-        auto accel_cov = this->get_parameter("linear_acceleration_covariance").as_double_array();
-
-        if (ori_cov.size() == 9) std::copy(ori_cov.begin(), ori_cov.end(), message->orientation_covariance.begin());
-        if (gyro_cov.size() == 9)
-            std::copy(gyro_cov.begin(), gyro_cov.end(), message->angular_velocity_covariance.begin());
-        if (accel_cov.size() == 9)
-            std::copy(accel_cov.begin(), accel_cov.end(), message->linear_acceleration_covariance.begin());
+        // Set covariances from parameters using common helper
+        bno055_ros2::fill_imu_covariances(this, *message);
 
         // Publish using std::move to enable zero-copy pointer pass
         publisher_->publish(std::move(message));
     }
 
     void publish_diagnostics() {
-        auto diag_arr = diagnostic_msgs::msg::DiagnosticArray();
-        diag_arr.header.stamp = this->now();
-
-        auto status = diagnostic_msgs::msg::DiagnosticStatus();
-        status.name = "libbno055_linux: IMU Perf Sensor Monitor";
-        status.hardware_id =
-            this->get_parameter("device").as_string() + ":" + std::to_string(this->get_parameter("address").as_int());
-
-        auto diag = imu_.getDiagnostics();
-
-        auto add_key_value = [](diagnostic_msgs::msg::DiagnosticStatus& stat, const std::string& key,
-                                const std::string& val) {
-            auto kv = diagnostic_msgs::msg::KeyValue();
-            kv.key = key;
-            kv.value = val;
-            stat.values.push_back(kv);
-        };
-
-        add_key_value(status, "I2C Read Failures", std::to_string(diag.read_failures));
-        add_key_value(status, "I2C Write Failures", std::to_string(diag.write_failures));
-        add_key_value(status, "I2C Reconnect Attempts", std::to_string(diag.reconnect_attempts));
-
-        bno055lib::CalibrationStatus calib;
-        bool calib_ok = false;
-        try {
-            calib = imu_.getCalibrationStatus();
-            calib_ok = true;
-        } catch (const std::exception& e) {
-            status.level = diagnostic_msgs::msg::DiagnosticStatus::ERROR;
-            status.message = std::string("Failed to query calibration status: ") + e.what();
-        }
-
-        if (calib_ok) {
-            add_key_value(status, "Calibration Status: Sys", std::to_string(calib.sys));
-            add_key_value(status, "Calibration Status: Gyro", std::to_string(calib.gyro));
-            add_key_value(status, "Calibration Status: Accel", std::to_string(calib.accel));
-            add_key_value(status, "Calibration Status: Mag", std::to_string(calib.mag));
-
-            if (calib.isFullyCalibrated()) {
-                status.level = diagnostic_msgs::msg::DiagnosticStatus::OK;
-                status.message = "Fully Calibrated & Streaming";
-            } else {
-                status.level = diagnostic_msgs::msg::DiagnosticStatus::WARN;
-                status.message = "Calibration incomplete (Sys:" + std::to_string(calib.sys) +
-                                 " G:" + std::to_string(calib.gyro) + " A:" + std::to_string(calib.accel) +
-                                 " M:" + std::to_string(calib.mag) + ")";
-            }
-        }
-
-        if (diag.reconnect_attempts > 5) {
-            status.level = diagnostic_msgs::msg::DiagnosticStatus::ERROR;
-            status.message =
-                "Unstable I2C connection. Reconnected " + std::to_string(diag.reconnect_attempts) + " times.";
-        }
-
-        diag_arr.status.push_back(status);
-        diag_publisher_->publish(diag_arr);
+        auto diag_arr = bno055_ros2::build_diagnostics(this, imu_, "IMU Perf Sensor Monitor");
+        diag_publisher_->publish(std::move(diag_arr));
     }
 
     bno055lib::BNO055 imu_;
