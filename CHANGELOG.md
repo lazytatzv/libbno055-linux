@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Mock-based ROS 2 node integration tests using GoogleTest in `tests/test_ros2_nodes.cpp`.
 - Formatter validation (`clang-format`) checks in the GitHub Actions CI pipeline.
 - Flexible GTest offline fallback resolution in `CMakeLists.txt` for offline environments (e.g., ROS buildfarms).
+- Comprehensive ROS 2 troubleshooting guides in `docs/TROUBLESHOOTING.md`.
 
 ## [1.0.0] - 2026-07-10
 
