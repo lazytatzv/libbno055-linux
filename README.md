@@ -93,9 +93,21 @@ Please see the [Sensor Overview & Calibration Guide](docs/SENSOR_OVERVIEW.md) fo
 
 ## Prerequisites (Linux / Raspberry Pi Setup)
 
-Before using the library, you must enable the I2C interface on your Linux device (such as a Raspberry Pi) and ensure your user has permissions to access it.
+Before using the library, you must wire the sensor, enable the I2C interface, and ensure your user has permissions.
 
-### 1. Enable I2C
+### 1. Hardware Wiring (Raspberry Pi)
+
+Connect the BNO055 sensor to the Raspberry Pi's standard I2C pins:
+
+| BNO055 Pin | Raspberry Pi Pin | Description |
+| :--- | :--- | :--- |
+| **Vin** | `3.3V` (Pin 1 or 17) | Power supply (do not use 5V if the breakout lacks a regulator) |
+| **GND** | `GND` (Pin 6 or 9) | Ground |
+| **SDA** | `GPIO 2` (Pin 3) | I2C Data |
+| **SCL** | `GPIO 3` (Pin 5) | I2C Clock |
+| **ADR** (Optional) | `GND` (or open) | Sets I2C Address to `0x28` (Default). Tie to `3.3V` for `0x29`. |
+
+### 2. Enable I2C
 On Raspberry Pi OS:
 1. Run sudo raspi-config.
 2. Navigate to Interface Options -> I2C and select Yes to enable it.
