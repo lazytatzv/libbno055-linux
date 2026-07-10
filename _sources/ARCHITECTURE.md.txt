@@ -70,7 +70,7 @@ stateDiagram-v2
     AutoRecovery --> HardwareFault : Physical Wire Broken
 ```
 
-When `AutoRecovery` triggers, the library transparently resets the file descriptor and pushes your previously configured `OpMode` and calibration offsets back into the sensor registers within milliseconds.
+When `AutoRecovery` triggers, the library transparently resets the file descriptor and pushes your previously configured `OpMode` and calibration offsets back into the sensor registers without requiring application-level intervention.
 
 ---
 
