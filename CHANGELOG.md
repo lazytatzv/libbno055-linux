@@ -17,6 +17,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Flexible GTest offline fallback resolution in `CMakeLists.txt` for offline environments (e.g., ROS buildfarms).
 - Comprehensive ROS 2 troubleshooting guides in `docs/TROUBLESHOOTING.md`.
 
+### Changed
+- Refactored ROS 2 nodes to eliminate redundant logic (DRY principle) by extracting parameter declarations, logging, covariance filling, and diagnostics building into a shared header `src/ros2/bno055_ros2_common.hpp`.
+
 ## [1.0.0] - 2026-07-10
 
 ### Added
