@@ -147,7 +147,7 @@ When users run `rosdep install --from-paths src -y`, `rosdep` will automatically
 
 ## 4. Building and Running the ROS 2 Examples
 
-The library comes with three pre-built ROS 2 node examples in the `examples/` directory:
+The library comes with three pre-built ROS 2 node examples in the `src/ros2/` directory:
 - **`bno055_publisher_node`**: A standard standalone ROS 2 publisher node.
 - **`bno055_perf_publisher_node`**: An optimized high-performance node designed for zero-copy intra-process communication.
 - **`bno055_lifecycle_publisher_node`**: A managed LifecycleNode that supports state transitions and low-power hardware state mapping.
