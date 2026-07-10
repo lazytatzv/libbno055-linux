@@ -7,6 +7,9 @@ Welcome to the documentation for **libbno055-linux**, a robust, thread-safe, and
 :caption: Contents:
 
 README
+ARCHITECTURE
+INTEGRATION
 SENSOR_OVERVIEW
 API_REFERENCE
+TROUBLESHOOTING
 ```
