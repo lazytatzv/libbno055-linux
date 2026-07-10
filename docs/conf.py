@@ -5,7 +5,6 @@ release = '1.0.0'
 
 extensions = [
     'myst_parser',
-    'sphinx_rtd_theme',
 ]
 
 source_suffix = {
@@ -16,4 +15,4 @@ source_suffix = {
 templates_path = ['_templates']
 exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
 
-html_theme = 'sphinx_rtd_theme'
+html_theme = 'furo'
