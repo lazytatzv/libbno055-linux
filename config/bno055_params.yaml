@@ -15,3 +15,20 @@
 
     # Publishing rate in Hz (BNO055 internal sensor fusion runs at 100Hz max)
     publish_rate: 100.0
+
+    # ROS 2 Quality of Service (QoS) Settings
+    # qos_reliability can be "best_effort" or "reliable"
+    qos_reliability: "best_effort"
+    qos_history_depth: 10
+
+    # Calibration Autoloading
+    # Absolute path to a generated BNO055 calibration binary file (e.g. "bno055_calib.bin")
+    # If left empty (""), no calibration offsets will be uploaded at startup.
+    calibration_file: ""
+
+    # EKF Covariance Matrices (3x3 row-major flat array of 9 doubles)
+    # Recommended covariance values can be populated from sensor noise specifications.
+    # Set to zero arrays if the covariance is unknown (default).
+    orientation_covariance: [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+    angular_velocity_covariance: [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+    linear_acceleration_covariance: [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
