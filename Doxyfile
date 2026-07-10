@@ -1,0 +1,15 @@
+PROJECT_NAME           = "libbno055-linux"
+PROJECT_NUMBER         = 1.0.0
+PROJECT_BRIEF          = "C++17 BNO055 I2C Library for Linux & ROS 2"
+OUTPUT_DIRECTORY       = docs/html
+INPUT                  = include/libbno055-linux/ docs/API_REFERENCE.md docs/SENSOR_OVERVIEW.md README.md
+USE_MDFILE_AS_MAINPAGE = README.md
+RECURSIVE              = YES
+EXTRACT_ALL            = YES
+EXTRACT_PRIVATE        = NO
+GENERATE_LATEX         = NO
+GENERATE_HTML          = YES
+HTML_OUTPUT            = .
+GENERATE_TREEVIEW      = YES
+DISABLE_INDEX          = NO
+FULL_PATH_NAMES        = NO
