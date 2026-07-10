@@ -21,7 +21,12 @@ jobs:
       if: startsWith(matrix.os, 'ubuntu')
       run: |
         sudo apt-get update
-        sudo apt-get install -y clang-tidy
+        sudo apt-get install -y clang-tidy clang-format
+
+    - name: Check code formatting (clang-format)
+      if: startsWith(matrix.os, 'ubuntu')
+      run: |
+        find include src tests -name "*.cpp" -o -name "*.hpp" | xargs clang-format --dry-run --Werror
 
     - name: Configure CMake
       run: cmake -S . -B build -DBUILD_TESTING=ON -DENABLE_CLANG_TIDY=ON

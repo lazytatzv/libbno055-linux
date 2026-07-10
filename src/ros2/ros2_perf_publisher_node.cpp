@@ -120,6 +120,7 @@ private:
 
 } // namespace bno055_ros2
 
+#ifndef ROS2_NODE_TESTING
 int main(int argc, char* argv[]) {
     rclcpp::init(argc, argv);
     rclcpp::NodeOptions options;
@@ -134,3 +135,4 @@ int main(int argc, char* argv[]) {
     rclcpp::shutdown();
     return 0;
 }
+#endif

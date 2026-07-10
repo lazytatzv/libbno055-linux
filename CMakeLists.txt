@@ -189,4 +189,34 @@ if(BUILD_TESTING)
 
     include(GoogleTest)
     gtest_discover_tests(libbno055-linux_tests)
+
+    # If ROS 2 is available, also build the ROS 2 node integration tests
+    if(rclcpp_FOUND AND sensor_msgs_FOUND AND rclcpp_lifecycle_FOUND)
+        message(STATUS "ROS 2 detected. Building ROS 2 node integration tests.")
+        add_executable(libbno055-linux_ros2_tests
+            tests/test_ros2_nodes.cpp
+        )
+        target_compile_definitions(libbno055-linux_ros2_tests PRIVATE ROS2_NODE_TESTING)
+        
+        if(TARGET GTest::gtest_main)
+            target_link_libraries(libbno055-linux_ros2_tests
+                PRIVATE
+                    libbno055-linux
+                    rclcpp::rclcpp
+                    rclcpp_lifecycle::rclcpp_lifecycle
+                    sensor_msgs::sensor_msgs
+                    GTest::gtest_main
+            )
+        else()
+            target_link_libraries(libbno055-linux_ros2_tests
+                PRIVATE
+                    libbno055-linux
+                    rclcpp::rclcpp
+                    rclcpp_lifecycle::rclcpp_lifecycle
+                    sensor_msgs::sensor_msgs
+                    gtest_main
+            )
+        endif()
+        gtest_discover_tests(libbno055-linux_ros2_tests)
+    endif()
 endif()

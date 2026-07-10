@@ -116,6 +116,7 @@ private:
     rclcpp::TimerBase::SharedPtr timer_;
 };
 
+#ifndef ROS2_NODE_TESTING
 int main(int argc, char* argv[]) {
     rclcpp::init(argc, argv);
     try {
@@ -126,3 +127,4 @@ int main(int argc, char* argv[]) {
     rclcpp::shutdown();
     return 0;
 }
+#endif
