@@ -142,3 +142,87 @@ To make your package easily buildable by others, declare this library as a syste
 ```
 
 When users run `rosdep install --from-paths src -y`, `rosdep` will automatically fetch and install this library via `vcpkg`, `apt`, or source, depending on how you distribute your final software stack.
+
+---
+
+## 4. Building and Running the ROS 2 Examples
+
+The library comes with three pre-built ROS 2 node examples in the `examples/` directory:
+- **`bno055_publisher_node`**: A standard standalone ROS 2 publisher node.
+- **`bno055_perf_publisher_node`**: An optimized high-performance node designed for zero-copy intra-process communication.
+- **`bno055_lifecycle_publisher_node`**: A managed LifecycleNode that supports state transitions and low-power hardware state mapping.
+
+### 4.1. Prerequisites
+
+Ensure you have ROS 2 (e.g., Humble, Jazzy) installed and sourced in your terminal:
+```bash
+source /opt/ros/humble/setup.bash
+```
+
+### 4.2. Building inside a ROS 2 Workspace
+
+Since this repository contains a `package.xml`, it is compatible with `colcon` and can be built directly inside a ROS 2 workspace.
+
+1. Create a workspace directory (if you do not have one):
+   ```bash
+   mkdir -p ~/ros2_ws/src
+   cd ~/ros2_ws/src
+   ```
+2. Clone or symlink this repository into `~/ros2_ws/src/`.
+3. Resolve dependencies using `rosdep`:
+   ```bash
+   cd ~/ros2_ws
+   rosdep install --from-paths src --ignore-src -y
+   ```
+4. Build the package:
+   ```bash
+   colcon build --packages-select libbno055_linux
+   ```
+5. Source the workspace:
+   ```bash
+   source install/setup.bash
+   ```
+
+### 4.3. Running the Nodes
+
+#### Standard Standalone Node
+Run the standard publisher node:
+```bash
+ros2 run libbno055_linux bno055_publisher_node
+```
+You can pass ROS 2 parameters to override the default I2C device and address:
+```bash
+ros2 run libbno055_linux bno055_publisher_node --ros-args -p device:="/dev/i2c-2" -p address:=40
+```
+
+#### High-Performance Node
+This node uses `std::unique_ptr` and `std::move` during publishing to enable zero-copy intra-process transport. Run it with:
+```bash
+ros2 run libbno055_linux bno055_perf_publisher_node
+```
+
+#### Lifecycle Node (Managed Node)
+The Lifecycle node remains in the `Unconfigured` state upon startup and does not publish immediately. You must command state transitions externally.
+
+1. **Start the node:**
+   ```bash
+   ros2 run libbno055_linux bno055_lifecycle_publisher_node
+   ```
+2. **Transition states (from another terminal):**
+   ```bash
+   # Configure: Boot the sensor and put it into low-power suspend mode
+   ros2 lifecycle set /bno055_lifecycle_publisher_node configure
+
+   # Activate: Wake the sensor up and start high-rate IMU publishing
+   ros2 lifecycle set /bno055_lifecycle_publisher_node activate
+
+   # Deactivate: Pause publishing and suspend the sensor
+   ros2 lifecycle set /bno055_lifecycle_publisher_node deactivate
+   ```
+
+### 4.4. Verification
+
+Verify that the IMU data is streaming correctly:
+```bash
+ros2 topic echo /imu/data
+```
