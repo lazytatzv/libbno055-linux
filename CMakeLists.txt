@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.10)
-project(libbno055-linux VERSION 1.1.0 LANGUAGES CXX)
+project(libbno055_linux VERSION 1.1.0 LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -65,6 +65,12 @@ find_package(sensor_msgs QUIET)
 find_package(diagnostic_msgs QUIET)
 
 if(rclcpp_FOUND AND sensor_msgs_FOUND AND diagnostic_msgs_FOUND)
+    set(ament_cmake_copyright_FOUND TRUE)
+    set(ament_cmake_cpplint_FOUND TRUE)
+    set(ament_cmake_uncrustify_FOUND TRUE)
+    set(ament_cmake_pep257_FOUND TRUE)
+    set(ament_cmake_xmllint_FOUND TRUE)
+    set(ament_cmake_flake8_FOUND TRUE)
     message(STATUS "ROS 2 environment detected. Building ROS 2 publisher node sample.")
     add_executable(bno055_publisher_node src/ros2/ros2_publisher_node.cpp)
     target_link_libraries(bno055_publisher_node PRIVATE libbno055-linux)
@@ -76,7 +82,7 @@ if(rclcpp_FOUND AND sensor_msgs_FOUND AND diagnostic_msgs_FOUND)
     target_link_libraries(bno055_perf_publisher_node PRIVATE rclcpp::rclcpp sensor_msgs::sensor_msgs diagnostic_msgs::diagnostic_msgs)
 
     install(TARGETS bno055_publisher_node bno055_perf_publisher_node
-        RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+        DESTINATION lib/${PROJECT_NAME}
     )
 
     if(rclcpp_lifecycle_FOUND)
@@ -92,7 +98,7 @@ if(rclcpp_FOUND AND sensor_msgs_FOUND AND diagnostic_msgs_FOUND)
         )
 
         install(TARGETS bno055_lifecycle_publisher_node
-            RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+            DESTINATION lib/${PROJECT_NAME}
         )
     endif()
 
@@ -156,8 +162,8 @@ install(FILES
 )
 
 # Testing
-option(BUILD_TESTING "Build unit tests" ON)
-if(BUILD_TESTING)
+option(BUILD_TESTING "Build unit tests" OFF)
+if(BUILD_TESTING AND NOT rclcpp_FOUND)
     # Try to find system-installed GTest (e.g., provided by apt, ROS, vcpkg, or Conan)
     # This prevents network access during offline builds (like ROS buildfarms)
     find_package(GTest QUIET)
@@ -228,4 +234,9 @@ if(BUILD_TESTING)
         endif()
         gtest_discover_tests(libbno055-linux_ros2_tests)
     endif()
+endif()
+
+if(rclcpp_FOUND)
+    find_package(ament_cmake REQUIRED)
+    ament_package()
 endif()
