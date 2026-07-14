@@ -16,21 +16,23 @@
 namespace bno055_ros2 {
 
 // Declare standard parameters
-inline void declare_common_parameters(rclcpp::Node* node) {
-    node->declare_parameter<std::string>("device", "/dev/i2c-1");
-    node->declare_parameter<int>("address", 0x28);
-    node->declare_parameter<std::string>("frame_id", "imu_link");
-    node->declare_parameter<double>("publish_rate", 50.0);
-    node->declare_parameter<std::string>("qos_reliability", "best_effort");
-    node->declare_parameter<int>("qos_history_depth", 10);
-    node->declare_parameter<std::string>("calibration_file", "");
-    node->declare_parameter<std::vector<double>>("orientation_covariance", std::vector<double>(9, 0.0));
-    node->declare_parameter<std::vector<double>>("angular_velocity_covariance", std::vector<double>(9, 0.0));
-    node->declare_parameter<std::vector<double>>("linear_acceleration_covariance", std::vector<double>(9, 0.0));
+template <typename T>
+inline void declare_common_parameters(T* node) {
+    node->template declare_parameter<std::string>("device", "/dev/i2c-1");
+    node->template declare_parameter<int>("address", 0x28);
+    node->template declare_parameter<std::string>("frame_id", "imu_link");
+    node->template declare_parameter<double>("publish_rate", 50.0);
+    node->template declare_parameter<std::string>("qos_reliability", "best_effort");
+    node->template declare_parameter<int>("qos_history_depth", 10);
+    node->template declare_parameter<std::string>("calibration_file", "");
+    node->template declare_parameter<std::vector<double>>("orientation_covariance", std::vector<double>(9, 0.0));
+    node->template declare_parameter<std::vector<double>>("angular_velocity_covariance", std::vector<double>(9, 0.0));
+    node->template declare_parameter<std::vector<double>>("linear_acceleration_covariance", std::vector<double>(9, 0.0));
 }
 
 // Redirect logger callback
-inline void setup_logger_redirection(rclcpp::Node* node, bno055lib::BNO055& imu) {
+template <typename T>
+inline void setup_logger_redirection(T* node, bno055lib::BNO055& imu) {
     imu.setLogger([node](bno055lib::LogLevel level, std::string_view message) {
         switch (level) {
             case bno055lib::LogLevel::Debug:
@@ -50,10 +52,11 @@ inline void setup_logger_redirection(rclcpp::Node* node, bno055lib::BNO055& imu)
 }
 
 // Set covariances from parameters
-inline void fill_imu_covariances(rclcpp::Node* node, sensor_msgs::msg::Imu& message) {
-    auto ori_cov = node->get_parameter("orientation_covariance").as_double_array();
-    auto gyro_cov = node->get_parameter("angular_velocity_covariance").as_double_array();
-    auto accel_cov = node->get_parameter("linear_acceleration_covariance").as_double_array();
+template <typename T>
+inline void fill_imu_covariances(T* node, sensor_msgs::msg::Imu& message) {
+    auto ori_cov = node->template get_parameter("orientation_covariance").as_double_array();
+    auto gyro_cov = node->template get_parameter("angular_velocity_covariance").as_double_array();
+    auto accel_cov = node->template get_parameter("linear_acceleration_covariance").as_double_array();
 
     if (ori_cov.size() == 9) std::copy(ori_cov.begin(), ori_cov.end(), message.orientation_covariance.begin());
     if (gyro_cov.size() == 9) std::copy(gyro_cov.begin(), gyro_cov.end(), message.angular_velocity_covariance.begin());
@@ -62,7 +65,8 @@ inline void fill_imu_covariances(rclcpp::Node* node, sensor_msgs::msg::Imu& mess
 }
 
 // Build standard diagnostic array
-inline diagnostic_msgs::msg::DiagnosticArray::UniquePtr build_diagnostics(rclcpp::Node* node, bno055lib::BNO055& imu,
+template <typename T>
+inline diagnostic_msgs::msg::DiagnosticArray::UniquePtr build_diagnostics(T* node, bno055lib::BNO055& imu,
                                                                           const std::string& node_name) {
     auto diag_arr = std::make_unique<diagnostic_msgs::msg::DiagnosticArray>();
     diag_arr->header.stamp = node->now();
@@ -70,7 +74,7 @@ inline diagnostic_msgs::msg::DiagnosticArray::UniquePtr build_diagnostics(rclcpp
     auto status = diagnostic_msgs::msg::DiagnosticStatus();
     status.name = std::string("libbno055_linux: ") + node_name;
     status.hardware_id =
-        node->get_parameter("device").as_string() + ":" + std::to_string(node->get_parameter("address").as_int());
+        node->template get_parameter("device").as_string() + ":" + std::to_string(node->template get_parameter("address").as_int());
 
     auto diag = imu.getDiagnostics();
 

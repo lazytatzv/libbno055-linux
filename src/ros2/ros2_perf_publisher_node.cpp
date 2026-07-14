@@ -43,7 +43,7 @@ public:
         imu_ = bno055lib::BNO055(address, device);
 
         // Redirect internal logs into ROS 2 RCLCPP
-        bno055_ros2::setup_logger_redirection(this, imu);
+        bno055_ros2::setup_logger_redirection(this, imu_);
 
         // Use high-performance NDOF mode (includes sensor fusion)
         if (!imu_.begin(bno055lib::OpMode::NDOF)) {
