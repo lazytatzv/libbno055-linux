@@ -168,8 +168,11 @@ public:
     BNO055& operator=(BNO055&&) noexcept;
 
     // Initialization
-    // Puts device into selected operation mode and configures unit selection to SI units
+    // Initialize the IMU and set the operating mode
     bool begin(OpMode mode = OpMode::NDOF);
+
+    // Hardware reset the IMU and restore the current operating mode
+    bool reset();
 
     // Set / Get operation mode
     void setMode(OpMode mode);

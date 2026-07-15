@@ -713,6 +713,11 @@ bool BNO055::begin(OpMode mode) {
     return true;
 }
 
+bool BNO055::reset() {
+    impl_->log(LogLevel::Info, "Performing hardware reset...");
+    return begin(impl_->mode_);
+}
+
 void BNO055::setMode(OpMode mode) {
     impl_->mode_ = mode;
     impl_->write8(OPR_MODE, static_cast<uint8_t>(mode));

@@ -104,7 +104,8 @@ public:
         temp_publisher_ = this->create_publisher<sensor_msgs::msg::Temperature>("imu/temp", qos);
         raw_publisher_ = this->create_publisher<sensor_msgs::msg::Imu>("imu/raw", qos);
         gravity_publisher_ = this->create_publisher<geometry_msgs::msg::Vector3>("imu/gravity", qos);
-        calib_status_publisher_ = this->create_publisher<std_msgs::msg::String>("imu/calib_status", 10);
+        calib_pub_ = this->create_publisher<std_msgs::msg::String>("~/calib_status", 10);
+        status_pub_ = this->create_publisher<diagnostic_msgs::msg::DiagnosticStatus>("~/status", 10);
         save_calib_service_ = this->create_service<std_srvs::srv::Trigger>(
             "~/save_calibration", [this](const std::shared_ptr<std_srvs::srv::Trigger::Request> request,
                                          std::shared_ptr<std_srvs::srv::Trigger::Response> response) {
@@ -136,6 +137,19 @@ public:
                 response->message = buf;
             });
 
+        reset_srv_ = this->create_service<std_srvs::srv::Trigger>(
+            "~/reset", [this](const std::shared_ptr<std_srvs::srv::Trigger::Request> request,
+                              std::shared_ptr<std_srvs::srv::Trigger::Response> response) {
+                (void)request;
+                if (imu_.reset()) {
+                    response->success = true;
+                    response->message = "IMU hardware reset successful";
+                } else {
+                    response->success = false;
+                    response->message = "IMU hardware reset failed";
+                }
+            });
+
         diag_publisher_ = this->create_publisher<diagnostic_msgs::msg::DiagnosticArray>("/diagnostics", 10);
 
         // Setup timers
@@ -165,7 +179,8 @@ public:
         temp_publisher_->on_activate();
         raw_publisher_->on_activate();
         gravity_publisher_->on_activate();
-        calib_status_publisher_->on_activate();
+        calib_pub_->on_activate();
+        status_pub_->on_activate();
         diag_publisher_->on_activate();
 
         // Restart timers
@@ -191,7 +206,8 @@ public:
         temp_publisher_->on_deactivate();
         raw_publisher_->on_deactivate();
         gravity_publisher_->on_deactivate();
-        calib_status_publisher_->on_deactivate();
+        calib_pub_->on_deactivate();
+        status_pub_->on_deactivate();
         diag_publisher_->on_deactivate();
 
         // Suspend sensor to save power
@@ -340,12 +356,22 @@ private:
         diag_publisher_->publish(std::move(diag_arr));
 
         auto status = imu_.getCalibrationStatus();
-        std_msgs::msg::String calib_msg;
         char buf[128];
         snprintf(buf, sizeof(buf), "{\"sys\": %d, \"gyro\": %d, \"accel\": %d, \"mag\": %d}", status.sys, status.gyro,
                  status.accel, status.mag);
-        calib_msg.data = buf;
-        calib_status_publisher_->publish(calib_msg);
+        auto calib_msg = std::make_unique<std_msgs::msg::String>();
+        calib_msg->data = buf;
+        calib_pub_->publish(std::move(calib_msg));
+
+        // Publish DiagnosticStatus
+        auto status_msg = diagnostic_msgs::msg::DiagnosticStatus();
+        status_msg.name = this->get_name();
+        status_msg.hardware_id = "BNO055";
+        status_msg.level = (status.sys == 3) ? diagnostic_msgs::msg::DiagnosticStatus::OK
+                                             : diagnostic_msgs::msg::DiagnosticStatus::WARN;
+        status_msg.message = "Sys: " + std::to_string(status.sys) + " Gyro: " + std::to_string(status.gyro) +
+                             " Accel: " + std::to_string(status.accel) + " Mag: " + std::to_string(status.mag);
+        status_pub_->publish(status_msg);
     }
 
     bno055lib::BNO055 imu_;
@@ -355,9 +381,11 @@ private:
     rclcpp_lifecycle::LifecyclePublisher<sensor_msgs::msg::MagneticField>::SharedPtr mag_publisher_;
     rclcpp_lifecycle::LifecyclePublisher<sensor_msgs::msg::Temperature>::SharedPtr temp_publisher_;
     rclcpp_lifecycle::LifecyclePublisher<geometry_msgs::msg::Vector3>::SharedPtr gravity_publisher_;
-    rclcpp_lifecycle::LifecyclePublisher<std_msgs::msg::String>::SharedPtr calib_status_publisher_;
+    rclcpp_lifecycle::LifecyclePublisher<std_msgs::msg::String>::SharedPtr calib_pub_;
+    rclcpp_lifecycle::LifecyclePublisher<diagnostic_msgs::msg::DiagnosticStatus>::SharedPtr status_pub_;
     rclcpp::Service<std_srvs::srv::Trigger>::SharedPtr save_calib_service_;
     rclcpp::Service<std_srvs::srv::Trigger>::SharedPtr calib_request_service_;
+    rclcpp::Service<std_srvs::srv::Trigger>::SharedPtr reset_srv_;
     rclcpp_lifecycle::LifecyclePublisher<diagnostic_msgs::msg::DiagnosticArray>::SharedPtr diag_publisher_;
     rclcpp::TimerBase::SharedPtr timer_;
     rclcpp::TimerBase::SharedPtr diag_timer_;
