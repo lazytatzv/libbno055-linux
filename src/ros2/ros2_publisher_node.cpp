@@ -21,7 +21,7 @@ using namespace std::chrono_literals;
 class BNO055PublisherNode : public rclcpp::Node {
 public:
     explicit BNO055PublisherNode(const rclcpp::NodeOptions& options = rclcpp::NodeOptions())
-        : Node("bno055_publisher_node", options), imu_(0x28, "/dev/i2c-1") {
+        : Node("bno055_publisher_node", options) {
         // Declare and fetch parameters using common helpers
         bno055_ros2::declare_common_parameters(this);
 
@@ -33,20 +33,20 @@ public:
 
         RCLCPP_INFO(this->get_logger(), "Initializing BNO055 on %s (address: 0x%02X)", device.c_str(), address);
 
-        imu_ = bno055lib::BNO055(address, device);
+        imu_.emplace(address, device);
 
         // Redirect library internal logs into ROS 2 RCLCPP logger
-        bno055_ros2::setup_logger_redirection(this, imu_);
+        bno055_ros2::setup_logger_redirection(this, *imu_);
 
         // 6-axis Fusion (IMUPlus) is recommended for indoor robotics to avoid magnetic yaw drift.
-        if (!imu_.begin(bno055lib::OpMode::IMUPlus)) {
+        if (!imu_->begin(bno055lib::OpMode::IMUPlus)) {
             RCLCPP_FATAL(this->get_logger(), "Failed to initialize BNO055 sensor!");
             throw std::runtime_error("Sensor initialization failed");
         }
 
         // Load calibration file if specified
         if (!calib_file.empty()) {
-            if (imu_.loadCalibrationFile(calib_file)) {
+            if (imu_->loadCalibrationFile(calib_file)) {
                 RCLCPP_INFO(this->get_logger(), "Loaded calibration offsets from: %s", calib_file.c_str());
             } else {
                 RCLCPP_ERROR(this->get_logger(), "Failed to load calibration file: %s", calib_file.c_str());
@@ -79,50 +79,51 @@ private:
         auto stamp = this->now();
 
         // Exception-free (noexcept) read path ensures no CPU overhead on communication drops
-        auto quat = imu_.getQuaternionNoexcept();
-        auto gyro = imu_.getGyroscopeNoexcept();
-        auto accel = imu_.getLinearAccelerationNoexcept();  // Acceleration excluding gravity
+        auto quat = imu_->getQuaternionNoexcept();
+        auto gyro = imu_->getGyroscopeNoexcept();
+        auto accel = imu_->getLinearAccelerationNoexcept();  // Acceleration excluding gravity
 
         if (!quat || !gyro || !accel) {
             RCLCPP_WARN_THROTTLE(this->get_logger(), *this->get_clock(), 1000,
                                  "Communication dropout detected. Diagnostics: RxErr=%u, TxErr=%u, Reconnects=%u",
-                                 imu_.getDiagnostics().read_failures, imu_.getDiagnostics().write_failures,
-                                 imu_.getDiagnostics().reconnect_attempts);
+                                 imu_->getDiagnostics().read_failures, imu_->getDiagnostics().write_failures,
+                                 imu_->getDiagnostics().reconnect_attempts);
             return;
         }
 
-        auto message = sensor_msgs::msg::Imu();
-        message.header.stamp = stamp;
-        message.header.frame_id = frame_id_;
+        // Use std::unique_ptr for Zero-Copy intra-process communication optimization
+        auto message = std::make_unique<sensor_msgs::msg::Imu>();
+        message->header.stamp = stamp;
+        message->header.frame_id = frame_id_;
 
         // Fill Orientation
-        message.orientation.w = quat->w;
-        message.orientation.x = quat->x;
-        message.orientation.y = quat->y;
-        message.orientation.z = quat->z;
+        message->orientation.w = quat->w;
+        message->orientation.x = quat->x;
+        message->orientation.y = quat->y;
+        message->orientation.z = quat->z;
 
         // Fill Angular Velocity (rad/s)
-        message.angular_velocity.x = gyro->x;
-        message.angular_velocity.y = gyro->y;
-        message.angular_velocity.z = gyro->z;
+        message->angular_velocity.x = gyro->x;
+        message->angular_velocity.y = gyro->y;
+        message->angular_velocity.z = gyro->z;
 
         // Fill Linear Acceleration (m/s^2)
-        message.linear_acceleration.x = accel->x;
-        message.linear_acceleration.y = accel->y;
-        message.linear_acceleration.z = accel->z;
+        message->linear_acceleration.x = accel->x;
+        message->linear_acceleration.y = accel->y;
+        message->linear_acceleration.z = accel->z;
 
         // Set covariances from parameters using common helper
-        bno055_ros2::fill_imu_covariances(this, message);
+        bno055_ros2::fill_imu_covariances(this, *message);
 
-        publisher_->publish(message);
+        publisher_->publish(std::move(message));
     }
 
     void publish_diagnostics() {
-        auto diag_arr = bno055_ros2::build_diagnostics(this, imu_, "IMU Sensor Monitor");
+        auto diag_arr = bno055_ros2::build_diagnostics(this, *imu_, "IMU Sensor Monitor");
         diag_publisher_->publish(*diag_arr);
     }
 
-    bno055lib::BNO055 imu_;
+    std::optional<bno055lib::BNO055> imu_;
     std::string frame_id_;
     rclcpp::Publisher<sensor_msgs::msg::Imu>::SharedPtr publisher_;
     rclcpp::Publisher<diagnostic_msgs::msg::DiagnosticArray>::SharedPtr diag_publisher_;
