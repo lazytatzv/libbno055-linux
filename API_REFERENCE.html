@@ -248,7 +248,6 @@
 <li><p><a class="reference internal" href="#configuration"><span class="xref myst">Configuration</span></a></p></li>
 <li><p><a class="reference internal" href="#sensor-data-throwing-apis"><span class="xref myst">Sensor Data (Throwing APIs)</span></a></p></li>
 <li><p><a class="reference internal" href="#sensor-data-exception-free--noexcept-apis"><span class="xref myst">Sensor Data (Exception-free / noexcept APIs)</span></a></p></li>
-<li><p><a class="reference internal" href="#sensor-data-beginner-friendly--ordefault-apis"><span class="xref myst">Sensor Data (Beginner-Friendly / OrDefault APIs)</span></a></p></li>
 <li><p><a class="reference internal" href="#diagnostics--calibration"><span class="xref myst">Diagnostics &amp; Calibration</span></a></p></li>
 <li><p><a class="reference internal" href="#power-management"><span class="xref myst">Power Management</span></a></p></li>
 <li><p><a class="reference internal" href="#logging"><span class="xref myst">Logging</span></a></p></li>
@@ -489,23 +488,6 @@
 <li><p><em>Parameters</em>: None.</p></li>
 <li><p><em>Returns</em>: <code class="docutils literal notranslate"><span class="pre">std::optional&lt;T&gt;</span></code>. Contains the requested struct on success; <code class="docutils literal notranslate"><span class="pre">std::nullopt</span></code> on communication failure.</p></li>
 <li><p><em>Description</em>: Safety-hardened read path that increments I2C diagnostic counters upon failure without generating CPU exceptions.</p></li>
-</ul>
-</li>
-</ul>
-</section>
-<section id="sensor-data-beginner-friendly-ordefault-apis">
-<h4>Sensor Data (Beginner-Friendly / OrDefault APIs)<a class="headerlink" href="#sensor-data-beginner-friendly-ordefault-apis" title="Link to this heading">¶</a></h4>
-<p>These functions return sensor readings directly. They never throw exceptions and never return optionals. If an I2C communication failure occurs, they automatically return the last cached valid value (or zero/identity values on startup).</p>
-<ul class="simple">
-<li><p><strong>Vector3 getAccelerometerOrDefault() noexcept</strong></p></li>
-<li><p><strong>Vector3 getMagnetometerOrDefault() noexcept</strong></p></li>
-<li><p><strong>Vector3 getGyroscopeOrDefault() noexcept</strong></p></li>
-<li><p><strong>Vector3 getEulerAnglesOrDefault() noexcept</strong></p></li>
-<li><p><strong>Vector3 getLinearAccelerationOrDefault() noexcept</strong></p></li>
-<li><p><strong>Vector3 getGravityOrDefault() noexcept</strong></p></li>
-<li><p><strong>Quaternion getQuaternionOrDefault() noexcept</strong></p></li>
-<li><p><strong>int8_t getTemperatureOrDefault() noexcept</strong></p>
-<ul>
 <li><p><em>Parameters</em>: None.</p></li>
 <li><p><em>Returns</em>: The requested struct directly (<code class="docutils literal notranslate"><span class="pre">Vector3</span></code>, <code class="docutils literal notranslate"><span class="pre">Quaternion</span></code>, or <code class="docutils literal notranslate"><span class="pre">int8_t</span></code>). On temporary bus drops, returns the last cached valid frame (or zero/identity).</p></li>
 </ul>
@@ -713,7 +695,6 @@
 <li><a class="reference internal" href="#configuration">Configuration</a></li>
 <li><a class="reference internal" href="#sensor-data-throwing-apis">Sensor Data (Throwing APIs)</a></li>
 <li><a class="reference internal" href="#sensor-data-exception-free-noexcept-apis">Sensor Data (Exception-free / noexcept APIs)</a></li>
-<li><a class="reference internal" href="#sensor-data-beginner-friendly-ordefault-apis">Sensor Data (Beginner-Friendly / OrDefault APIs)</a></li>
 <li><a class="reference internal" href="#diagnostics-calibration">Diagnostics &amp; Calibration</a></li>
 <li><a class="reference internal" href="#power-management">Power Management</a></li>
 <li><a class="reference internal" href="#logging">Logging</a></li>

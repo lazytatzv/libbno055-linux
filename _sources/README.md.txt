@@ -55,8 +55,10 @@ Designed for robotic control systems, autonomous vehicles, and ROS 2 deployments
        }
 
        for (int i = 0; i < 10; ++i) {
-           auto q = imu.getQuaternionOrDefault();
-           std::cout << "w: " << q.w << " x: " << q.x << " y: " << q.y << " z: " << q.z << std::endl;
+           auto q = imu.getQuaternionNoexcept();
+            if (q) {
+               std::cout << "w: " << q->w << " x: " << q->x << " y: " << q->y << " z: " << q->z << "\n";
+            }
            std::this_thread::sleep_for(std::chrono::milliseconds(100));
        }
        return 0;
@@ -87,9 +89,9 @@ Designed for robotic control systems, autonomous vehicles, and ROS 2 deployments
    ```
 
 2. **Launch with Parameters**:
-   Launch standard, performance (zero-copy), or lifecycle nodes:
+   Launch the high-performance zero-copy node (default) or the lifecycle node:
    ```bash
-   ros2 launch libbno055_linux bno055_launch.py node_type:=standard
+   ros2 launch libbno055_linux bno055_launch.py
    ```
 
 ---
