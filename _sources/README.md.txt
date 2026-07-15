@@ -15,8 +15,10 @@ C++17 BNO055 library and ROS 2 nodes for Linux.
 ## Features
 
 - **Standalone C++17 library**: Link natively via CMake without ROS dependencies.
-- **ROS 2 nodes**: Provides a ROS 2 interface.
-- **Automatic I2C recovery**: Implements automatic recovery for `EIO` faults (e.g., clock stretching issues on Raspberry Pi).
+- **Native I2C & UART Support**: Fully implements the BNO055 binary protocol for both I2C (`/dev/i2c-*`) and USB-to-UART (`/dev/ttyUSB*`) using fast, low-level POSIX APIs.
+- **Full Telemetry Parity**: Publishes standard IMU data, raw unfiltered data (`imu/raw`), gravity vectors (`imu/gravity`), and JSON calibration status (`imu/calib_status`).
+- **ROS 2 nodes**: Provides high-performance standard and lifecycle node interfaces.
+- **Automatic Recovery**: Implements automatic recovery for `EIO` faults, clock stretching issues, and UART `BUS_OVER_RUN` errors.
 - **No heap allocations**: Avoids dynamic memory allocation in hot sensor readout paths.
 - **Zero-copy publishers**: Implements zero-copy memory transport (`std::unique_ptr`) for ROS 2 publishers.
 - **Built-in I2C mocking**: Provides built-in I2C mocking for compilation and testing on macOS/Windows.
@@ -43,8 +45,14 @@ C++17 BNO055 library and ROS 2 nodes for Linux.
    #include <thread>
 
    int main() {
-       // 0x28 is default address, /dev/i2c-1 is default port
-       bno055lib::BNO055 imu(0x28, "/dev/i2c-1");
+       // Initialize via I2C (Default)
+       // bno055lib::BNO055 imu(0x28, "/dev/i2c-1");
+
+       // OR Initialize via UART
+       bno055lib::BNO055::UARTConfig uart_cfg;
+       uart_cfg.port = "/dev/ttyUSB0";
+       uart_cfg.baudrate = 115200;
+       bno055lib::BNO055 imu(uart_cfg);
 
        // Initialize in NDOF fusion mode
        if (!imu.begin(bno055lib::OpMode::NDOF)) {

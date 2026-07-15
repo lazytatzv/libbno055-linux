@@ -251,8 +251,10 @@
 <h2>Features<a class="headerlink" href="#features" title="Link to this heading">¶</a></h2>
 <ul class="simple">
 <li><p><strong>Standalone C++17 library</strong>: Link natively via CMake without ROS dependencies.</p></li>
-<li><p><strong>ROS 2 nodes</strong>: Provides a ROS 2 interface.</p></li>
-<li><p><strong>Automatic I2C recovery</strong>: Implements automatic recovery for <code class="docutils literal notranslate"><span class="pre">EIO</span></code> faults (e.g., clock stretching issues on Raspberry Pi).</p></li>
+<li><p><strong>Native I2C &amp; UART Support</strong>: Fully implements the BNO055 binary protocol for both I2C (<code class="docutils literal notranslate"><span class="pre">/dev/i2c-*</span></code>) and USB-to-UART (<code class="docutils literal notranslate"><span class="pre">/dev/ttyUSB*</span></code>) using fast, low-level POSIX APIs.</p></li>
+<li><p><strong>Full Telemetry Parity</strong>: Publishes standard IMU data, raw unfiltered data (<code class="docutils literal notranslate"><span class="pre">imu/raw</span></code>), gravity vectors (<code class="docutils literal notranslate"><span class="pre">imu/gravity</span></code>), and JSON calibration status (<code class="docutils literal notranslate"><span class="pre">imu/calib_status</span></code>).</p></li>
+<li><p><strong>ROS 2 nodes</strong>: Provides high-performance standard and lifecycle node interfaces.</p></li>
+<li><p><strong>Automatic Recovery</strong>: Implements automatic recovery for <code class="docutils literal notranslate"><span class="pre">EIO</span></code> faults, clock stretching issues, and UART <code class="docutils literal notranslate"><span class="pre">BUS_OVER_RUN</span></code> errors.</p></li>
 <li><p><strong>No heap allocations</strong>: Avoids dynamic memory allocation in hot sensor readout paths.</p></li>
 <li><p><strong>Zero-copy publishers</strong>: Implements zero-copy memory transport (<code class="docutils literal notranslate"><span class="pre">std::unique_ptr</span></code>) for ROS 2 publishers.</p></li>
 <li><p><strong>Built-in I2C mocking</strong>: Provides built-in I2C mocking for compilation and testing on macOS/Windows.</p></li>
@@ -279,8 +281,14 @@ make<span class="w"> </span>-j<span class="k">$(</span>nproc<span class="k">)</s
 <span class="cp">#include</span><span class="w"> </span><span class="cpf">&lt;thread&gt;</span>
 
 <span class="kt">int</span><span class="w"> </span><span class="nf">main</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
-<span class="w">    </span><span class="c1">// 0x28 is default address, /dev/i2c-1 is default port</span>
-<span class="w">    </span><span class="n">bno055lib</span><span class="o">::</span><span class="n">BNO055</span><span class="w"> </span><span class="n">imu</span><span class="p">(</span><span class="mh">0x28</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;/dev/i2c-1&quot;</span><span class="p">);</span>
+<span class="w">    </span><span class="c1">// Initialize via I2C (Default)</span>
+<span class="w">    </span><span class="c1">// bno055lib::BNO055 imu(0x28, &quot;/dev/i2c-1&quot;);</span>
+
+<span class="w">    </span><span class="c1">// OR Initialize via UART</span>
+<span class="w">    </span><span class="n">bno055lib</span><span class="o">::</span><span class="n">BNO055</span><span class="o">::</span><span class="n">UARTConfig</span><span class="w"> </span><span class="n">uart_cfg</span><span class="p">;</span>
+<span class="w">    </span><span class="n">uart_cfg</span><span class="p">.</span><span class="n">port</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;/dev/ttyUSB0&quot;</span><span class="p">;</span>
+<span class="w">    </span><span class="n">uart_cfg</span><span class="p">.</span><span class="n">baudrate</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">115200</span><span class="p">;</span>
+<span class="w">    </span><span class="n">bno055lib</span><span class="o">::</span><span class="n">BNO055</span><span class="w"> </span><span class="n">imu</span><span class="p">(</span><span class="n">uart_cfg</span><span class="p">);</span>
 
 <span class="w">    </span><span class="c1">// Initialize in NDOF fusion mode</span>
 <span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="o">!</span><span class="n">imu</span><span class="p">.</span><span class="n">begin</span><span class="p">(</span><span class="n">bno055lib</span><span class="o">::</span><span class="n">OpMode</span><span class="o">::</span><span class="n">NDOF</span><span class="p">))</span><span class="w"> </span><span class="p">{</span>
