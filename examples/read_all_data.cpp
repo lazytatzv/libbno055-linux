@@ -6,6 +6,10 @@
 
 #include "libbno055-linux/bno055.hpp"
 
+constexpr uint8_t DEFAULT_ADDR = 0x28;
+constexpr int OUTPUT_WIDTH = 7;
+constexpr int LOOP_DELAY_MS = 100;
+
 // Helper function to print a simple ASCII visual bar indicator for orientation angle [-90, 90]
 void printBarIndicator(const std::string& label, double val_deg) {
     const int width = 20;
@@ -52,10 +56,6 @@ int main(int argc, char* argv[]) {
     }
 
     std::cout << "Initializing BNO055 IMU on " << device << " (Mode: " << mode_str << ")..." << "\n";
-    constexpr uint8_t DEFAULT_ADDR = 0x28;
-    constexpr uint8_t DEFAULT_ADDR = 0x28;
-    constexpr int OUTPUT_WIDTH = 7;
-    constexpr int LOOP_DELAY_MS = 100;
     bno055lib::BNO055 imu(DEFAULT_ADDR, device);
 
     // Use default logger (standard error output)
@@ -87,8 +87,8 @@ int main(int argc, char* argv[]) {
             std::cout << "\033[2J\033[H";
             std::cout << "================== BNO055 Visual Dashboard ==================" << "\n";
             std::cout << "Device: " << device << "  |  Mode: " << mode_str << "\n";
-            std::cout << "Calibration: SYS=" << (int)calib.sys << " GYRO=" << (int)calib.gyro
-                      << " ACCEL=" << (int)calib.accel << " MAG=" << (int)calib.mag << "\n";
+            std::cout << "Calibration: SYS=" << static_cast<int>(calib.sys) << " GYRO=" << static_cast<int>(calib.gyro)
+                      << " ACCEL=" << static_cast<int>(calib.accel) << " MAG=" << static_cast<int>(calib.mag) << "\n";
             std::cout << "-------------------------------------------------------------" << "\n";
 
             // Visual indicators for tilt (Roll and Pitch)
@@ -112,7 +112,7 @@ int main(int argc, char* argv[]) {
                       << gravity.y << " Z=" << std::setw(OUTPUT_WIDTH) << gravity.z << "\n";
             std::cout << "Quaternion:                  W=" << std::setw(OUTPUT_WIDTH) << quat.w << " X=" << std::setw(OUTPUT_WIDTH) << quat.x
                       << " Y=" << std::setw(OUTPUT_WIDTH) << quat.y << " Z=" << std::setw(OUTPUT_WIDTH) << quat.z << "\n";
-            std::cout << "Temperature (C):             " << (int)temp << "\n";
+            std::cout << "Temperature (C):             " << static_cast<int>(temp) << "\n";
 
         } catch (const bno055lib::IMUError& e) {
             std::cout << "\033[2J\033[H";
