@@ -245,15 +245,20 @@
 <a class="reference external" href="https://lazytatzv.github.io/libbno055-linux/"><img alt="Docs" src="https://img.shields.io/badge/docs-GitHub%20Pages-blue.svg" /></a>
 <img alt="CI" src="https://github.com/lazytatzv/libbno055-linux/actions/workflows/ci.yml/badge.svg" />
 <img alt="License" src="https://img.shields.io/badge/License-MIT-green.svg" /></p>
-<p>A robust, thread-safe, and dependency-free C++17 library for the BNO055 sensor over I2C on Linux.</p>
 <p><strong><a class="reference external" href="https://lazytatzv.github.io/libbno055-linux/">View the Official Web Documentation (API, Architecture, Integration Guides)</a></strong></p>
-<p>Designed for robotic control systems, autonomous vehicles, and ROS 2 deployments that demand high reliability, automatic error recovery, and deterministic (<code class="docutils literal notranslate"><span class="pre">noexcept</span></code>) execution.</p>
+<p>A robust, thread-safe, and dependency-free C++17 library for the BNO055 sensor over I2C on Linux—designed from the ground up to serve a dual purpose:</p>
+<ol class="arabic simple">
+<li><p><strong>A Pure, Standalone C++17 Library</strong>: Zero ROS dependencies. Link it natively in your embedded Linux applications (Raspberry Pi, Jetson) using standard CMake.</p></li>
+<li><p><strong>A High-Performance ROS 2 Node</strong>: Out-of-the-box ROS 2 wrappers built on top of the library, featuring zero-copy intra-process communication and Lifecycle Node management.</p></li>
+</ol>
+<p>Designed for robotic control systems, autonomous vehicles, and production deployments that demand high reliability, automatic error recovery, and deterministic (<code class="docutils literal notranslate"><span class="pre">noexcept</span></code>) execution.</p>
 <hr class="docutils" />
 <section id="key-features">
 <h2>Key Features<a class="headerlink" href="#key-features" title="Link to this heading">¶</a></h2>
 <ul class="simple">
+<li><p><strong>Dual Architecture (Library + ROS 2)</strong>: Cleanly separated hardware logic and ROS interfaces. Use it as a pure C++ library (<code class="docutils literal notranslate"><span class="pre">-lbno055-linux</span></code>) or launch it as a native ROS 2 node.</p></li>
 <li><p><strong>Self-Healing (Auto-Recovery)</strong>: BNO055 is notorious for I2C lockups on Raspberry Pi due to clock stretching. This library transparently catches <code class="docutils literal notranslate"><span class="pre">EIO</span></code> faults, flushes the bus, and recovers sensor state automatically without crashing your application.</p></li>
-<li><p><strong>Real-Time Safe</strong>: Zero heap allocations in hot paths and exception-free (<code class="docutils literal notranslate"><span class="pre">noexcept</span></code>) APIs guarantee bounded, zero-jitter execution time for high-frequency control loops.</p></li>
+<li><p><strong>Real-Time Safe &amp; Zero-Copy</strong>: Zero heap allocations in hot paths. The ROS 2 node uses <code class="docutils literal notranslate"><span class="pre">std::unique_ptr</span></code> publishing and <code class="docutils literal notranslate"><span class="pre">noexcept</span></code> APIs, guaranteeing zero-copy memory transport and zero-jitter execution for high-frequency control loops.</p></li>
 <li><p><strong>Modern &amp; Lightweight</strong>: Pure C++17 implementation. Zero external dependencies, no Arduino wrappers.</p></li>
 <li><p><strong>CI/CD Ready</strong>: Cross-platform compilation support with built-in I2C Mocking. Compile and test natively on macOS/Windows without physical hardware.</p></li>
 </ul>
