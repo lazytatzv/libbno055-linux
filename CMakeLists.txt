@@ -63,8 +63,9 @@ find_package(rclcpp QUIET)
 find_package(rclcpp_lifecycle QUIET)
 find_package(sensor_msgs QUIET)
 find_package(diagnostic_msgs QUIET)
+find_package(std_srvs QUIET)
 
-if(rclcpp_FOUND AND sensor_msgs_FOUND AND diagnostic_msgs_FOUND)
+if(rclcpp_FOUND AND sensor_msgs_FOUND AND diagnostic_msgs_FOUND AND std_srvs_FOUND)
     set(ament_cmake_copyright_FOUND TRUE)
     set(ament_cmake_cpplint_FOUND TRUE)
     set(ament_cmake_uncrustify_FOUND TRUE)
@@ -74,12 +75,12 @@ if(rclcpp_FOUND AND sensor_msgs_FOUND AND diagnostic_msgs_FOUND)
     message(STATUS "ROS 2 environment detected. Building ROS 2 publisher node sample.")
     add_executable(bno055_publisher_node src/ros2/ros2_publisher_node.cpp)
     target_link_libraries(bno055_publisher_node PRIVATE libbno055-linux)
-    target_link_libraries(bno055_publisher_node PRIVATE rclcpp::rclcpp sensor_msgs::sensor_msgs diagnostic_msgs::diagnostic_msgs)
+    target_link_libraries(bno055_publisher_node PRIVATE rclcpp::rclcpp sensor_msgs::sensor_msgs diagnostic_msgs::diagnostic_msgs std_srvs::std_srvs)
     
     # High-Performance Node (Zero-copy, Intra-process)
     add_executable(bno055_perf_publisher_node src/ros2/ros2_perf_publisher_node.cpp)
     target_link_libraries(bno055_perf_publisher_node PRIVATE libbno055-linux)
-    target_link_libraries(bno055_perf_publisher_node PRIVATE rclcpp::rclcpp sensor_msgs::sensor_msgs diagnostic_msgs::diagnostic_msgs)
+    target_link_libraries(bno055_perf_publisher_node PRIVATE rclcpp::rclcpp sensor_msgs::sensor_msgs diagnostic_msgs::diagnostic_msgs std_srvs::std_srvs)
 
     install(TARGETS bno055_publisher_node bno055_perf_publisher_node
         DESTINATION lib/${PROJECT_NAME}
@@ -94,7 +95,7 @@ if(rclcpp_FOUND AND sensor_msgs_FOUND AND diagnostic_msgs_FOUND)
             rclcpp::rclcpp
             rclcpp_lifecycle::rclcpp_lifecycle
             sensor_msgs::sensor_msgs
-            diagnostic_msgs::diagnostic_msgs
+            diagnostic_msgs::diagnostic_msgs std_srvs::std_srvs
         )
 
         install(TARGETS bno055_lifecycle_publisher_node
@@ -204,7 +205,7 @@ if(BUILD_TESTING AND NOT rclcpp_FOUND)
     gtest_discover_tests(libbno055-linux_tests)
 
     # If ROS 2 is available, also build the ROS 2 node integration tests
-    if(rclcpp_FOUND AND sensor_msgs_FOUND AND rclcpp_lifecycle_FOUND AND diagnostic_msgs_FOUND)
+    if(rclcpp_FOUND AND sensor_msgs_FOUND AND rclcpp_lifecycle_FOUND AND diagnostic_msgs_FOUND AND std_srvs_FOUND)
         message(STATUS "ROS 2 detected. Building ROS 2 node integration tests.")
         add_executable(libbno055-linux_ros2_tests
             tests/test_ros2_nodes.cpp
@@ -218,7 +219,7 @@ if(BUILD_TESTING AND NOT rclcpp_FOUND)
                     rclcpp::rclcpp
                     rclcpp_lifecycle::rclcpp_lifecycle
                     sensor_msgs::sensor_msgs
-                    diagnostic_msgs::diagnostic_msgs
+                    diagnostic_msgs::diagnostic_msgs std_srvs::std_srvs
                     GTest::gtest_main
             )
         else()
@@ -228,7 +229,7 @@ if(BUILD_TESTING AND NOT rclcpp_FOUND)
                     rclcpp::rclcpp
                     rclcpp_lifecycle::rclcpp_lifecycle
                     sensor_msgs::sensor_msgs
-                    diagnostic_msgs::diagnostic_msgs
+                    diagnostic_msgs::diagnostic_msgs std_srvs::std_srvs
                     gtest_main
             )
         endif()

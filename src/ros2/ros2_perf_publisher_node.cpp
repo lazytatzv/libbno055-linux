@@ -16,6 +16,8 @@
 #include <rclcpp/rclcpp.hpp>
 #include <sensor_msgs/msg/imu.hpp>
 #include <sensor_msgs/msg/magnetic_field.hpp>
+#include <sensor_msgs/msg/temperature.hpp>
+#include <std_srvs/srv/trigger.hpp>
 #include <utility>
 
 #include "bno055_ros2_common.hpp"
@@ -77,6 +79,26 @@ public:
 
         publisher_ = this->create_publisher<sensor_msgs::msg::Imu>("imu/data", qos);
         mag_publisher_ = this->create_publisher<sensor_msgs::msg::MagneticField>("imu/mag", qos);
+        temp_publisher_ = this->create_publisher<sensor_msgs::msg::Temperature>("imu/temp", qos);
+        save_calib_service_ = this->create_service<std_srvs::srv::Trigger>(
+            "~/save_calibration", [this](const std::shared_ptr<std_srvs::srv::Trigger::Request> request,
+                                         std::shared_ptr<std_srvs::srv::Trigger::Response> response) {
+                (void)request;
+                std::string cf = this->get_parameter("calibration_file").as_string();
+                if (cf.empty()) {
+                    response->success = false;
+                    response->message = "calibration_file parameter is empty.";
+                    return;
+                }
+                if (imu_.saveCalibrationFile(cf)) {
+                    response->success = true;
+                    response->message = "Successfully saved calibration to " + cf;
+                } else {
+                    response->success = false;
+                    response->message = "Failed to save calibration file.";
+                }
+            });
+
         diag_publisher_ = this->create_publisher<diagnostic_msgs::msg::DiagnosticArray>("/diagnostics", 10);
 
         auto interval = std::chrono::duration<double>(1.0 / rate_hz);
@@ -96,7 +118,7 @@ private:
         auto gyro = imu_.getGyroscopeNoexcept();
         auto accel = imu_.getLinearAccelerationNoexcept();  // Acceleration excluding gravity
 
-        if (!quat || !gyro || !accel || !mag) {
+        if (!quat || !gyro || !accel || !mag || !temp) {
             RCLCPP_WARN_THROTTLE(this->get_logger(), *this->get_clock(), 1000,
                                  "Communication dropout. Diagnostics: RxErr=%u, TxErr=%u, Reconnects=%u",
                                  imu_.getDiagnostics().read_failures, imu_.getDiagnostics().write_failures,
@@ -141,6 +163,14 @@ private:
         mag_msg->magnetic_field.z = mag->z * 1e-6;
         bno055_ros2::fill_mag_covariance(this, *mag_msg);
         mag_publisher_->publish(std::move(mag_msg));
+
+        // Temperature
+        auto temp_msg = std::make_unique<sensor_msgs::msg::Temperature>();
+        temp_msg->header.stamp = stamp;
+        temp_msg->header.frame_id = frame_id_;
+        temp_msg->temperature = static_cast<double>(*temp);
+        temp_msg->variance = this->get_parameter("temperature_variance").as_double();
+        temp_publisher_->publish(std::move(temp_msg));
     }
 
     void publish_diagnostics() {
@@ -152,6 +182,8 @@ private:
     std::string frame_id_;
     rclcpp::Publisher<sensor_msgs::msg::Imu>::SharedPtr publisher_;
     rclcpp::Publisher<sensor_msgs::msg::MagneticField>::SharedPtr mag_publisher_;
+    rclcpp::Publisher<sensor_msgs::msg::Temperature>::SharedPtr temp_publisher_;
+    rclcpp::Service<std_srvs::srv::Trigger>::SharedPtr save_calib_service_;
     rclcpp::Publisher<diagnostic_msgs::msg::DiagnosticArray>::SharedPtr diag_publisher_;
     rclcpp::TimerBase::SharedPtr timer_;
     rclcpp::TimerBase::SharedPtr diag_timer_;
