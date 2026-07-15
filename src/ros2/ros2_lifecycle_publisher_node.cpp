@@ -12,14 +12,15 @@
  */
 
 #include <algorithm>
-#include <chrono>
 #include <diagnostic_msgs/msg/diagnostic_array.hpp>
+#include <geometry_msgs/msg/vector3.hpp>
 #include <memory>
 #include <rclcpp/rclcpp.hpp>
 #include <rclcpp_lifecycle/lifecycle_node.hpp>
 #include <sensor_msgs/msg/imu.hpp>
 #include <sensor_msgs/msg/magnetic_field.hpp>
 #include <sensor_msgs/msg/temperature.hpp>
+#include <std_msgs/msg/string.hpp>
 #include <std_srvs/srv/trigger.hpp>
 #include <utility>
 
@@ -47,9 +48,19 @@ public:
         double rate_hz = this->get_parameter("publish_rate").as_double();
         std::string calib_file = this->get_parameter("calibration_file").as_string();
 
-        RCLCPP_INFO(this->get_logger(), "Configuring BNO055: device=%s, address=0x%02X", device.c_str(), address);
+        std::string connection_type = this->get_parameter("connection_type").as_string();
 
-        imu_ = bno055lib::BNO055(address, device);
+        if (connection_type == "uart") {
+            bno055lib::BNO055::UARTConfig uart_config;
+            uart_config.port = this->get_parameter("uart_port").as_string();
+            uart_config.baudrate = this->get_parameter("uart_baudrate").as_int();
+            uart_config.timeout = this->get_parameter("uart_timeout").as_double();
+            RCLCPP_INFO(this->get_logger(), "Configuring BNO055 on UART %s (%d bps)", uart_config.port.c_str(), uart_config.baudrate);
+            imu_ = bno055lib::BNO055(uart_config);
+        } else {
+            RCLCPP_INFO(this->get_logger(), "Configuring BNO055 on I2C %s (address: 0x%02X)", device.c_str(), address);
+            imu_ = bno055lib::BNO055(address, device);
+        }
 
         // Redirect internal logs into ROS 2 RCLCPP
         bno055_ros2::setup_logger_redirection(this, imu_);
@@ -90,6 +101,9 @@ public:
         publisher_ = this->create_publisher<sensor_msgs::msg::Imu>("imu/data", qos);
         mag_publisher_ = this->create_publisher<sensor_msgs::msg::MagneticField>("imu/mag", qos);
         temp_publisher_ = this->create_publisher<sensor_msgs::msg::Temperature>("imu/temp", qos);
+        raw_publisher_ = this->create_publisher<sensor_msgs::msg::Imu>("imu/raw", qos);
+        gravity_publisher_ = this->create_publisher<geometry_msgs::msg::Vector3>("imu/gravity", qos);
+        calib_status_publisher_ = this->create_publisher<std_msgs::msg::String>("imu/calib_status", 10);
         save_calib_service_ = this->create_service<std_srvs::srv::Trigger>(
             "~/save_calibration", [this](const std::shared_ptr<std_srvs::srv::Trigger::Request> request,
                                          std::shared_ptr<std_srvs::srv::Trigger::Response> response) {
@@ -107,6 +121,18 @@ public:
                     response->success = false;
                     response->message = "Failed to save calibration file.";
                 }
+            });
+
+        calib_request_service_ = this->create_service<std_srvs::srv::Trigger>(
+            "~/calibration_request", [this](const std::shared_ptr<std_srvs::srv::Trigger::Request> request,
+                                         std::shared_ptr<std_srvs::srv::Trigger::Response> response) {
+                (void)request;
+                auto status = imu_.getCalibrationStatus();
+                char buf[128];
+                snprintf(buf, sizeof(buf), "{\"sys\": %d, \"gyro\": %d, \"accel\": %d, \"mag\": %d}",
+                         status.sys, status.gyro, status.accel, status.mag);
+                response->success = true;
+                response->message = buf;
             });
 
         diag_publisher_ = this->create_publisher<diagnostic_msgs::msg::DiagnosticArray>("/diagnostics", 10);
@@ -136,6 +162,9 @@ public:
         publisher_->on_activate();
         mag_publisher_->on_activate();
         temp_publisher_->on_activate();
+        raw_publisher_->on_activate();
+        gravity_publisher_->on_activate();
+        calib_status_publisher_->on_activate();
         diag_publisher_->on_activate();
 
         // Restart timers
@@ -159,6 +188,9 @@ public:
         publisher_->on_deactivate();
         mag_publisher_->on_deactivate();
         temp_publisher_->on_deactivate();
+        raw_publisher_->on_deactivate();
+        gravity_publisher_->on_deactivate();
+        calib_status_publisher_->on_deactivate();
         diag_publisher_->on_deactivate();
 
         // Suspend sensor to save power
@@ -179,8 +211,12 @@ public:
         publisher_.reset();
         mag_publisher_.reset();
         temp_publisher_.reset();
+        raw_publisher_.reset();
+        gravity_publisher_.reset();
+        calib_status_publisher_.reset();
         diag_publisher_.reset();
         save_calib_service_.reset();
+        calib_request_service_.reset();
 
         RCLCPP_INFO(this->get_logger(), "Cleanup successful.");
         return CallbackReturn::SUCCESS;
@@ -199,8 +235,12 @@ public:
         publisher_.reset();
         mag_publisher_.reset();
         temp_publisher_.reset();
+        raw_publisher_.reset();
+        gravity_publisher_.reset();
+        calib_status_publisher_.reset();
         diag_publisher_.reset();
         save_calib_service_.reset();
+        calib_request_service_.reset();
 
         return CallbackReturn::SUCCESS;
     }
@@ -216,8 +256,10 @@ private:
         auto accel = imu_.getLinearAccelerationNoexcept();
         auto mag = imu_.getMagnetometerNoexcept();
         auto temp = imu_.getTemperatureNoexcept();
+        auto raw_accel = imu_.getAccelerometerNoexcept();
+        auto grav = imu_.getGravityNoexcept();
 
-        if (!quat || !gyro || !accel || !mag || !temp) {
+        if (!quat || !gyro || !accel || !mag || !temp || !raw_accel || !grav) {
             RCLCPP_WARN_THROTTLE(this->get_logger(), *this->get_clock(), 1000,
                                  "Communication dropout (Lifecycle). Diagnostics: RxErr=%u, TxErr=%u, Reconnects=%u",
                                  imu_.getDiagnostics().read_failures, imu_.getDiagnostics().write_failures,
@@ -270,19 +312,51 @@ private:
         temp_msg->temperature = static_cast<double>(*temp);
         temp_msg->variance = this->get_parameter("temperature_variance").as_double();
         temp_publisher_->publish(std::move(temp_msg));
+
+        // Raw Data (Unfiltered)
+        auto raw_msg = std::make_unique<sensor_msgs::msg::Imu>();
+        raw_msg->header.stamp = stamp;
+        raw_msg->header.frame_id = frame_id_;
+        raw_msg->linear_acceleration.x = raw_accel->x;
+        raw_msg->linear_acceleration.y = raw_accel->y;
+        raw_msg->linear_acceleration.z = raw_accel->z;
+        raw_msg->angular_velocity.x = gyro->x;
+        raw_msg->angular_velocity.y = gyro->y;
+        raw_msg->angular_velocity.z = gyro->z;
+        raw_msg->orientation.w = 1.0;  // Raw typically omits fusion orientation
+        raw_publisher_->publish(std::move(raw_msg));
+
+        // Gravity Vector
+        auto grav_msg = std::make_unique<geometry_msgs::msg::Vector3>();
+        grav_msg->x = grav->x;
+        grav_msg->y = grav->y;
+        grav_msg->z = grav->z;
+        gravity_publisher_->publish(std::move(grav_msg));
     }
 
     void publish_diagnostics() {
         auto diag_arr = bno055_ros2::build_diagnostics(this, imu_, "IMU Lifecycle Sensor Monitor");
         diag_publisher_->publish(std::move(diag_arr));
+
+        auto status = imu_.getCalibrationStatus();
+        std_msgs::msg::String calib_msg;
+        char buf[128];
+        snprintf(buf, sizeof(buf), "{\"sys\": %d, \"gyro\": %d, \"accel\": %d, \"mag\": %d}",
+                 status.sys, status.gyro, status.accel, status.mag);
+        calib_msg.data = buf;
+        calib_status_publisher_->publish(calib_msg);
     }
 
     bno055lib::BNO055 imu_;
     std::string frame_id_;
     rclcpp_lifecycle::LifecyclePublisher<sensor_msgs::msg::Imu>::SharedPtr publisher_;
+    rclcpp_lifecycle::LifecyclePublisher<sensor_msgs::msg::Imu>::SharedPtr raw_publisher_;
     rclcpp_lifecycle::LifecyclePublisher<sensor_msgs::msg::MagneticField>::SharedPtr mag_publisher_;
     rclcpp_lifecycle::LifecyclePublisher<sensor_msgs::msg::Temperature>::SharedPtr temp_publisher_;
+    rclcpp_lifecycle::LifecyclePublisher<geometry_msgs::msg::Vector3>::SharedPtr gravity_publisher_;
+    rclcpp_lifecycle::LifecyclePublisher<std_msgs::msg::String>::SharedPtr calib_status_publisher_;
     rclcpp::Service<std_srvs::srv::Trigger>::SharedPtr save_calib_service_;
+    rclcpp::Service<std_srvs::srv::Trigger>::SharedPtr calib_request_service_;
     rclcpp_lifecycle::LifecyclePublisher<diagnostic_msgs::msg::DiagnosticArray>::SharedPtr diag_publisher_;
     rclcpp::TimerBase::SharedPtr timer_;
     rclcpp::TimerBase::SharedPtr diag_timer_;
