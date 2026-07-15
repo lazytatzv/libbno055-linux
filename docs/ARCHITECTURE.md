@@ -96,15 +96,13 @@ Modern C++ development relies heavily on Continuous Integration (GitHub Actions,
 
 ## 6. ROS 2 Node Architectures & Zero-Copy Communication
 
-The library includes three ROS 2 node implementations located in the `src/ros2/` directory, designed to cover various robotics system requirements:
+The library includes two ROS 2 node implementations located in the `src/ros2/` directory, designed to cover various robotics system requirements:
 
 ### Standard Standalone Node (`bno055_publisher_node`)
-Designed for simplicity and general-purpose robotics. It initializes the sensor, redirects logs to `RCLCPP`, and publishes the IMU message via a standard asynchronous timer.
-
-### High-Performance Zero-Copy Node (`bno055_perf_publisher_node`)
-Optimized for resource-constrained embedded systems and high-rate feedback loops. 
-* **Zero-Copy Message Passing**: Instead of publishing by value, this node allocates a `std::unique_ptr<sensor_msgs::msg::Imu>` and passes ownership using `std::move()`. When executed within a ROS 2 Composable Node Container alongside compatible subscriber nodes, ROS 2 completely bypasses message serialization and memory copying, passing the underlying pointer directly through shared memory.
+Optimized for resource-constrained embedded systems and high-rate feedback loops. It initializes the sensor, redirects logs to `RCLCPP`, and publishes IMU messages via a standard asynchronous timer.
+* **Zero-Copy Message Passing**: This node allocates messages via `std::make_unique` and passes ownership using `std::move()`, with intra-process communication enabled by default. When executed within a ROS 2 Composable Node Container, ROS 2 completely bypasses message serialization and memory copying, passing the underlying pointer directly through shared memory.
 * **Deterministic Execution**: Uses `noexcept` APIs to ensure that sensor read failures do not invoke the overhead of C++ stack unwinding in high-frequency control loops.
+
 
 ### Managed Lifecycle Node (`bno055_lifecycle_publisher_node`)
 For production robots requiring strict startup sequences and energy efficiency, the Lifecycle Node maps ROS 2 state transitions directly to BNO055 hardware states:
