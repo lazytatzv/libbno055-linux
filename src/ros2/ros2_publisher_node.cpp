@@ -138,8 +138,6 @@ private:
         auto accel = imu_->getLinearAccelerationNoexcept();
         auto mag = imu_->getMagnetometerNoexcept();
         auto temp = imu_->getTemperatureNoexcept();  // Acceleration excluding gravity
-
-        auto temp = imu_->getTemperatureNoexcept();  // Acceleration excluding gravity
         auto raw_accel = imu_->getAccelerometerNoexcept();
         auto grav = imu_->getGravityNoexcept();
 
