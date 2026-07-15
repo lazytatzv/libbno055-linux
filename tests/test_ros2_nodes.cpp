@@ -49,7 +49,6 @@ TEST_F(ROS2NodeTest, TestStandardPublisherNodeMock) {
     EXPECT_TRUE(msg_received);
 }
 
-
 TEST_F(ROS2NodeTest, TestLifecyclePublisherNodeMock) {
     rclcpp::NodeOptions options;
     options.append_parameter_override("device", "/dev/i2c-mock");

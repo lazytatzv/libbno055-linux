@@ -1,8 +1,8 @@
 #ifndef LIBBNO055_LINUX_BNO055_HPP
 #define LIBBNO055_LINUX_BNO055_HPP
 
-#include <cstdint>
 #include <array>
+#include <cstdint>
 #include <functional>
 #include <memory>
 #include <optional>
