@@ -3,9 +3,9 @@
 #include <fcntl.h>
 #ifdef __linux__
 #include <linux/i2c-dev.h>
+#include <poll.h>
 #include <sys/ioctl.h>
 #include <termios.h>
-#include <poll.h>
 #endif
 #include <unistd.h>
 
@@ -133,9 +133,7 @@ public:
     bool has_offsets_{false};
     std::array<uint8_t, 22> offsets_data_{0};
 
-    Impl(const UARTConfig& uart_config) : uart_config_(uart_config) {
-        conn_type_ = ConnectionType::UART;
-    }
+    Impl(const UARTConfig& uart_config) : uart_config_(uart_config) { conn_type_ = ConnectionType::UART; }
 
     Impl(uint8_t address, std::string_view i2c_device) : address_(address), i2c_device_(std::string(i2c_device)) {}
 
@@ -189,7 +187,7 @@ public:
             tty.c_iflag &= ~IGNBRK;
             tty.c_lflag = 0;
             tty.c_oflag = 0;
-            tty.c_cc[VMIN]  = 0;
+            tty.c_cc[VMIN] = 0;
             tty.c_cc[VTIME] = static_cast<cc_t>(uart_config_.timeout * 10);
             tty.c_iflag &= ~(IXON | IXOFF | IXANY);
             tty.c_cflag |= (CLOCAL | CREAD);
@@ -318,12 +316,11 @@ public:
         return true;
     }
 
-
     bool uart_read_exact(uint8_t* buf, int len) {
         int read_bytes = 0;
         int timeout_ms = static_cast<int>(uart_config_.timeout * 1000);
         while (read_bytes < len) {
-            struct pollfd pfd = { i2c_fd, POLLIN, 0 };
+            struct pollfd pfd = {i2c_fd, POLLIN, 0};
             int ret = poll(&pfd, 1, timeout_ms);
             if (ret > 0) {
                 int n = ::read(i2c_fd, buf + read_bytes, len - read_bytes);
@@ -364,7 +361,10 @@ public:
 #ifdef __linux__
         if (conn_type_ == ConnectionType::UART) {
             std::vector<uint8_t> buf(4 + len);
-            buf[0] = 0xAA; buf[1] = 0x00; buf[2] = reg; buf[3] = len;
+            buf[0] = 0xAA;
+            buf[1] = 0x00;
+            buf[2] = reg;
+            buf[3] = len;
             std::memcpy(buf.data() + 4, buffer, len);
             if (::write(i2c_fd, buf.data(), buf.size()) != (ssize_t)buf.size()) return false;
             uint8_t resp[2];
