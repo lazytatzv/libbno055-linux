@@ -10,20 +10,16 @@
 
 **[View the Official Web Documentation (API, Architecture, Integration Guides)](https://lazytatzv.github.io/libbno055-linux/)**
 
-Provides a C++17 library for the BNO055 sensor over I2C on Linux, along with ROS 2 wrappers.
-
-- **C++ Library**: Can be linked natively via CMake without ROS dependencies.
-- **ROS 2 Node**: Provides a ROS 2 interface utilizing intra-process communication.
-
----
+C++17 BNO055 library for Linux and ROS 2.
 
 ## Features
 
-- **I2C Error Recovery**: Implements automatic recovery for `EIO` faults (e.g., clock stretching issues on Raspberry Pi).
-- **noexcept APIs**: Provides `noexcept` methods returning `std::optional` to avoid exception unwinding.
-- **Zero-Allocation**: Avoids heap allocations in sensor readout loops.
-- **Zero-Copy ROS 2**: Implements zero-copy memory transport (`std::unique_ptr`) for ROS 2 publishers.
-- **I2C Mocking**: Provides built-in I2C mocking for compilation and testing on macOS/Windows.
+- **Standalone C++17 library**: Link natively via CMake without ROS dependencies.
+- **ROS 2 wrapper**: Provides a ROS 2 interface.
+- **Automatic I2C recovery**: Implements automatic recovery for `EIO` faults (e.g., clock stretching issues on Raspberry Pi).
+- **Zero-allocation API**: No heap allocations in hot sensor readout paths.
+- **Zero-copy publishers**: Implements zero-copy memory transport (`std::unique_ptr`) for ROS 2 publishers.
+- **Built-in I2C mocking**: Provides built-in I2C mocking for compilation and testing on macOS/Windows.
 
 ---
 
