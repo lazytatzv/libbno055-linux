@@ -246,12 +246,12 @@
 <img alt="CI" src="https://github.com/lazytatzv/libbno055-linux/actions/workflows/ci.yml/badge.svg" />
 <img alt="License" src="https://img.shields.io/badge/License-MIT-green.svg" /></p>
 <p><strong><a class="reference external" href="https://lazytatzv.github.io/libbno055-linux/">View the Official Web Documentation (API, Architecture, Integration Guides)</a></strong></p>
-<p>C++17 BNO055 library for Linux and ROS 2.</p>
+<p>C++17 BNO055 library and ROS 2 nodes for Linux.</p>
 <section id="features">
 <h2>Features<a class="headerlink" href="#features" title="Link to this heading">¶</a></h2>
 <ul class="simple">
 <li><p><strong>Standalone C++17 library</strong>: Link natively via CMake without ROS dependencies.</p></li>
-<li><p><strong>ROS 2 wrapper</strong>: Provides a ROS 2 interface.</p></li>
+<li><p><strong>ROS 2 nodes</strong>: Provides a ROS 2 interface.</p></li>
 <li><p><strong>Automatic I2C recovery</strong>: Implements automatic recovery for <code class="docutils literal notranslate"><span class="pre">EIO</span></code> faults (e.g., clock stretching issues on Raspberry Pi).</p></li>
 <li><p><strong>No heap allocations</strong>: Avoids dynamic memory allocation in hot sensor readout paths.</p></li>
 <li><p><strong>Zero-copy publishers</strong>: Implements zero-copy memory transport (<code class="docutils literal notranslate"><span class="pre">std::unique_ptr</span></code>) for ROS 2 publishers.</p></li>
