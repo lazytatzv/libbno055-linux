@@ -230,10 +230,12 @@ public:
         temp_publisher_.reset();
         raw_publisher_.reset();
         gravity_publisher_.reset();
-        calib_status_publisher_.reset();
+        calib_pub_.reset();
+        status_pub_.reset();
         diag_publisher_.reset();
         save_calib_service_.reset();
         calib_request_service_.reset();
+        reset_srv_.reset();
 
         RCLCPP_INFO(this->get_logger(), "Cleanup successful.");
         return CallbackReturn::SUCCESS;
@@ -254,10 +256,12 @@ public:
         temp_publisher_.reset();
         raw_publisher_.reset();
         gravity_publisher_.reset();
-        calib_status_publisher_.reset();
+        calib_pub_.reset();
+        status_pub_.reset();
         diag_publisher_.reset();
         save_calib_service_.reset();
         calib_request_service_.reset();
+        reset_srv_.reset();
 
         return CallbackReturn::SUCCESS;
     }
