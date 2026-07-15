@@ -236,3 +236,28 @@ if(rclcpp_FOUND)
     find_package(ament_cmake REQUIRED)
     ament_package()
 endif()
+
+# ---------------------------------------------------------
+# CPack Packaging for non-ROS users (.deb / .rpm)
+# ---------------------------------------------------------
+set(CPACK_PACKAGE_NAME "libbno055-linux")
+set(CPACK_PACKAGE_VENDOR "lazytatzv")
+set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "A robust C++17 library for the BNO055 sensor over I2C.")
+set(CPACK_PACKAGE_VERSION_MAJOR ${PROJECT_VERSION_MAJOR})
+set(CPACK_PACKAGE_VERSION_MINOR ${PROJECT_VERSION_MINOR})
+set(CPACK_PACKAGE_VERSION_PATCH ${PROJECT_VERSION_PATCH})
+set(CPACK_RESOURCE_FILE_LICENSE "${CMAKE_CURRENT_SOURCE_DIR}/LICENSE")
+
+# Exclude ROS components from the standalone debian package
+if(rclcpp_FOUND)
+    set(CPACK_COMPONENTS_ALL_IN_ONE_PACKAGE 1)
+endif()
+
+# Debian specific
+set(CPACK_DEBIAN_PACKAGE_ARCHITECTURE "amd64") # Note: Will be overridden by build system if cross-compiling
+set(CPACK_DEBIAN_PACKAGE_DEPENDS "")
+set(CPACK_DEBIAN_PACKAGE_MAINTAINER "lazytatzv")
+set(CPACK_DEBIAN_PACKAGE_SECTION "devel")
+
+set(CPACK_GENERATOR "DEB;TGZ")
+include(CPack)
