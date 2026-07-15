@@ -5,6 +5,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.3.0] - 2026-07-16
+
+### Added
+- Added `imu/raw` (sensor_msgs/Imu) publisher for unfiltered accelerometer and gyroscope data.
+- Added `imu/gravity` (geometry_msgs/Vector3) publisher for gravity vector.
+- Added `imu/calib_status` (std_msgs/String) publisher to output calibration status as JSON.
+- Added `~/calibration_request` (std_srvs/Trigger) service to query calibration status dynamically.
+- Implemented native C++ UART communication backend for USB-to-UART bridges.
+- Added new ROS parameters for UART: `connection_type`, `uart_port`, `uart_baudrate`, `uart_timeout`.
+
 ## [1.2.3] - 2026-07-16
 
 ### Fixed
