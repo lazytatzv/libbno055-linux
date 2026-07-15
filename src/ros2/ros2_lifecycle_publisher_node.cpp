@@ -55,7 +55,8 @@ public:
             uart_config.port = this->get_parameter("uart_port").as_string();
             uart_config.baudrate = this->get_parameter("uart_baudrate").as_int();
             uart_config.timeout = this->get_parameter("uart_timeout").as_double();
-            RCLCPP_INFO(this->get_logger(), "Configuring BNO055 on UART %s (%d bps)", uart_config.port.c_str(), uart_config.baudrate);
+            RCLCPP_INFO(this->get_logger(), "Configuring BNO055 on UART %s (%d bps)", uart_config.port.c_str(),
+                        uart_config.baudrate);
             imu_ = bno055lib::BNO055(uart_config);
         } else {
             RCLCPP_INFO(this->get_logger(), "Configuring BNO055 on I2C %s (address: 0x%02X)", device.c_str(), address);
@@ -125,12 +126,12 @@ public:
 
         calib_request_service_ = this->create_service<std_srvs::srv::Trigger>(
             "~/calibration_request", [this](const std::shared_ptr<std_srvs::srv::Trigger::Request> request,
-                                         std::shared_ptr<std_srvs::srv::Trigger::Response> response) {
+                                            std::shared_ptr<std_srvs::srv::Trigger::Response> response) {
                 (void)request;
                 auto status = imu_.getCalibrationStatus();
                 char buf[128];
-                snprintf(buf, sizeof(buf), "{\"sys\": %d, \"gyro\": %d, \"accel\": %d, \"mag\": %d}",
-                         status.sys, status.gyro, status.accel, status.mag);
+                snprintf(buf, sizeof(buf), "{\"sys\": %d, \"gyro\": %d, \"accel\": %d, \"mag\": %d}", status.sys,
+                         status.gyro, status.accel, status.mag);
                 response->success = true;
                 response->message = buf;
             });
@@ -341,8 +342,8 @@ private:
         auto status = imu_.getCalibrationStatus();
         std_msgs::msg::String calib_msg;
         char buf[128];
-        snprintf(buf, sizeof(buf), "{\"sys\": %d, \"gyro\": %d, \"accel\": %d, \"mag\": %d}",
-                 status.sys, status.gyro, status.accel, status.mag);
+        snprintf(buf, sizeof(buf), "{\"sys\": %d, \"gyro\": %d, \"accel\": %d, \"mag\": %d}", status.sys, status.gyro,
+                 status.accel, status.mag);
         calib_msg.data = buf;
         calib_status_publisher_->publish(calib_msg);
     }
