@@ -12,6 +12,7 @@
 #include <diagnostic_msgs/msg/diagnostic_array.hpp>
 #include <rclcpp/rclcpp.hpp>
 #include <sensor_msgs/msg/imu.hpp>
+#include <sensor_msgs/msg/magnetic_field.hpp>
 
 #include "bno055_ros2_common.hpp"
 #include "libbno055-linux/bno055.hpp"
@@ -67,6 +68,7 @@ public:
         qos.keep_last(this->get_parameter("qos_history_depth").as_int());
 
         publisher_ = this->create_publisher<sensor_msgs::msg::Imu>("imu/data", qos);
+        mag_publisher_ = this->create_publisher<sensor_msgs::msg::MagneticField>("imu/mag", qos);
         diag_publisher_ = this->create_publisher<diagnostic_msgs::msg::DiagnosticArray>("/diagnostics", 10);
 
         auto interval = std::chrono::duration<double>(1.0 / rate_hz);
@@ -84,9 +86,10 @@ private:
         // Exception-free (noexcept) read path ensures no CPU overhead on communication drops
         auto quat = imu_->getQuaternionNoexcept();
         auto gyro = imu_->getGyroscopeNoexcept();
-        auto accel = imu_->getLinearAccelerationNoexcept();  // Acceleration excluding gravity
+        auto accel = imu_->getLinearAccelerationNoexcept();
+        auto mag = imu_->getMagnetometerNoexcept();  // Acceleration excluding gravity
 
-        if (!quat || !gyro || !accel) {
+        if (!quat || !gyro || !accel || !mag) {
             RCLCPP_WARN_THROTTLE(this->get_logger(), *this->get_clock(), 1000,
                                  "Communication dropout detected. Diagnostics: RxErr=%u, TxErr=%u, Reconnects=%u",
                                  imu_->getDiagnostics().read_failures, imu_->getDiagnostics().write_failures,
@@ -119,6 +122,16 @@ private:
         bno055_ros2::fill_imu_covariances(this, *message);
 
         publisher_->publish(std::move(message));
+
+        // Magnetic Field
+        auto mag_msg = std::make_unique<sensor_msgs::msg::MagneticField>();
+        mag_msg->header.stamp = stamp;
+        mag_msg->header.frame_id = frame_id_;
+        mag_msg->magnetic_field.x = mag->x * 1e-6;  // Convert uT to Tesla
+        mag_msg->magnetic_field.y = mag->y * 1e-6;
+        mag_msg->magnetic_field.z = mag->z * 1e-6;
+        bno055_ros2::fill_mag_covariance(this, *mag_msg);
+        mag_publisher_->publish(std::move(mag_msg));
     }
 
     void publish_diagnostics() {
@@ -129,6 +142,7 @@ private:
     std::optional<bno055lib::BNO055> imu_;
     std::string frame_id_;
     rclcpp::Publisher<sensor_msgs::msg::Imu>::SharedPtr publisher_;
+    rclcpp::Publisher<sensor_msgs::msg::MagneticField>::SharedPtr mag_publisher_;
     rclcpp::Publisher<diagnostic_msgs::msg::DiagnosticArray>::SharedPtr diag_publisher_;
     rclcpp::TimerBase::SharedPtr timer_;
     rclcpp::TimerBase::SharedPtr diag_timer_;

@@ -8,6 +8,7 @@
 #include <memory>
 #include <rclcpp/rclcpp.hpp>
 #include <sensor_msgs/msg/imu.hpp>
+#include <sensor_msgs/msg/magnetic_field.hpp>
 #include <string>
 #include <vector>
 
@@ -33,6 +34,7 @@ inline void declare_common_parameters(T* node) {
     node->template declare_parameter<std::string>("axis_map_config", "p1");
     node->template declare_parameter<std::string>("axis_map_sign", "p1");
     node->template declare_parameter<bool>("use_external_crystal", true);
+    node->template declare_parameter<std::vector<double>>("magnetic_field_covariance", std::vector<double>(9, 0.0));
 }
 
 // Redirect logger callback
@@ -177,6 +179,12 @@ inline void apply_advanced_features(T* node, bno055lib::BNO055& imu) {
     imu.setAxisRemap(parse_axis_map_config(node->template get_parameter("axis_map_config").as_string()));
     imu.setAxisSign(parse_axis_map_sign(node->template get_parameter("axis_map_sign").as_string()));
     imu.setExtCrystalUse(node->template get_parameter("use_external_crystal").as_bool());
+}
+
+template <typename T>
+inline void fill_mag_covariance(T* node, sensor_msgs::msg::MagneticField& message) {
+    auto mag_cov = node->template get_parameter("magnetic_field_covariance").as_double_array();
+    if (mag_cov.size() == 9) std::copy(mag_cov.begin(), mag_cov.end(), message.magnetic_field_covariance.begin());
 }
 
 }  // namespace bno055_ros2
