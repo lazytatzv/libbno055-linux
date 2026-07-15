@@ -10,10 +10,12 @@
 
 #include <chrono>
 #include <diagnostic_msgs/msg/diagnostic_array.hpp>
+#include <geometry_msgs/msg/vector3.hpp>
 #include <rclcpp/rclcpp.hpp>
 #include <sensor_msgs/msg/imu.hpp>
 #include <sensor_msgs/msg/magnetic_field.hpp>
 #include <sensor_msgs/msg/temperature.hpp>
+#include <std_msgs/msg/string.hpp>
 #include <std_srvs/srv/trigger.hpp>
 
 #include "bno055_ros2_common.hpp"
@@ -72,6 +74,9 @@ public:
         publisher_ = this->create_publisher<sensor_msgs::msg::Imu>("imu/data", qos);
         mag_publisher_ = this->create_publisher<sensor_msgs::msg::MagneticField>("imu/mag", qos);
         temp_publisher_ = this->create_publisher<sensor_msgs::msg::Temperature>("imu/temp", qos);
+        raw_publisher_ = this->create_publisher<sensor_msgs::msg::Imu>("imu/raw", qos);
+        gravity_publisher_ = this->create_publisher<geometry_msgs::msg::Vector3>("imu/gravity", qos);
+        calib_status_publisher_ = this->create_publisher<std_msgs::msg::String>("imu/calib_status", 10);
         save_calib_service_ = this->create_service<std_srvs::srv::Trigger>(
             "~/save_calibration", [this](const std::shared_ptr<std_srvs::srv::Trigger::Request> request,
                                          std::shared_ptr<std_srvs::srv::Trigger::Response> response) {
@@ -89,6 +94,18 @@ public:
                     response->success = false;
                     response->message = "Failed to save calibration file.";
                 }
+            });
+
+        calib_request_service_ = this->create_service<std_srvs::srv::Trigger>(
+            "~/calibration_request", [this](const std::shared_ptr<std_srvs::srv::Trigger::Request> request,
+                                         std::shared_ptr<std_srvs::srv::Trigger::Response> response) {
+                (void)request;
+                auto status = imu_->getCalibrationStatus();
+                char buf[128];
+                snprintf(buf, sizeof(buf), "{\"sys\": %d, \"gyro\": %d, \"accel\": %d, \"mag\": %d}",
+                         status.sys, status.gyro, status.accel, status.mag);
+                response->success = true;
+                response->message = buf;
             });
 
         diag_publisher_ = this->create_publisher<diagnostic_msgs::msg::DiagnosticArray>("/diagnostics", 10);
@@ -112,7 +129,11 @@ private:
         auto mag = imu_->getMagnetometerNoexcept();
         auto temp = imu_->getTemperatureNoexcept();  // Acceleration excluding gravity
 
-        if (!quat || !gyro || !accel || !mag || !temp) {
+        auto temp = imu_->getTemperatureNoexcept();  // Acceleration excluding gravity
+        auto raw_accel = imu_->getAccelerometerNoexcept();
+        auto grav = imu_->getGravityNoexcept();
+
+        if (!quat || !gyro || !accel || !mag || !temp || !raw_accel || !grav) {
             RCLCPP_WARN_THROTTLE(this->get_logger(), *this->get_clock(), 1000,
                                  "Communication dropout detected. Diagnostics: RxErr=%u, TxErr=%u, Reconnects=%u",
                                  imu_->getDiagnostics().read_failures, imu_->getDiagnostics().write_failures,
@@ -163,19 +184,51 @@ private:
         temp_msg->temperature = static_cast<double>(*temp);
         temp_msg->variance = this->get_parameter("temperature_variance").as_double();
         temp_publisher_->publish(std::move(temp_msg));
+
+        // Raw Data (Unfiltered)
+        auto raw_msg = std::make_unique<sensor_msgs::msg::Imu>();
+        raw_msg->header.stamp = stamp;
+        raw_msg->header.frame_id = frame_id_;
+        raw_msg->linear_acceleration.x = raw_accel->x;
+        raw_msg->linear_acceleration.y = raw_accel->y;
+        raw_msg->linear_acceleration.z = raw_accel->z;
+        raw_msg->angular_velocity.x = gyro->x;
+        raw_msg->angular_velocity.y = gyro->y;
+        raw_msg->angular_velocity.z = gyro->z;
+        raw_msg->orientation.w = 1.0;  // Raw typically omits fusion orientation
+        raw_publisher_->publish(std::move(raw_msg));
+
+        // Gravity Vector
+        auto grav_msg = std::make_unique<geometry_msgs::msg::Vector3>();
+        grav_msg->x = grav->x;
+        grav_msg->y = grav->y;
+        grav_msg->z = grav->z;
+        gravity_publisher_->publish(std::move(grav_msg));
     }
 
     void publish_diagnostics() {
         auto diag_arr = bno055_ros2::build_diagnostics(this, *imu_, "IMU Sensor Monitor");
         diag_publisher_->publish(*diag_arr);
+
+        auto status = imu_->getCalibrationStatus();
+        std_msgs::msg::String calib_msg;
+        char buf[128];
+        snprintf(buf, sizeof(buf), "{\"sys\": %d, \"gyro\": %d, \"accel\": %d, \"mag\": %d}",
+                 status.sys, status.gyro, status.accel, status.mag);
+        calib_msg.data = buf;
+        calib_status_publisher_->publish(calib_msg);
     }
 
     std::optional<bno055lib::BNO055> imu_;
     std::string frame_id_;
     rclcpp::Publisher<sensor_msgs::msg::Imu>::SharedPtr publisher_;
+    rclcpp::Publisher<sensor_msgs::msg::Imu>::SharedPtr raw_publisher_;
     rclcpp::Publisher<sensor_msgs::msg::MagneticField>::SharedPtr mag_publisher_;
     rclcpp::Publisher<sensor_msgs::msg::Temperature>::SharedPtr temp_publisher_;
+    rclcpp::Publisher<geometry_msgs::msg::Vector3>::SharedPtr gravity_publisher_;
+    rclcpp::Publisher<std_msgs::msg::String>::SharedPtr calib_status_publisher_;
     rclcpp::Service<std_srvs::srv::Trigger>::SharedPtr save_calib_service_;
+    rclcpp::Service<std_srvs::srv::Trigger>::SharedPtr calib_request_service_;
     rclcpp::Publisher<diagnostic_msgs::msg::DiagnosticArray>::SharedPtr diag_publisher_;
     rclcpp::TimerBase::SharedPtr timer_;
     rclcpp::TimerBase::SharedPtr diag_timer_;
