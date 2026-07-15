@@ -184,8 +184,12 @@ private:
 #ifndef ROS2_NODE_TESTING
 int main(int argc, char* argv[]) {
     rclcpp::init(argc, argv);
+    rclcpp::NodeOptions options;
+    // Enable intra-process communication by default for high performance zero-copy
+    options.use_intra_process_comms(true);
+
     try {
-        rclcpp::spin(std::make_shared<BNO055PublisherNode>());
+        rclcpp::spin(std::make_shared<BNO055PublisherNode>(options));
     } catch (const std::exception& e) {
         RCLCPP_ERROR(rclcpp::get_logger("rclcpp"), "Node terminated due to exception: %s", e.what());
     }
