@@ -83,3 +83,23 @@ TEST(BNO055Test, NoexceptGettersAndEulerConversion) {
     EXPECT_NEAR(euler_rot.z, 90.0, 1e-4);  // Should be exactly 90 degrees
 #endif
 }
+
+TEST(BNO055Test, UARTConstructorInvalidPort) {
+#ifdef __linux__
+    bno055lib::BNO055::UARTConfig cfg;
+    cfg.port = "/dev/ttyUSB-invalid-port";
+    cfg.baudrate = 115200;
+    bno055lib::BNO055 imu(cfg);
+    EXPECT_FALSE(imu.begin(bno055lib::OpMode::NDOF));
+#endif
+}
+
+TEST(BNO055Test, HardwareResetMock) {
+#ifndef __linux__
+    bno055lib::BNO055 imu(0x28, "/dev/i2c-mock");
+    ASSERT_TRUE(imu.begin(bno055lib::OpMode::NDOF));
+
+    // Reset should succeed in mock mode
+    EXPECT_TRUE(imu.reset());
+#endif
+}
