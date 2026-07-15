@@ -99,6 +99,10 @@ All functions in the `BNO055` class are thread-safe and protect access to the un
         *   `mode`: `OpMode`. The target operation mode to start in.
     *   *Returns*: `bool`. `true` if initialization, self-test verification, and mode transition succeeded; `false` on boot timeouts or I2C failures.
     *   *Description*: Power-cycles the sensor, verifies the Chip ID, configures default Axis Maps and Unit settings, and spawns the background auto-recovery thread.
+*   **bool reset()**
+    *   *Parameters*: None.
+    *   *Returns*: `bool`. `true` if reset and mode restoration succeeded; `false` on failure.
+    *   *Description*: Triggers a software hardware-reset using the `SYS_TRIGGER` register and completely re-initializes the device into the previously active operating mode. Useful for recovery from external hardware lockups.
 
 #### Configuration
 
