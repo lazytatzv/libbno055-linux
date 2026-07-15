@@ -27,7 +27,8 @@ inline void declare_common_parameters(T* node) {
     node->template declare_parameter<std::string>("calibration_file", "");
     node->template declare_parameter<std::vector<double>>("orientation_covariance", std::vector<double>(9, 0.0));
     node->template declare_parameter<std::vector<double>>("angular_velocity_covariance", std::vector<double>(9, 0.0));
-    node->template declare_parameter<std::vector<double>>("linear_acceleration_covariance", std::vector<double>(9, 0.0));
+    node->template declare_parameter<std::vector<double>>("linear_acceleration_covariance",
+                                                          std::vector<double>(9, 0.0));
 }
 
 // Redirect logger callback
@@ -73,8 +74,8 @@ inline diagnostic_msgs::msg::DiagnosticArray::UniquePtr build_diagnostics(T* nod
 
     auto status = diagnostic_msgs::msg::DiagnosticStatus();
     status.name = std::string("libbno055_linux: ") + node_name;
-    status.hardware_id =
-        node->template get_parameter("device").as_string() + ":" + std::to_string(node->template get_parameter("address").as_int());
+    status.hardware_id = node->template get_parameter("device").as_string() + ":" +
+                         std::to_string(node->template get_parameter("address").as_int());
 
     auto diag = imu.getDiagnostics();
 
