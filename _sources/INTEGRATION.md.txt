@@ -1,6 +1,6 @@
 # Advanced ROS 2 Integration Guide
 
-For enterprise-grade robotics, simply dropping a sensor read into a `rclcpp::TimerBase` is insufficient. Hardware sensors can disconnect, drivers can crash, and I2C buses can lock up.
+For robust robotics applications, simply dropping a sensor read into a `rclcpp::TimerBase` is insufficient. Hardware sensors can disconnect, drivers can crash, and I2C buses can lock up.
 
 This guide demonstrates how to integrate `libbno055-linux` using **ROS 2 Lifecycle Nodes (Managed Nodes)** and strict **Quality of Service (QoS)** profiles to build a truly fault-tolerant IMU driver.
 

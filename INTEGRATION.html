@@ -238,7 +238,7 @@
         <article role="main" id="furo-main-content">
           <section id="advanced-ros-2-integration-guide">
 <h1>Advanced ROS 2 Integration Guide<a class="headerlink" href="#advanced-ros-2-integration-guide" title="Link to this heading">¶</a></h1>
-<p>For enterprise-grade robotics, simply dropping a sensor read into a <code class="docutils literal notranslate"><span class="pre">rclcpp::TimerBase</span></code> is insufficient. Hardware sensors can disconnect, drivers can crash, and I2C buses can lock up.</p>
+<p>For robust robotics applications, simply dropping a sensor read into a <code class="docutils literal notranslate"><span class="pre">rclcpp::TimerBase</span></code> is insufficient. Hardware sensors can disconnect, drivers can crash, and I2C buses can lock up.</p>
 <p>This guide demonstrates how to integrate <code class="docutils literal notranslate"><span class="pre">libbno055-linux</span></code> using <strong>ROS 2 Lifecycle Nodes (Managed Nodes)</strong> and strict <strong>Quality of Service (QoS)</strong> profiles to build a truly fault-tolerant IMU driver.</p>
 <hr class="docutils" />
 <section id="the-lifecycle-node-state-machine-approach">

@@ -238,7 +238,7 @@
         <article role="main" id="furo-main-content">
           <section id="architecture-and-design-decisions">
 <h1>Architecture and Design Decisions<a class="headerlink" href="#architecture-and-design-decisions" title="Link to this heading">¶</a></h1>
-<p>The <code class="docutils literal notranslate"><span class="pre">libbno055-linux</span></code> library is not a simple port of an Arduino hobbyist script. It was engineered from the ground up for <strong>production-grade robotics</strong>, autonomous vehicles, and strict real-time control loops (such as ROS 2 hardware interfaces).</p>
+<p>The <code class="docutils literal notranslate"><span class="pre">libbno055-linux</span></code> library is not a simple port of an Arduino hobbyist script. It was engineered from the ground up for <strong>stable robotics applications</strong>, autonomous vehicles, and strict real-time control loops (such as ROS 2 hardware interfaces).</p>
 <p>This document outlines the core technical philosophies, low-level trade-offs, and architectural decisions that guarantee its reliability.</p>
 <hr class="docutils" />
 <section id="zero-allocation-exception-free-hot-paths">
@@ -347,7 +347,7 @@
 </section>
 <section id="managed-lifecycle-node-bno055-lifecycle-publisher-node">
 <h3>Managed Lifecycle Node (<code class="docutils literal notranslate"><span class="pre">bno055_lifecycle_publisher_node</span></code>)<a class="headerlink" href="#managed-lifecycle-node-bno055-lifecycle-publisher-node" title="Link to this heading">¶</a></h3>
-<p>For production robots requiring strict startup sequences and energy efficiency, the Lifecycle Node maps ROS 2 state transitions directly to BNO055 hardware states:</p>
+<p>For robots requiring strict startup sequences and energy efficiency, the Lifecycle Node maps ROS 2 state transitions directly to BNO055 hardware states:</p>
 <div class="highlight-mermaid notranslate"><div class="highlight"><pre><span></span>stateDiagram-v2
     [*] --&gt; Unconfigured
     Unconfigured --&gt; Inactive : on_configure()\n(Init Hardware, Enter Suspend)
