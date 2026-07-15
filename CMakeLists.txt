@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.10)
-project(libbno055_linux VERSION 1.2.1 LANGUAGES CXX)
+project(libbno055_linux VERSION 1.2.2 LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -75,7 +75,7 @@ if(rclcpp_FOUND AND sensor_msgs_FOUND AND diagnostic_msgs_FOUND AND std_srvs_FOU
     set(ament_cmake_flake8_FOUND TRUE)
     message(STATUS "ROS 2 environment detected. Building ROS 2 publisher node sample.")
     add_executable(bno055_publisher_node src/ros2/ros2_publisher_node.cpp)
-    target_link_libraries(bno055_publisher_node PRIVATE libbno055-linux)
+    target_link_libraries(bno055_publisher_node libbno055-linux)
     ament_target_dependencies(bno055_publisher_node rclcpp sensor_msgs diagnostic_msgs std_srvs)
 
     install(TARGETS bno055_publisher_node
@@ -86,7 +86,7 @@ if(rclcpp_FOUND AND sensor_msgs_FOUND AND diagnostic_msgs_FOUND AND std_srvs_FOU
         message(STATUS "ROS 2 Lifecycle detected. Building Lifecycle Node sample.")
         # Lifecycle Node (Managed Node)
         add_executable(bno055_lifecycle_publisher_node src/ros2/ros2_lifecycle_publisher_node.cpp)
-        target_link_libraries(bno055_lifecycle_publisher_node PRIVATE libbno055-linux)
+        target_link_libraries(bno055_lifecycle_publisher_node libbno055-linux)
         ament_target_dependencies(bno055_lifecycle_publisher_node rclcpp rclcpp_lifecycle sensor_msgs diagnostic_msgs std_srvs)
 
         install(TARGETS bno055_lifecycle_publisher_node
@@ -209,9 +209,9 @@ if(BUILD_TESTING AND NOT rclcpp_FOUND)
         target_compile_definitions(libbno055-linux_ros2_tests PRIVATE ROS2_NODE_TESTING)
         
         if(TARGET GTest::gtest_main)
-            target_link_libraries(libbno055-linux_ros2_tests PRIVATE libbno055-linux GTest::gtest_main)
+            target_link_libraries(libbno055-linux_ros2_tests libbno055-linux GTest::gtest_main)
         else()
-            target_link_libraries(libbno055-linux_ros2_tests PRIVATE libbno055-linux gtest_main)
+            target_link_libraries(libbno055-linux_ros2_tests libbno055-linux gtest_main)
         endif()
         ament_target_dependencies(libbno055-linux_ros2_tests rclcpp rclcpp_lifecycle sensor_msgs diagnostic_msgs std_srvs)
         gtest_discover_tests(libbno055-linux_ros2_tests)
