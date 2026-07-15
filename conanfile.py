@@ -7,7 +7,7 @@ class LibBNO055LinuxConan(ConanFile):
     license = "MIT"
     author = "lazytatzv"
     url = "https://github.com/lazytatzv/libbno055-linux"
-    description = "A robust, thread-safe C++17 library for the BNO055 sensor over I2C on Linux."
+    description = "C++17 BNO055 library for Linux and ROS 2."
     topics = ("bno055", "imu", "i2c", "linux", "robotics")
     settings = "os", "compiler", "build_type", "arch"
     options = {"shared": [True, False], "fPIC": [True, False]}
