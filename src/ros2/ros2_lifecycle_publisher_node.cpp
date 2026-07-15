@@ -48,9 +48,19 @@ public:
         double rate_hz = this->get_parameter("publish_rate").as_double();
         std::string calib_file = this->get_parameter("calibration_file").as_string();
 
-        RCLCPP_INFO(this->get_logger(), "Configuring BNO055: device=%s, address=0x%02X", device.c_str(), address);
+        std::string connection_type = this->get_parameter("connection_type").as_string();
 
-        imu_ = bno055lib::BNO055(address, device);
+        if (connection_type == "uart") {
+            bno055lib::BNO055::UARTConfig uart_config;
+            uart_config.port = this->get_parameter("uart_port").as_string();
+            uart_config.baudrate = this->get_parameter("uart_baudrate").as_int();
+            uart_config.timeout = this->get_parameter("uart_timeout").as_double();
+            RCLCPP_INFO(this->get_logger(), "Configuring BNO055 on UART %s (%d bps)", uart_config.port.c_str(), uart_config.baudrate);
+            imu_ = bno055lib::BNO055(uart_config);
+        } else {
+            RCLCPP_INFO(this->get_logger(), "Configuring BNO055 on I2C %s (address: 0x%02X)", device.c_str(), address);
+            imu_ = bno055lib::BNO055(address, device);
+        }
 
         // Redirect internal logs into ROS 2 RCLCPP
         bno055_ros2::setup_logger_redirection(this, imu_);
