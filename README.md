@@ -16,7 +16,8 @@ C++17 BNO055 library and ROS 2 nodes for Linux.
 
 - **Standalone C++17 library**: Link natively via CMake without ROS dependencies.
 - **Native I2C & UART Support**: Fully implements the BNO055 binary protocol for both I2C (`/dev/i2c-*`) and USB-to-UART (`/dev/ttyUSB*`) using fast, low-level POSIX APIs.
-- **Full Telemetry Parity**: Publishes standard IMU data, raw unfiltered data (`imu/raw`), gravity vectors (`imu/gravity`), and JSON calibration status (`imu/calib_status`).
+- **Full Telemetry Parity**: Publishes standard IMU data, raw unfiltered data (`imu/raw`), gravity vectors (`imu/gravity`), and calibration status via JSON (`~/calib_status`) and `diagnostic_msgs::msg::DiagnosticStatus` (`~/status`).
+- **Hardware Reset & Calibration Services**: Provides `~/reset` for software-triggered hardware resets and `~/calibration_request` for dynamic calibration state queries.
 - **ROS 2 nodes**: Provides high-performance standard and lifecycle node interfaces.
 - **Automatic Recovery**: Implements automatic recovery for `EIO` faults, clock stretching issues, and UART `BUS_OVER_RUN` errors.
 - **No heap allocations**: Avoids dynamic memory allocation in hot sensor readout paths.
