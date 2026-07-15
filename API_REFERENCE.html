@@ -351,6 +351,13 @@
 <li><p><em>Description</em>: Power-cycles the sensor, verifies the Chip ID, configures default Axis Maps and Unit settings, and spawns the background auto-recovery thread.</p></li>
 </ul>
 </li>
+<li><p><strong>bool reset()</strong></p>
+<ul>
+<li><p><em>Parameters</em>: None.</p></li>
+<li><p><em>Returns</em>: <code class="docutils literal notranslate"><span class="pre">bool</span></code>. <code class="docutils literal notranslate"><span class="pre">true</span></code> if reset and mode restoration succeeded; <code class="docutils literal notranslate"><span class="pre">false</span></code> on failure.</p></li>
+<li><p><em>Description</em>: Triggers a software hardware-reset using the <code class="docutils literal notranslate"><span class="pre">SYS_TRIGGER</span></code> register and completely re-initializes the device into the previously active operating mode. Useful for recovery from external hardware lockups.</p></li>
+</ul>
+</li>
 </ul>
 </section>
 <section id="configuration">

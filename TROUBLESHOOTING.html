@@ -264,6 +264,20 @@ Add your user to the <code class="docutils literal notranslate"><span class="pre
 <li><p>Reboot the Pi.</p></li>
 </ol>
 </section>
+<section id="hardware-lockups-or-unresponsive-sensor">
+<h2>Hardware Lockups or Unresponsive Sensor<a class="headerlink" href="#hardware-lockups-or-unresponsive-sensor" title="Link to this heading">¶</a></h2>
+<p><strong>Error</strong>: <code class="docutils literal notranslate"><span class="pre">[Error]</span> <span class="pre">I2C</span> <span class="pre">read</span> <span class="pre">failed</span> <span class="pre">continuously</span></code> or no data is being published, even after Auto-Recovery kicks in.
+<strong>Cause</strong>: The BNO055 internal microcontroller occasionally crashes or permanently locks the I2C/UART bus when exposed to severe voltage spikes or EM interference.
+<strong>Solution</strong>:</p>
+<ol class="arabic">
+<li><p>You can force a complete software hardware-reset without rebooting your computer by calling the <code class="docutils literal notranslate"><span class="pre">~/reset</span></code> service:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>ros2<span class="w"> </span>service<span class="w"> </span>call<span class="w"> </span>/bno055_publisher_node/reset<span class="w"> </span>std_srvs/srv/Trigger
+</pre></div>
+</div>
+</li>
+<li><p>This invokes the <code class="docutils literal notranslate"><span class="pre">SYS_TRIGGER</span></code> register, power cycles the internal logic, and restores your previous operating mode.</p></li>
+</ol>
+</section>
 <section id="sensor-calibration-is-lost-on-reboot">
 <h2>Sensor Calibration is Lost on Reboot<a class="headerlink" href="#sensor-calibration-is-lost-on-reboot" title="Link to this heading">¶</a></h2>
 <p><strong>Error</strong>: The heading (Yaw) drifts immediately after power-on.
@@ -386,6 +400,7 @@ ros2<span class="w"> </span>lifecycle<span class="w"> </span><span class="nb">se
 <li><a class="reference internal" href="#">Troubleshooting &amp; FAQ</a><ul>
 <li><a class="reference internal" href="#i2c-permission-denied">I2C Permission Denied</a></li>
 <li><a class="reference internal" href="#bno055-clock-stretching-i2c-lockups-on-raspberry-pi">BNO055 Clock Stretching (I2C Lockups on Raspberry Pi)</a></li>
+<li><a class="reference internal" href="#hardware-lockups-or-unresponsive-sensor">Hardware Lockups or Unresponsive Sensor</a></li>
 <li><a class="reference internal" href="#sensor-calibration-is-lost-on-reboot">Sensor Calibration is Lost on Reboot</a></li>
 <li><a class="reference internal" href="#why-isn-t-the-magnetometer-working-indoors">Why isn’t the Magnetometer working indoors?</a></li>
 <li><a class="reference internal" href="#ros-2-specific-troubleshooting">ROS 2 Specific Troubleshooting</a><ul>

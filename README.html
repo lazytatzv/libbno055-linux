@@ -357,6 +357,130 @@ Launch the high-performance zero-copy node (default) or the lifecycle node:</p>
 </li>
 </ol>
 </section>
+<section id="c-ros-2-api-reference">
+<h3>C. ROS 2 API Reference<a class="headerlink" href="#c-ros-2-api-reference" title="Link to this heading">¶</a></h3>
+<section id="published-topics">
+<h4>Published Topics<a class="headerlink" href="#published-topics" title="Link to this heading">¶</a></h4>
+<div class="table-wrapper colwidths-auto docutils container">
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head text-left"><p>Topic Name</p></th>
+<th class="head text-left"><p>Message Type</p></th>
+<th class="head text-left"><p>Description</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td class="text-left"><p><code class="docutils literal notranslate"><span class="pre">~/imu/data</span></code></p></td>
+<td class="text-left"><p><code class="docutils literal notranslate"><span class="pre">sensor_msgs/msg/Imu</span></code></p></td>
+<td class="text-left"><p>Fused IMU data (Orientation, Angular Velocity, Linear Acceleration).</p></td>
+</tr>
+<tr class="row-odd"><td class="text-left"><p><code class="docutils literal notranslate"><span class="pre">~/imu/raw</span></code></p></td>
+<td class="text-left"><p><code class="docutils literal notranslate"><span class="pre">sensor_msgs/msg/Imu</span></code></p></td>
+<td class="text-left"><p>Raw, unfiltered Accelerometer and Gyroscope data.</p></td>
+</tr>
+<tr class="row-even"><td class="text-left"><p><code class="docutils literal notranslate"><span class="pre">~/imu/mag</span></code></p></td>
+<td class="text-left"><p><code class="docutils literal notranslate"><span class="pre">sensor_msgs/msg/MagneticField</span></code></p></td>
+<td class="text-left"><p>Raw Magnetic Field data.</p></td>
+</tr>
+<tr class="row-odd"><td class="text-left"><p><code class="docutils literal notranslate"><span class="pre">~/imu/temp</span></code></p></td>
+<td class="text-left"><p><code class="docutils literal notranslate"><span class="pre">sensor_msgs/msg/Temperature</span></code></p></td>
+<td class="text-left"><p>Ambient Temperature data.</p></td>
+</tr>
+<tr class="row-even"><td class="text-left"><p><code class="docutils literal notranslate"><span class="pre">~/imu/gravity</span></code></p></td>
+<td class="text-left"><p><code class="docutils literal notranslate"><span class="pre">geometry_msgs/msg/Vector3</span></code></p></td>
+<td class="text-left"><p>Gravity vector (available in fusion modes).</p></td>
+</tr>
+<tr class="row-odd"><td class="text-left"><p><code class="docutils literal notranslate"><span class="pre">~/status</span></code></p></td>
+<td class="text-left"><p><code class="docutils literal notranslate"><span class="pre">diagnostic_msgs/msg/DiagnosticStatus</span></code></p></td>
+<td class="text-left"><p>Hardware and calibration status compatibility topic.</p></td>
+</tr>
+<tr class="row-even"><td class="text-left"><p><code class="docutils literal notranslate"><span class="pre">~/calib_status</span></code></p></td>
+<td class="text-left"><p><code class="docutils literal notranslate"><span class="pre">std_msgs/msg/String</span></code></p></td>
+<td class="text-left"><p>JSON formatted real-time calibration levels (Sys, Gyro, Accel, Mag).</p></td>
+</tr>
+<tr class="row-odd"><td class="text-left"><p><code class="docutils literal notranslate"><span class="pre">/diagnostics</span></code></p></td>
+<td class="text-left"><p><code class="docutils literal notranslate"><span class="pre">diagnostic_msgs/msg/DiagnosticArray</span></code></p></td>
+<td class="text-left"><p>Standard ROS 2 diagnostics stream (heartbeat, error rates, dropped reads).</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</section>
+<section id="services">
+<h4>Services<a class="headerlink" href="#services" title="Link to this heading">¶</a></h4>
+<div class="table-wrapper colwidths-auto docutils container">
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head text-left"><p>Service Name</p></th>
+<th class="head text-left"><p>Service Type</p></th>
+<th class="head text-left"><p>Description</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td class="text-left"><p><code class="docutils literal notranslate"><span class="pre">~/save_calibration</span></code></p></td>
+<td class="text-left"><p><code class="docutils literal notranslate"><span class="pre">std_srvs/srv/Trigger</span></code></p></td>
+<td class="text-left"><p>Saves the current calibration offsets to the file specified in parameters.</p></td>
+</tr>
+<tr class="row-odd"><td class="text-left"><p><code class="docutils literal notranslate"><span class="pre">~/calibration_request</span></code></p></td>
+<td class="text-left"><p><code class="docutils literal notranslate"><span class="pre">std_srvs/srv/Trigger</span></code></p></td>
+<td class="text-left"><p>Immediately responds with a JSON string of the current calibration status.</p></td>
+</tr>
+<tr class="row-even"><td class="text-left"><p><code class="docutils literal notranslate"><span class="pre">~/reset</span></code></p></td>
+<td class="text-left"><p><code class="docutils literal notranslate"><span class="pre">std_srvs/srv/Trigger</span></code></p></td>
+<td class="text-left"><p>Triggers a software hardware-reset of the BNO055 and reinitializes it automatically.</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</section>
+<section id="core-parameters">
+<h4>Core Parameters<a class="headerlink" href="#core-parameters" title="Link to this heading">¶</a></h4>
+<div class="table-wrapper colwidths-auto docutils container">
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head text-left"><p>Parameter</p></th>
+<th class="head text-left"><p>Default</p></th>
+<th class="head text-left"><p>Description</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td class="text-left"><p><code class="docutils literal notranslate"><span class="pre">connection_type</span></code></p></td>
+<td class="text-left"><p><code class="docutils literal notranslate"><span class="pre">&quot;i2c&quot;</span></code></p></td>
+<td class="text-left"><p><code class="docutils literal notranslate"><span class="pre">&quot;i2c&quot;</span></code> or <code class="docutils literal notranslate"><span class="pre">&quot;uart&quot;</span></code>. Determines the hardware communication interface.</p></td>
+</tr>
+<tr class="row-odd"><td class="text-left"><p><code class="docutils literal notranslate"><span class="pre">device</span></code></p></td>
+<td class="text-left"><p><code class="docutils literal notranslate"><span class="pre">&quot;/dev/i2c-1&quot;</span></code></p></td>
+<td class="text-left"><p>Path to the I2C device node (used if <code class="docutils literal notranslate"><span class="pre">connection_type</span></code> is <code class="docutils literal notranslate"><span class="pre">&quot;i2c&quot;</span></code>).</p></td>
+</tr>
+<tr class="row-even"><td class="text-left"><p><code class="docutils literal notranslate"><span class="pre">address</span></code></p></td>
+<td class="text-left"><p><code class="docutils literal notranslate"><span class="pre">40</span></code></p></td>
+<td class="text-left"><p>I2C address of the sensor (<code class="docutils literal notranslate"><span class="pre">40</span></code> for 0x28, <code class="docutils literal notranslate"><span class="pre">41</span></code> for 0x29).</p></td>
+</tr>
+<tr class="row-odd"><td class="text-left"><p><code class="docutils literal notranslate"><span class="pre">uart_port</span></code></p></td>
+<td class="text-left"><p><code class="docutils literal notranslate"><span class="pre">&quot;/dev/ttyUSB0&quot;</span></code></p></td>
+<td class="text-left"><p>Path to the UART device node (used if <code class="docutils literal notranslate"><span class="pre">connection_type</span></code> is <code class="docutils literal notranslate"><span class="pre">&quot;uart&quot;</span></code>).</p></td>
+</tr>
+<tr class="row-even"><td class="text-left"><p><code class="docutils literal notranslate"><span class="pre">uart_baudrate</span></code></p></td>
+<td class="text-left"><p><code class="docutils literal notranslate"><span class="pre">115200</span></code></p></td>
+<td class="text-left"><p>Baudrate for the UART connection.</p></td>
+</tr>
+<tr class="row-odd"><td class="text-left"><p><code class="docutils literal notranslate"><span class="pre">operation_mode</span></code></p></td>
+<td class="text-left"><p><code class="docutils literal notranslate"><span class="pre">&quot;ndof&quot;</span></code></p></td>
+<td class="text-left"><p>Sensor fusion mode (<code class="docutils literal notranslate"><span class="pre">&quot;ndof&quot;</span></code>, <code class="docutils literal notranslate"><span class="pre">&quot;imu_plus&quot;</span></code>, <code class="docutils literal notranslate"><span class="pre">&quot;compass&quot;</span></code>, etc.).</p></td>
+</tr>
+<tr class="row-even"><td class="text-left"><p><code class="docutils literal notranslate"><span class="pre">publish_rate</span></code></p></td>
+<td class="text-left"><p><code class="docutils literal notranslate"><span class="pre">100.0</span></code></p></td>
+<td class="text-left"><p>Publishing frequency in Hz.</p></td>
+</tr>
+<tr class="row-odd"><td class="text-left"><p><code class="docutils literal notranslate"><span class="pre">frame_id</span></code></p></td>
+<td class="text-left"><p><code class="docutils literal notranslate"><span class="pre">&quot;imu_link&quot;</span></code></p></td>
+<td class="text-left"><p>TF frame ID attached to message headers.</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</section>
+</section>
 </section>
 <hr class="docutils" />
 <section id="detailed-project-documentation">
@@ -489,6 +613,12 @@ Launch the high-performance zero-copy node (default) or the lifecycle node:</p>
 <li><a class="reference internal" href="#quick-start">Quick Start</a><ul>
 <li><a class="reference internal" href="#a-standalone-c-no-ros">A. Standalone C++ (No-ROS)</a></li>
 <li><a class="reference internal" href="#b-ros-2-colcon-workspace">B. ROS 2 (colcon workspace)</a></li>
+<li><a class="reference internal" href="#c-ros-2-api-reference">C. ROS 2 API Reference</a><ul>
+<li><a class="reference internal" href="#published-topics">Published Topics</a></li>
+<li><a class="reference internal" href="#services">Services</a></li>
+<li><a class="reference internal" href="#core-parameters">Core Parameters</a></li>
+</ul>
+</li>
 </ul>
 </li>
 <li><a class="reference internal" href="#detailed-project-documentation">Detailed Project Documentation</a></li>

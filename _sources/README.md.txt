@@ -116,6 +116,39 @@ C++17 BNO055 library and ROS 2 nodes for Linux.
    ros2 launch libbno055_linux bno055_launch.py
    ```
 
+### C. ROS 2 API Reference
+
+#### Published Topics
+| Topic Name | Message Type | Description |
+| :--- | :--- | :--- |
+| `~/imu/data` | `sensor_msgs/msg/Imu` | Fused IMU data (Orientation, Angular Velocity, Linear Acceleration). |
+| `~/imu/raw` | `sensor_msgs/msg/Imu` | Raw, unfiltered Accelerometer and Gyroscope data. |
+| `~/imu/mag` | `sensor_msgs/msg/MagneticField` | Raw Magnetic Field data. |
+| `~/imu/temp` | `sensor_msgs/msg/Temperature` | Ambient Temperature data. |
+| `~/imu/gravity` | `geometry_msgs/msg/Vector3` | Gravity vector (available in fusion modes). |
+| `~/status` | `diagnostic_msgs/msg/DiagnosticStatus` | Hardware and calibration status compatibility topic. |
+| `~/calib_status` | `std_msgs/msg/String` | JSON formatted real-time calibration levels (Sys, Gyro, Accel, Mag). |
+| `/diagnostics` | `diagnostic_msgs/msg/DiagnosticArray` | Standard ROS 2 diagnostics stream (heartbeat, error rates, dropped reads). |
+
+#### Services
+| Service Name | Service Type | Description |
+| :--- | :--- | :--- |
+| `~/save_calibration` | `std_srvs/srv/Trigger` | Saves the current calibration offsets to the file specified in parameters. |
+| `~/calibration_request` | `std_srvs/srv/Trigger` | Immediately responds with a JSON string of the current calibration status. |
+| `~/reset` | `std_srvs/srv/Trigger` | Triggers a software hardware-reset of the BNO055 and reinitializes it automatically. |
+
+#### Core Parameters
+| Parameter | Default | Description |
+| :--- | :--- | :--- |
+| `connection_type` | `"i2c"` | `"i2c"` or `"uart"`. Determines the hardware communication interface. |
+| `device` | `"/dev/i2c-1"` | Path to the I2C device node (used if `connection_type` is `"i2c"`). |
+| `address` | `40` | I2C address of the sensor (`40` for 0x28, `41` for 0x29). |
+| `uart_port` | `"/dev/ttyUSB0"` | Path to the UART device node (used if `connection_type` is `"uart"`). |
+| `uart_baudrate`| `115200` | Baudrate for the UART connection. |
+| `operation_mode` | `"ndof"` | Sensor fusion mode (`"ndof"`, `"imu_plus"`, `"compass"`, etc.). |
+| `publish_rate` | `100.0` | Publishing frequency in Hz. |
+| `frame_id` | `"imu_link"` | TF frame ID attached to message headers. |
+
 ---
 
 ## Detailed Project Documentation
