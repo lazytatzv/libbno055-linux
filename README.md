@@ -15,7 +15,7 @@ A robust, thread-safe, and dependency-free C++17 library for the BNO055 sensor o
 1. **A Pure, Standalone C++17 Library**: Zero ROS dependencies. Link it natively in your embedded Linux applications (Raspberry Pi, Jetson) using standard CMake.
 2. **A High-Performance ROS 2 Node**: Out-of-the-box ROS 2 wrappers built on top of the library, featuring zero-copy intra-process communication and Lifecycle Node management.
 
-Designed for robotic control systems, autonomous vehicles, and production deployments that demand high reliability, automatic error recovery, and deterministic (`noexcept`) execution.
+Designed for robotic control systems, autonomous vehicles, and practical applications that demand high reliability, automatic error recovery, and deterministic (`noexcept`) execution.
 
 ---
 
