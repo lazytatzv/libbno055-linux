@@ -23,7 +23,7 @@ void printBarIndicator(const std::string& label, double val_deg) {
     bar[center] = '|';
     bar[pos] = '*';
 
-    std::cout << label << " [" << bar << "] " << std::fixed << std::setprecision(2) << std::setw(7) << val_deg << " deg"
+    std::cout << label << " [" << bar << "] " << std::fixed << std::setprecision(2) << std::setw(OUTPUT_WIDTH) << val_deg << " deg"
               << "\n";
 }
 
@@ -52,7 +52,11 @@ int main(int argc, char* argv[]) {
     }
 
     std::cout << "Initializing BNO055 IMU on " << device << " (Mode: " << mode_str << ")..." << "\n";
-    bno055lib::BNO055 imu(static_cast<uint8_t>(0x28), device);
+    constexpr uint8_t DEFAULT_ADDR = 0x28;
+    constexpr uint8_t DEFAULT_ADDR = 0x28;
+    constexpr int OUTPUT_WIDTH = 7;
+    constexpr int LOOP_DELAY_MS = 100;
+    bno055lib::BNO055 imu(DEFAULT_ADDR, device);
 
     // Use default logger (standard error output)
     if (!imu.begin(mode)) {
@@ -90,24 +94,24 @@ int main(int argc, char* argv[]) {
             // Visual indicators for tilt (Roll and Pitch)
             printBarIndicator("Roll  (X)", euler_deg.x);
             printBarIndicator("Pitch (Y)", euler_deg.y);
-            std::cout << "Yaw   (Z)  " << std::fixed << std::setprecision(2) << std::setw(7) << euler_deg.z << " deg"
+            std::cout << "Yaw   (Z)  " << std::fixed << std::setprecision(2) << std::setw(OUTPUT_WIDTH) << euler_deg.z << " deg"
                       << "\n";
             std::cout << "-------------------------------------------------------------" << "\n";
 
-            std::cout << "Accelerometer (m/s^2):       X=" << std::setw(7) << accel.x << " Y=" << std::setw(7)
-                      << accel.y << " Z=" << std::setw(7) << accel.z << "\n";
-            std::cout << "Magnetometer (uT):           X=" << std::setw(7) << mag.x << " Y=" << std::setw(7) << mag.y
-                      << " Z=" << std::setw(7) << mag.z << "\n";
-            std::cout << "Gyroscope (rad/s):           X=" << std::setw(7) << gyro.x << " Y=" << std::setw(7) << gyro.y
-                      << " Z=" << std::setw(7) << gyro.z << "\n";
-            std::cout << "Euler Angles (rad):          Roll=" << std::setw(7) << euler.x << " Pitch=" << std::setw(7)
-                      << euler.y << " Yaw=" << std::setw(7) << euler.z << "\n";
-            std::cout << "Linear Acceleration (m/s^2):  X=" << std::setw(7) << linear.x << " Y=" << std::setw(7)
-                      << linear.y << " Z=" << std::setw(7) << linear.z << "\n";
-            std::cout << "Gravity Vector (m/s^2):       X=" << std::setw(7) << gravity.x << " Y=" << std::setw(7)
-                      << gravity.y << " Z=" << std::setw(7) << gravity.z << "\n";
-            std::cout << "Quaternion:                  W=" << std::setw(7) << quat.w << " X=" << std::setw(7) << quat.x
-                      << " Y=" << std::setw(7) << quat.y << " Z=" << std::setw(7) << quat.z << "\n";
+            std::cout << "Accelerometer (m/s^2):       X=" << std::setw(OUTPUT_WIDTH) << accel.x << " Y=" << std::setw(OUTPUT_WIDTH)
+                      << accel.y << " Z=" << std::setw(OUTPUT_WIDTH) << accel.z << "\n";
+            std::cout << "Magnetometer (uT):           X=" << std::setw(OUTPUT_WIDTH) << mag.x << " Y=" << std::setw(OUTPUT_WIDTH) << mag.y
+                      << " Z=" << std::setw(OUTPUT_WIDTH) << mag.z << "\n";
+            std::cout << "Gyroscope (rad/s):           X=" << std::setw(OUTPUT_WIDTH) << gyro.x << " Y=" << std::setw(OUTPUT_WIDTH) << gyro.y
+                      << " Z=" << std::setw(OUTPUT_WIDTH) << gyro.z << "\n";
+            std::cout << "Euler Angles (rad):          Roll=" << std::setw(OUTPUT_WIDTH) << euler.x << " Pitch=" << std::setw(OUTPUT_WIDTH)
+                      << euler.y << " Yaw=" << std::setw(OUTPUT_WIDTH) << euler.z << "\n";
+            std::cout << "Linear Acceleration (m/s^2):  X=" << std::setw(OUTPUT_WIDTH) << linear.x << " Y=" << std::setw(OUTPUT_WIDTH)
+                      << linear.y << " Z=" << std::setw(OUTPUT_WIDTH) << linear.z << "\n";
+            std::cout << "Gravity Vector (m/s^2):       X=" << std::setw(OUTPUT_WIDTH) << gravity.x << " Y=" << std::setw(OUTPUT_WIDTH)
+                      << gravity.y << " Z=" << std::setw(OUTPUT_WIDTH) << gravity.z << "\n";
+            std::cout << "Quaternion:                  W=" << std::setw(OUTPUT_WIDTH) << quat.w << " X=" << std::setw(OUTPUT_WIDTH) << quat.x
+                      << " Y=" << std::setw(OUTPUT_WIDTH) << quat.y << " Z=" << std::setw(OUTPUT_WIDTH) << quat.z << "\n";
             std::cout << "Temperature (C):             " << (int)temp << "\n";
 
         } catch (const bno055lib::IMUError& e) {
@@ -115,7 +119,7 @@ int main(int argc, char* argv[]) {
             std::cerr << "Communication error: " << e.what() << "\n";
         }
 
-        std::this_thread::sleep_for(std::chrono::milliseconds(static_cast<int>(100)));  // 10Hz
+        std::this_thread::sleep_for(std::chrono::milliseconds(LOOP_DELAY_MS));  // 10Hz
     }
 
     return 0;

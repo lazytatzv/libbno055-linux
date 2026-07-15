@@ -173,7 +173,12 @@ if(BUILD_TESTING AND NOT rclcpp_FOUND)
           GIT_TAG        release-1.12.1
         )
         set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
+        
+        # Disable clang-tidy for third-party GoogleTest to prevent false-positive errors
+        set(BACKUP_CLANG_TIDY "${CMAKE_CXX_CLANG_TIDY}")
+        set(CMAKE_CXX_CLANG_TIDY "")
         FetchContent_MakeAvailable(googletest)
+        set(CMAKE_CXX_CLANG_TIDY "${BACKUP_CLANG_TIDY}")
     endif()
 
     enable_testing()
