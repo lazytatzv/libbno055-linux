@@ -76,13 +76,8 @@ if(rclcpp_FOUND AND sensor_msgs_FOUND AND diagnostic_msgs_FOUND AND std_srvs_FOU
     add_executable(bno055_publisher_node src/ros2/ros2_publisher_node.cpp)
     target_link_libraries(bno055_publisher_node PRIVATE libbno055-linux)
     target_link_libraries(bno055_publisher_node PRIVATE rclcpp::rclcpp sensor_msgs::sensor_msgs diagnostic_msgs::diagnostic_msgs std_srvs::std_srvs)
-    
-    # High-Performance Node (Zero-copy, Intra-process)
-    add_executable(bno055_perf_publisher_node src/ros2/ros2_perf_publisher_node.cpp)
-    target_link_libraries(bno055_perf_publisher_node PRIVATE libbno055-linux)
-    target_link_libraries(bno055_perf_publisher_node PRIVATE rclcpp::rclcpp sensor_msgs::sensor_msgs diagnostic_msgs::diagnostic_msgs std_srvs::std_srvs)
 
-    install(TARGETS bno055_publisher_node bno055_perf_publisher_node
+    install(TARGETS bno055_publisher_node
         DESTINATION lib/${PROJECT_NAME}
     )
 
