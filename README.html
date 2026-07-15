@@ -246,20 +246,16 @@
 <img alt="CI" src="https://github.com/lazytatzv/libbno055-linux/actions/workflows/ci.yml/badge.svg" />
 <img alt="License" src="https://img.shields.io/badge/License-MIT-green.svg" /></p>
 <p><strong><a class="reference external" href="https://lazytatzv.github.io/libbno055-linux/">View the Official Web Documentation (API, Architecture, Integration Guides)</a></strong></p>
-<p>Provides a C++17 library for the BNO055 sensor over I2C on Linux, along with ROS 2 wrappers.</p>
-<ul class="simple">
-<li><p><strong>C++ Library</strong>: Can be linked natively via CMake without ROS dependencies.</p></li>
-<li><p><strong>ROS 2 Node</strong>: Provides a ROS 2 interface utilizing intra-process communication.</p></li>
-</ul>
-<hr class="docutils" />
+<p>C++17 BNO055 library for Linux and ROS 2.</p>
 <section id="features">
 <h2>Features<a class="headerlink" href="#features" title="Link to this heading">¶</a></h2>
 <ul class="simple">
-<li><p><strong>I2C Error Recovery</strong>: Implements automatic recovery for <code class="docutils literal notranslate"><span class="pre">EIO</span></code> faults (e.g., clock stretching issues on Raspberry Pi).</p></li>
-<li><p><strong>noexcept APIs</strong>: Provides <code class="docutils literal notranslate"><span class="pre">noexcept</span></code> methods returning <code class="docutils literal notranslate"><span class="pre">std::optional</span></code> to avoid exception unwinding.</p></li>
-<li><p><strong>Zero-Allocation</strong>: Avoids heap allocations in sensor readout loops.</p></li>
-<li><p><strong>Zero-Copy ROS 2</strong>: Implements zero-copy memory transport (<code class="docutils literal notranslate"><span class="pre">std::unique_ptr</span></code>) for ROS 2 publishers.</p></li>
-<li><p><strong>I2C Mocking</strong>: Provides built-in I2C mocking for compilation and testing on macOS/Windows.</p></li>
+<li><p><strong>Standalone C++17 library</strong>: Link natively via CMake without ROS dependencies.</p></li>
+<li><p><strong>ROS 2 wrapper</strong>: Provides a ROS 2 interface.</p></li>
+<li><p><strong>Automatic I2C recovery</strong>: Implements automatic recovery for <code class="docutils literal notranslate"><span class="pre">EIO</span></code> faults (e.g., clock stretching issues on Raspberry Pi).</p></li>
+<li><p><strong>Zero-allocation API</strong>: No heap allocations in hot sensor readout paths.</p></li>
+<li><p><strong>Zero-copy publishers</strong>: Implements zero-copy memory transport (<code class="docutils literal notranslate"><span class="pre">std::unique_ptr</span></code>) for ROS 2 publishers.</p></li>
+<li><p><strong>Built-in I2C mocking</strong>: Provides built-in I2C mocking for compilation and testing on macOS/Windows.</p></li>
 </ul>
 </section>
 <hr class="docutils" />
