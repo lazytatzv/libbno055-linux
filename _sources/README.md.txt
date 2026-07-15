@@ -52,15 +52,30 @@ Provides a C++17 library for the BNO055 sensor over I2C on Linux, along with ROS
 
        // Initialize in NDOF fusion mode
        if (!imu.begin(bno055lib::OpMode::NDOF)) {
-           std::cerr << "Sensor initialization failed!" << std::endl;
+           std::cerr << "Sensor initialization failed!\n";
            return 1;
        }
 
        for (int i = 0; i < 10; ++i) {
-           auto q = imu.getQuaternionNoexcept();
-            if (q) {
-               std::cout << "w: " << q->w << " x: " << q->x << " y: " << q->y << " z: " << q->z << "\n";
-            }
+           // Orientation (Euler Angles converted from Quaternion)
+           if (auto q = imu.getQuaternionNoexcept()) {
+               auto euler = bno055lib::toEulerDegrees(*q);
+               std::cout << "Euler (deg): Roll=" << euler.x << " Pitch=" << euler.y << " Yaw=" << euler.z << "\n";
+           }
+
+           // Acceleration
+           if (auto acc = imu.getAccelerometerNoexcept()) {
+               std::cout << "Accel (m/s^2): X=" << acc->x << " Y=" << acc->y << " Z=" << acc->z << "\n";
+           }
+
+           // Calibration Status
+           auto calib = imu.getCalibrationStatus();
+           std::cout << "Calibration: SYS=" << static_cast<int>(calib.sys) 
+                     << " GYRO=" << static_cast<int>(calib.gyro) << "\n";
+
+           // Temperature
+           std::cout << "Temperature: " << static_cast<int>(imu.getTemperature()) << " C\n\n";
+
            std::this_thread::sleep_for(std::chrono::milliseconds(100));
        }
        return 0;
