@@ -10,12 +10,12 @@
 
 **[View the Official Web Documentation (API, Architecture, Integration Guides)](https://lazytatzv.github.io/libbno055-linux/)**
 
-C++17 BNO055 library for Linux and ROS 2.
+C++17 BNO055 library and ROS 2 nodes for Linux.
 
 ## Features
 
 - **Standalone C++17 library**: Link natively via CMake without ROS dependencies.
-- **ROS 2 wrapper**: Provides a ROS 2 interface.
+- **ROS 2 nodes**: Provides a ROS 2 interface.
 - **Automatic I2C recovery**: Implements automatic recovery for `EIO` faults (e.g., clock stretching issues on Raspberry Pi).
 - **No heap allocations**: Avoids dynamic memory allocation in hot sensor readout paths.
 - **Zero-copy publishers**: Implements zero-copy memory transport (`std::unique_ptr`) for ROS 2 publishers.

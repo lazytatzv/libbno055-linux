@@ -7,7 +7,7 @@ class LibBNO055LinuxConan(ConanFile):
     license = "MIT"
     author = "lazytatzv"
     url = "https://github.com/lazytatzv/libbno055-linux"
-    description = "C++17 BNO055 library for Linux and ROS 2."
+    description = "C++17 BNO055 library and ROS 2 nodes for Linux."
     topics = ("bno055", "imu", "i2c", "linux", "robotics")
     settings = "os", "compiler", "build_type", "arch"
     options = {"shared": [True, False], "fPIC": [True, False]}
