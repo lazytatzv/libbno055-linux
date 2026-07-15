@@ -17,7 +17,7 @@ C++17 BNO055 library for Linux and ROS 2.
 - **Standalone C++17 library**: Link natively via CMake without ROS dependencies.
 - **ROS 2 wrapper**: Provides a ROS 2 interface.
 - **Automatic I2C recovery**: Implements automatic recovery for `EIO` faults (e.g., clock stretching issues on Raspberry Pi).
-- **Zero-allocation API**: No heap allocations in hot sensor readout paths.
+- **No heap allocations**: Avoids dynamic memory allocation in hot sensor readout paths.
 - **Zero-copy publishers**: Implements zero-copy memory transport (`std::unique_ptr`) for ROS 2 publishers.
 - **Built-in I2C mocking**: Provides built-in I2C mocking for compilation and testing on macOS/Windows.
 
