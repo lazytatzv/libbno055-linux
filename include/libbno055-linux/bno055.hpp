@@ -31,17 +31,29 @@ struct Vector3 {
     double z{0.0};
 
     double operator[](size_t index) const {
-        if (index == 0) return x;
-        if (index == 1) return y;
-        if (index == 2) return z;
-        throw std::out_of_range("Vector3 index out of range");
+        switch (index) {
+            case 0:
+                return x;
+            case 1:
+                return y;
+            case 2:
+                return z;
+            default:
+                throw std::out_of_range("Vector3 index out of range");
+        }
     }
 
     double& operator[](size_t index) {
-        if (index == 0) return x;
-        if (index == 1) return y;
-        if (index == 2) return z;
-        throw std::out_of_range("Vector3 index out of range");
+        switch (index) {
+            case 0:
+                return x;
+            case 1:
+                return y;
+            case 2:
+                return z;
+            default:
+                throw std::out_of_range("Vector3 index out of range");
+        }
     }
 };
 
