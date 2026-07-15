@@ -23,6 +23,10 @@ template <typename T>
 inline void declare_common_parameters(T* node) {
     node->template declare_parameter<std::string>("device", "/dev/i2c-1");
     node->template declare_parameter<int>("address", 0x28);
+    node->template declare_parameter<std::string>("connection_type", "i2c");
+    node->template declare_parameter<std::string>("uart_port", "/dev/ttyUSB0");
+    node->template declare_parameter<int>("uart_baudrate", 115200);
+    node->template declare_parameter<double>("uart_timeout", 0.1);
     node->template declare_parameter<std::string>("frame_id", "imu_link");
     node->template declare_parameter<double>("publish_rate", 50.0);
     node->template declare_parameter<std::string>("qos_reliability", "best_effort");

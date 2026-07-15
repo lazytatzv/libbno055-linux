@@ -143,10 +143,20 @@ enum class AxisMapSign : uint8_t {
 
 class BNO055 {
 public:
-    // Constructor
-    // i2c_address: Default BNO055_ADDRESS_A is 0x28. Alternate is 0x29.
+    // UART Configuration
+    struct UARTConfig {
+        std::string port{"/dev/ttyUSB0"};
+        uint32_t baudrate{115200};
+        double timeout{0.1};
+    };
+
+    // Constructors
+    // I2C mode: Default BNO055_ADDRESS_A is 0x28. Alternate is 0x29.
     // i2c_device: Linux I2C device node.
     explicit BNO055(uint8_t i2c_address = 0x28, std::string_view i2c_device = "/dev/i2c-1");
+
+    // UART mode: Connect using a USB-to-UART bridge
+    explicit BNO055(const UARTConfig& uart_config);
 
     // Destructor
     ~BNO055();
