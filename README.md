@@ -10,22 +10,20 @@
 
 **[View the Official Web Documentation (API, Architecture, Integration Guides)](https://lazytatzv.github.io/libbno055-linux/)**
 
-A thread-safe, dependency-free C++17 library for the BNO055 sensor over I2C on Linux. It provides both a standalone library and ROS 2 nodes.
+Provides a C++17 library for the BNO055 sensor over I2C on Linux, along with ROS 2 wrappers.
 
-1. **Standalone C++17 Library**: Zero ROS dependencies. Link it natively in embedded Linux applications (Raspberry Pi, Jetson) using standard CMake.
-2. **ROS 2 Nodes**: Provides ROS 2 nodes with zero-copy intra-process communication and Lifecycle Node management.
-
-Designed for control systems that require automatic I2C error recovery and deterministic (`noexcept`) execution.
+- **C++ Library**: Can be linked natively via CMake without ROS dependencies.
+- **ROS 2 Node**: Provides a ROS 2 interface utilizing intra-process communication.
 
 ---
 
-## Key Features
+## Features
 
-*   **Library + ROS 2**: Cleanly separated hardware logic and ROS interfaces. Use it as a standalone C++ library (`-lbno055-linux`) or launch it as a ROS 2 node.
-*   **I2C Error Recovery**: BNO055 is known for I2C lockups on Raspberry Pi due to clock stretching. This library catches `EIO` faults, flushes the bus, and recovers sensor state automatically.
-*   **Zero-Copy & noexcept APIs**: Zero heap allocations in hot paths. The ROS 2 node uses `std::unique_ptr` publishing and `noexcept` APIs for zero-copy memory transport and deterministic execution.
-*   **C++17 & Dependency-Free**: Pure C++17 implementation. No external dependencies or Arduino wrappers.
-*   **Cross-Platform Testing**: Built-in I2C Mocking allows compilation and testing natively on macOS/Windows without physical hardware.
+- **I2C Error Recovery**: Implements automatic recovery for `EIO` faults (e.g., clock stretching issues on Raspberry Pi).
+- **noexcept APIs**: Provides `noexcept` methods returning `std::optional` to avoid exception unwinding.
+- **Zero-Allocation**: Avoids heap allocations in sensor readout loops.
+- **Zero-Copy ROS 2**: Implements zero-copy memory transport (`std::unique_ptr`) for ROS 2 publishers.
+- **I2C Mocking**: Provides built-in I2C mocking for compilation and testing on macOS/Windows.
 
 ---
 
