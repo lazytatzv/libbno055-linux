@@ -8,18 +8,22 @@
 ![CI](https://github.com/lazytatzv/libbno055-linux/actions/workflows/ci.yml/badge.svg)
 ![License](https://img.shields.io/badge/License-MIT-green.svg)
 
-A robust, thread-safe, and dependency-free C++17 library for the BNO055 sensor over I2C on Linux.
-
 **[View the Official Web Documentation (API, Architecture, Integration Guides)](https://lazytatzv.github.io/libbno055-linux/)**
 
-Designed for robotic control systems, autonomous vehicles, and ROS 2 deployments that demand high reliability, automatic error recovery, and deterministic (`noexcept`) execution.
+A robust, thread-safe, and dependency-free C++17 library for the BNO055 sensor over I2C on Linux—designed from the ground up to serve a dual purpose:
+
+1. **A Pure, Standalone C++17 Library**: Zero ROS dependencies. Link it natively in your embedded Linux applications (Raspberry Pi, Jetson) using standard CMake.
+2. **A High-Performance ROS 2 Node**: Out-of-the-box ROS 2 wrappers built on top of the library, featuring zero-copy intra-process communication and Lifecycle Node management.
+
+Designed for robotic control systems, autonomous vehicles, and production deployments that demand high reliability, automatic error recovery, and deterministic (`noexcept`) execution.
 
 ---
 
 ## Key Features
 
+*   **Dual Architecture (Library + ROS 2)**: Cleanly separated hardware logic and ROS interfaces. Use it as a pure C++ library (`-lbno055-linux`) or launch it as a native ROS 2 node.
 *   **Self-Healing (Auto-Recovery)**: BNO055 is notorious for I2C lockups on Raspberry Pi due to clock stretching. This library transparently catches `EIO` faults, flushes the bus, and recovers sensor state automatically without crashing your application.
-*   **Real-Time Safe**: Zero heap allocations in hot paths and exception-free (`noexcept`) APIs guarantee bounded, zero-jitter execution time for high-frequency control loops.
+*   **Real-Time Safe & Zero-Copy**: Zero heap allocations in hot paths. The ROS 2 node uses `std::unique_ptr` publishing and `noexcept` APIs, guaranteeing zero-copy memory transport and zero-jitter execution for high-frequency control loops.
 *   **Modern & Lightweight**: Pure C++17 implementation. Zero external dependencies, no Arduino wrappers.
 *   **CI/CD Ready**: Cross-platform compilation support with built-in I2C Mocking. Compile and test natively on macOS/Windows without physical hardware.
 
