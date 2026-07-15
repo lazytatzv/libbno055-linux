@@ -38,11 +38,14 @@ public:
         // Redirect library internal logs into ROS 2 RCLCPP logger
         bno055_ros2::setup_logger_redirection(this, *imu_);
 
-        // 6-axis Fusion (IMUPlus) is recommended for indoor robotics to avoid magnetic yaw drift.
-        if (!imu_->begin(bno055lib::OpMode::IMUPlus)) {
+        auto mode = bno055_ros2::parse_op_mode(this->get_parameter("operation_mode").as_string());
+        if (!imu_->begin(mode)) {
             RCLCPP_FATAL(this->get_logger(), "Failed to initialize BNO055 sensor!");
             throw std::runtime_error("Sensor initialization failed");
         }
+
+        // Apply advanced hardware configurations
+        bno055_ros2::apply_advanced_features(this, *imu_);
 
         // Load calibration file if specified
         if (!calib_file.empty()) {

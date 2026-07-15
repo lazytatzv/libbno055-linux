@@ -29,6 +29,10 @@ inline void declare_common_parameters(T* node) {
     node->template declare_parameter<std::vector<double>>("angular_velocity_covariance", std::vector<double>(9, 0.0));
     node->template declare_parameter<std::vector<double>>("linear_acceleration_covariance",
                                                           std::vector<double>(9, 0.0));
+    node->template declare_parameter<std::string>("operation_mode", "imu_plus");
+    node->template declare_parameter<std::string>("axis_map_config", "p1");
+    node->template declare_parameter<std::string>("axis_map_sign", "p1");
+    node->template declare_parameter<bool>("use_external_crystal", true);
 }
 
 // Redirect logger callback
@@ -125,6 +129,54 @@ inline diagnostic_msgs::msg::DiagnosticArray::UniquePtr build_diagnostics(T* nod
 
     diag_arr->status.push_back(status);
     return diag_arr;
+}
+
+inline bno055lib::OpMode parse_op_mode(const std::string& mode_str) {
+    if (mode_str == "config") return bno055lib::OpMode::Config;
+    if (mode_str == "acc_only") return bno055lib::OpMode::AccOnly;
+    if (mode_str == "mag_only") return bno055lib::OpMode::MagOnly;
+    if (mode_str == "gyro_only") return bno055lib::OpMode::GyroOnly;
+    if (mode_str == "acc_mag") return bno055lib::OpMode::AccMag;
+    if (mode_str == "acc_gyro") return bno055lib::OpMode::AccGyro;
+    if (mode_str == "mag_gyro") return bno055lib::OpMode::MagGyro;
+    if (mode_str == "amg") return bno055lib::OpMode::AMG;
+    if (mode_str == "imu_plus") return bno055lib::OpMode::IMUPlus;
+    if (mode_str == "compass") return bno055lib::OpMode::Compass;
+    if (mode_str == "m4g") return bno055lib::OpMode::M4G;
+    if (mode_str == "ndof_fmc_off") return bno055lib::OpMode::NDOF_FMC_Off;
+    if (mode_str == "ndof") return bno055lib::OpMode::NDOF;
+    return bno055lib::OpMode::IMUPlus;
+}
+
+inline bno055lib::AxisMapConfig parse_axis_map_config(const std::string& str) {
+    if (str == "p0") return bno055lib::AxisMapConfig::P0;
+    if (str == "p1") return bno055lib::AxisMapConfig::P1;
+    if (str == "p2") return bno055lib::AxisMapConfig::P2;
+    if (str == "p3") return bno055lib::AxisMapConfig::P3;
+    if (str == "p4") return bno055lib::AxisMapConfig::P4;
+    if (str == "p5") return bno055lib::AxisMapConfig::P5;
+    if (str == "p6") return bno055lib::AxisMapConfig::P6;
+    if (str == "p7") return bno055lib::AxisMapConfig::P7;
+    return bno055lib::AxisMapConfig::P1;
+}
+
+inline bno055lib::AxisMapSign parse_axis_map_sign(const std::string& str) {
+    if (str == "p0") return bno055lib::AxisMapSign::P0;
+    if (str == "p1") return bno055lib::AxisMapSign::P1;
+    if (str == "p2") return bno055lib::AxisMapSign::P2;
+    if (str == "p3") return bno055lib::AxisMapSign::P3;
+    if (str == "p4") return bno055lib::AxisMapSign::P4;
+    if (str == "p5") return bno055lib::AxisMapSign::P5;
+    if (str == "p6") return bno055lib::AxisMapSign::P6;
+    if (str == "p7") return bno055lib::AxisMapSign::P7;
+    return bno055lib::AxisMapSign::P1;
+}
+
+template <typename T>
+inline void apply_advanced_features(T* node, bno055lib::BNO055& imu) {
+    imu.setAxisRemap(parse_axis_map_config(node->template get_parameter("axis_map_config").as_string()));
+    imu.setAxisSign(parse_axis_map_sign(node->template get_parameter("axis_map_sign").as_string()));
+    imu.setExtCrystalUse(node->template get_parameter("use_external_crystal").as_bool());
 }
 
 }  // namespace bno055_ros2

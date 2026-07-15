@@ -52,10 +52,14 @@ public:
         bno055_ros2::setup_logger_redirection(this, imu_);
 
         // Initialize BNO055
-        if (!imu_.begin(bno055lib::OpMode::NDOF)) {
+        auto mode = bno055_ros2::parse_op_mode(this->get_parameter("operation_mode").as_string());
+        if (!imu_.begin(mode)) {
             RCLCPP_ERROR(this->get_logger(), "Failed to initialize BNO055 during configuration!");
             return CallbackReturn::FAILURE;
         }
+
+        // Apply advanced hardware configurations
+        bno055_ros2::apply_advanced_features(this, imu_);
 
         // Load calibration file if specified
         if (!calib_file.empty()) {
