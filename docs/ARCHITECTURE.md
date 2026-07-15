@@ -1,6 +1,6 @@
 # Architecture and Design Decisions
 
-The `libbno055-linux` library is not a simple port of an Arduino hobbyist script. It was engineered from the ground up for **stable robotics applications**, autonomous vehicles, and strict real-time control loops (such as ROS 2 hardware interfaces). 
+The `libbno055-linux` library provides a C++ interface to the BNO055 sensor over I2C on Linux. It is designed for robotics and control loops, emphasizing deterministic execution and error recovery. 
 
 This document outlines the core technical philosophies, low-level trade-offs, and architectural decisions that guarantee its reliability.
 
