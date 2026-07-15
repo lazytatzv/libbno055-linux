@@ -376,10 +376,9 @@ For high-frequency sensor streams (like IMUs running at 100Hz), using the defaul
 <hr class="docutils" />
 <section id="building-and-running-the-ros-2-examples">
 <h2>4. Building and Running the ROS 2 Examples<a class="headerlink" href="#building-and-running-the-ros-2-examples" title="Link to this heading">¶</a></h2>
-<p>The library comes with three pre-built ROS 2 node examples in the <code class="docutils literal notranslate"><span class="pre">src/ros2/</span></code> directory:</p>
+<p>The library comes with two pre-built ROS 2 node implementations in the <code class="docutils literal notranslate"><span class="pre">src/ros2/</span></code> directory:</p>
 <ul class="simple">
-<li><p><strong><code class="docutils literal notranslate"><span class="pre">bno055_publisher_node</span></code></strong>: A standard standalone ROS 2 publisher node.</p></li>
-<li><p><strong><code class="docutils literal notranslate"><span class="pre">bno055_perf_publisher_node</span></code></strong>: An optimized high-performance node designed for zero-copy intra-process communication.</p></li>
+<li><p><strong><code class="docutils literal notranslate"><span class="pre">bno055_publisher_node</span></code></strong>: A high-performance standalone ROS 2 publisher node optimized for zero-copy intra-process communication.</p></li>
 <li><p><strong><code class="docutils literal notranslate"><span class="pre">bno055_lifecycle_publisher_node</span></code></strong>: A managed LifecycleNode that supports state transitions and low-power hardware state mapping.</p></li>
 </ul>
 <section id="prerequisites">
@@ -423,15 +422,10 @@ rosdep<span class="w"> </span>install<span class="w"> </span>--from-paths<span c
 <p>You can launch and configure the nodes using the provided launch file and parameters YAML file.</p>
 <section id="a-launching-via-launch-file-recommended">
 <h4>A. Launching via Launch File (Recommended)<a class="headerlink" href="#a-launching-via-launch-file-recommended" title="Link to this heading">¶</a></h4>
-<p>You can launch any of the three node types (<code class="docutils literal notranslate"><span class="pre">standard</span></code>, <code class="docutils literal notranslate"><span class="pre">perf</span></code>, or <code class="docutils literal notranslate"><span class="pre">lifecycle</span></code>) and customize their parameters using the ROS 2 Launch system.</p>
+<p>You can launch either of the node types (<code class="docutils literal notranslate"><span class="pre">standard</span></code> or <code class="docutils literal notranslate"><span class="pre">lifecycle</span></code>) and customize their parameters using the ROS 2 Launch system.</p>
 <ul>
-<li><p><strong>Standard Node (Default)</strong>:</p>
+<li><p><strong>Standard Zero-Copy Node (Default)</strong>:</p>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>ros2<span class="w"> </span>launch<span class="w"> </span>libbno055_linux<span class="w"> </span>bno055_launch.py<span class="w"> </span>node_type:<span class="o">=</span>standard
-</pre></div>
-</div>
-</li>
-<li><p><strong>High-Performance Node</strong>:</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>ros2<span class="w"> </span>launch<span class="w"> </span>libbno055_linux<span class="w"> </span>bno055_launch.py<span class="w"> </span>node_type:<span class="o">=</span>perf
 </pre></div>
 </div>
 </li>
@@ -449,17 +443,12 @@ rosdep<span class="w"> </span>install<span class="w"> </span>--from-paths<span c
 <section id="b-direct-command-line-alternative">
 <h4>B. Direct Command Line (Alternative)<a class="headerlink" href="#b-direct-command-line-alternative" title="Link to this heading">¶</a></h4>
 <ul>
-<li><p><strong>Standard Standalone Node</strong>:</p>
+<li><p><strong>Standard Zero-Copy Node</strong>:</p>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>ros2<span class="w"> </span>run<span class="w"> </span>libbno055_linux<span class="w"> </span>bno055_publisher_node
 </pre></div>
 </div>
 <p>You can override parameters directly via CLI:</p>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>ros2<span class="w"> </span>run<span class="w"> </span>libbno055_linux<span class="w"> </span>bno055_publisher_node<span class="w"> </span>--ros-args<span class="w"> </span>-p<span class="w"> </span>device:<span class="o">=</span><span class="s2">&quot;/dev/i2c-2&quot;</span><span class="w"> </span>-p<span class="w"> </span>address:<span class="o">=</span><span class="m">40</span>
-</pre></div>
-</div>
-</li>
-<li><p><strong>High-Performance Zero-Copy Node</strong>:</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>ros2<span class="w"> </span>run<span class="w"> </span>libbno055_linux<span class="w"> </span>bno055_perf_publisher_node
 </pre></div>
 </div>
 </li>

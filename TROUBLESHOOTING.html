@@ -312,7 +312,7 @@ Do not use <code class="docutils literal notranslate"><span class="pre">NDOF</sp
 <strong>Cause</strong>: For ROS 2 to optimize message passing via zero-copy, the publishing node and the subscribing node must:</p>
 <ol class="arabic simple">
 <li><p>Be loaded into the <strong>same component container</strong> (single process).</p></li>
-<li><p>Utilize <code class="docutils literal notranslate"><span class="pre">std::unique_ptr</span></code> and <code class="docutils literal notranslate"><span class="pre">std::move()</span></code> for publishing (which <code class="docutils literal notranslate"><span class="pre">bno055_perf_publisher_node</span></code> does).</p></li>
+<li><p>Utilize <code class="docutils literal notranslate"><span class="pre">std::unique_ptr</span></code> and <code class="docutils literal notranslate"><span class="pre">std::move()</span></code> for publishing (which <code class="docutils literal notranslate"><span class="pre">bno055_publisher_node</span></code> does by default).</p></li>
 <li><p>Both have <code class="docutils literal notranslate"><span class="pre">use_intra_process_comms</span></code> option enabled.
 <strong>Solution</strong>:
 When creating your pipeline, compose the BNO055 component and your subscriber component inside a single container executable (using <code class="docutils literal notranslate"><span class="pre">rclcpp_components</span></code>) and set <code class="docutils literal notranslate"><span class="pre">use_intra_process_comms</span></code> to <code class="docutils literal notranslate"><span class="pre">True</span></code> in the launch parameters.</p></li>

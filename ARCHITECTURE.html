@@ -336,16 +336,12 @@
 <hr class="docutils" />
 <section id="ros-2-node-architectures-zero-copy-communication">
 <h2>6. ROS 2 Node Architectures &amp; Zero-Copy Communication<a class="headerlink" href="#ros-2-node-architectures-zero-copy-communication" title="Link to this heading">¶</a></h2>
-<p>The library includes three ROS 2 node implementations located in the <code class="docutils literal notranslate"><span class="pre">src/ros2/</span></code> directory, designed to cover various robotics system requirements:</p>
+<p>The library includes two ROS 2 node implementations located in the <code class="docutils literal notranslate"><span class="pre">src/ros2/</span></code> directory, designed to cover various robotics system requirements:</p>
 <section id="standard-standalone-node-bno055-publisher-node">
 <h3>Standard Standalone Node (<code class="docutils literal notranslate"><span class="pre">bno055_publisher_node</span></code>)<a class="headerlink" href="#standard-standalone-node-bno055-publisher-node" title="Link to this heading">¶</a></h3>
-<p>Designed for simplicity and general-purpose robotics. It initializes the sensor, redirects logs to <code class="docutils literal notranslate"><span class="pre">RCLCPP</span></code>, and publishes the IMU message via a standard asynchronous timer.</p>
-</section>
-<section id="high-performance-zero-copy-node-bno055-perf-publisher-node">
-<h3>High-Performance Zero-Copy Node (<code class="docutils literal notranslate"><span class="pre">bno055_perf_publisher_node</span></code>)<a class="headerlink" href="#high-performance-zero-copy-node-bno055-perf-publisher-node" title="Link to this heading">¶</a></h3>
-<p>Optimized for resource-constrained embedded systems and high-rate feedback loops.</p>
+<p>Optimized for resource-constrained embedded systems and high-rate feedback loops. It initializes the sensor, redirects logs to <code class="docutils literal notranslate"><span class="pre">RCLCPP</span></code>, and publishes IMU messages via a standard asynchronous timer.</p>
 <ul class="simple">
-<li><p><strong>Zero-Copy Message Passing</strong>: Instead of publishing by value, this node allocates a <code class="docutils literal notranslate"><span class="pre">std::unique_ptr&lt;sensor_msgs::msg::Imu&gt;</span></code> and passes ownership using <code class="docutils literal notranslate"><span class="pre">std::move()</span></code>. When executed within a ROS 2 Composable Node Container alongside compatible subscriber nodes, ROS 2 completely bypasses message serialization and memory copying, passing the underlying pointer directly through shared memory.</p></li>
+<li><p><strong>Zero-Copy Message Passing</strong>: This node allocates messages via <code class="docutils literal notranslate"><span class="pre">std::make_unique</span></code> and passes ownership using <code class="docutils literal notranslate"><span class="pre">std::move()</span></code>, with intra-process communication enabled by default. When executed within a ROS 2 Composable Node Container, ROS 2 completely bypasses message serialization and memory copying, passing the underlying pointer directly through shared memory.</p></li>
 <li><p><strong>Deterministic Execution</strong>: Uses <code class="docutils literal notranslate"><span class="pre">noexcept</span></code> APIs to ensure that sensor read failures do not invoke the overhead of C++ stack unwinding in high-frequency control loops.</p></li>
 </ul>
 </section>
@@ -444,7 +440,6 @@
 <li><a class="reference internal" href="#cross-platform-mocking-ci-cd-ready">5. Cross-Platform Mocking (CI/CD Ready)</a></li>
 <li><a class="reference internal" href="#ros-2-node-architectures-zero-copy-communication">6. ROS 2 Node Architectures &amp; Zero-Copy Communication</a><ul>
 <li><a class="reference internal" href="#standard-standalone-node-bno055-publisher-node">Standard Standalone Node (<code class="docutils literal notranslate"><span class="pre">bno055_publisher_node</span></code>)</a></li>
-<li><a class="reference internal" href="#high-performance-zero-copy-node-bno055-perf-publisher-node">High-Performance Zero-Copy Node (<code class="docutils literal notranslate"><span class="pre">bno055_perf_publisher_node</span></code>)</a></li>
 <li><a class="reference internal" href="#managed-lifecycle-node-bno055-lifecycle-publisher-node">Managed Lifecycle Node (<code class="docutils literal notranslate"><span class="pre">bno055_lifecycle_publisher_node</span></code>)</a></li>
 </ul>
 </li>
