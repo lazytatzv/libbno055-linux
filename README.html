@@ -268,54 +268,18 @@
 <hr class="docutils" />
 <section id="high-performance-state-estimation-ekf-features">
 <h2>High-Performance &amp; State Estimation (EKF) Features<a class="headerlink" href="#high-performance-state-estimation-ekf-features" title="Link to this heading">¶</a></h2>
-<p>If you are developing a custom state estimator (Extended Kalman Filter / Complementary Filter), raw sensor throughput and latency determinism are critical. <code class="docutils literal notranslate"><span class="pre">libbno055-linux</span></code> provides specialized APIs to meet these requirements.</p>
-<section id="byte-raw-sensor-burst-reading">
-<h3>1. 18-Byte Raw Sensor Burst Reading<a class="headerlink" href="#byte-raw-sensor-burst-reading" title="Link to this heading">¶</a></h3>
-<p>Reading accelerometer, magnetometer, and gyroscope data through separate function calls causes severe I2C transaction overhead.</p>
-<p>Using <code class="docutils literal notranslate"><span class="pre">getRawSensorData()</span></code>, the library issues a single sequential read transaction of 18 bytes from register <code class="docutils literal notranslate"><span class="pre">0x08</span></code> (Accel X LSB) to <code class="docutils literal notranslate"><span class="pre">0x19</span></code> (Gyro Z MSB), reducing latency on a 400kHz bus to <strong>~450 microseconds</strong>.</p>
-<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="cp">#include</span><span class="w"> </span><span class="cpf">&lt;libbno055-linux/bno055.hpp&gt;</span>
-<span class="cp">#include</span><span class="w"> </span><span class="cpf">&lt;iostream&gt;</span>
-
-<span class="kt">void</span><span class="w"> </span><span class="nf">read_ekf_inputs</span><span class="p">(</span><span class="n">bno055lib</span><span class="o">::</span><span class="n">BNO055</span><span class="o">&amp;</span><span class="w"> </span><span class="n">imu</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
-<span class="w">    </span><span class="c1">// Single 18-byte sequential read transaction</span>
-<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="k">auto</span><span class="w"> </span><span class="n">raw</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">imu</span><span class="p">.</span><span class="n">getRawSensorDataNoexcept</span><span class="p">())</span><span class="w"> </span><span class="p">{</span>
-<span class="w">        </span><span class="c1">// raw-&gt;accel (Vector3 float)</span>
-<span class="w">        </span><span class="c1">// raw-&gt;gyro (Vector3 float in rad/s)</span>
-<span class="w">        </span><span class="c1">// raw-&gt;mag (Vector3 float in uT)</span>
-<span class="w">        </span><span class="n">std</span><span class="o">::</span><span class="n">cout</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="s">&quot;Accel X: &quot;</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="n">raw</span><span class="o">-&gt;</span><span class="n">accel</span><span class="p">.</span><span class="n">x</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="s">&quot; Gyro X: &quot;</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="n">raw</span><span class="o">-&gt;</span><span class="n">gyro</span><span class="p">.</span><span class="n">x</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="s">&quot;</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">;</span>
-<span class="w">    </span><span class="p">}</span>
-<span class="p">}</span>
-</pre></div>
-</div>
-</section>
-<section id="high-frequency-asynchronous-polling">
-<h3>2. High-Frequency Asynchronous Polling<a class="headerlink" href="#high-frequency-asynchronous-polling" title="Link to this heading">¶</a></h3>
-<p>Spawns a dedicated background thread to poll raw sensor data at a high frequency (up to 100-200Hz) with minimized scheduling jitter.</p>
-<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="n">imu</span><span class="p">.</span><span class="n">startRawAsyncReading</span><span class="p">(</span><span class="mf">100.0</span><span class="p">,</span><span class="w"> </span><span class="p">[](</span><span class="k">const</span><span class="w"> </span><span class="n">bno055lib</span><span class="o">::</span><span class="n">BNO055</span><span class="o">::</span><span class="n">RawSensorData</span><span class="o">&amp;</span><span class="w"> </span><span class="n">data</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
-<span class="w">    </span><span class="c1">// Executed on high-rate background thread</span>
-<span class="w">    </span><span class="n">process_ekf_prediction</span><span class="p">(</span><span class="n">data</span><span class="p">.</span><span class="n">accel</span><span class="p">,</span><span class="w"> </span><span class="n">data</span><span class="p">.</span><span class="n">gyro</span><span class="p">);</span>
-<span class="p">});</span>
-
-<span class="c1">// To stop the background polling</span>
-<span class="n">imu</span><span class="p">.</span><span class="n">stopRawAsyncReading</span><span class="p">();</span>
-</pre></div>
-</div>
-</section>
-<section id="linux-gpio-hardware-interrupt-irq-driven-mode">
-<h3>3. Linux GPIO Hardware Interrupt (IRQ) Driven Mode<a class="headerlink" href="#linux-gpio-hardware-interrupt-irq-driven-mode" title="Link to this heading">¶</a></h3>
-<p>Rather than wasting CPU cycles polling the sensor, you can connect the BNO055’s physical <strong>INT (Interrupt) pin</strong> to a GPIO pin on your SBC.</p>
-<p>The library uses POSIX <code class="docutils literal notranslate"><span class="pre">poll()</span></code> on the Linux GPIO sysfs node (<code class="docutils literal notranslate"><span class="pre">/sys/class/gpio</span></code>). The moment the sensor has new measurements ready, the kernel wakes the waiting thread, triggering your callback with raw burst data in sub-milliseconds.</p>
-<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="c1">// Wait on GPIO 24 hardware interrupt (INT pin rising edge)</span>
-<span class="n">imu</span><span class="p">.</span><span class="n">startInterruptDrivenReading</span><span class="p">(</span><span class="mi">24</span><span class="p">,</span><span class="w"> </span><span class="p">[](</span><span class="k">const</span><span class="w"> </span><span class="n">bno055lib</span><span class="o">::</span><span class="n">BNO055</span><span class="o">::</span><span class="n">RawSensorData</span><span class="o">&amp;</span><span class="w"> </span><span class="n">data</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
-<span class="w">    </span><span class="c1">// Executed instantly on hardware interrupt event</span>
-<span class="w">    </span><span class="n">process_ekf_prediction</span><span class="p">(</span><span class="n">data</span><span class="p">.</span><span class="n">accel</span><span class="p">,</span><span class="w"> </span><span class="n">data</span><span class="p">.</span><span class="n">gyro</span><span class="p">);</span>
-<span class="p">});</span>
-
-<span class="c1">// To stop waiting on interrupts</span>
-<span class="n">imu</span><span class="p">.</span><span class="n">stopInterruptDrivenReading</span><span class="p">();</span>
-</pre></div>
-</div>
-</section>
+<p>If you are developing a custom state estimator (Extended Kalman Filter / Complementary Filter) or using <strong><code class="docutils literal notranslate"><span class="pre">robot_localization</span></code></strong>, raw sensor throughput and latency determinism are critical.</p>
+<p><code class="docutils literal notranslate"><span class="pre">libbno055-linux</span></code> provides:</p>
+<ol class="arabic simple">
+<li><p><strong>18-Byte Burst Read</strong>: Reads Accelerometer, Magnetometer, and Gyroscope raw variables in a single sequential bus transaction (~450µs at 400kHz I2C).</p></li>
+<li><p><strong>High-Frequency Polling</strong>: Low-jitter background polling threads up to 200Hz.</p></li>
+<li><p><strong>GPIO Interrupt (IRQ) Driven Mode</strong>: POSIX <code class="docutils literal notranslate"><span class="pre">poll()</span></code> edge event detection on the physical INT pin for sub-millisecond response.</p></li>
+</ol>
+<blockquote>
+<div><p>[!TIP]
+Complete C++ code examples for these APIs, EKF configuration files (<code class="docutils literal notranslate"><span class="pre">ekf.yaml</span></code>) for ROS 2 <code class="docutils literal notranslate"><span class="pre">robot_localization</span></code>, and kernel real-time scheduling setup are located in the <strong><a class="reference internal" href="#docs/INTEGRATION.md"><span class="xref myst">Advanced Integration &amp; Kernel Tuning Guide</span></a></strong>.
+For function signatures and types, see the <strong><a class="reference internal" href="#docs/API_REFERENCE.md"><span class="xref myst">API Reference</span></a></strong>.</p>
+</div></blockquote>
 </section>
 <hr class="docutils" />
 <section id="quick-start">
@@ -673,12 +637,7 @@ Launch the high-performance zero-copy node (default) or the lifecycle node:</p>
             <ul>
 <li><a class="reference internal" href="#">libbno055-linux</a><ul>
 <li><a class="reference internal" href="#features">Features</a></li>
-<li><a class="reference internal" href="#high-performance-state-estimation-ekf-features">High-Performance &amp; State Estimation (EKF) Features</a><ul>
-<li><a class="reference internal" href="#byte-raw-sensor-burst-reading">1. 18-Byte Raw Sensor Burst Reading</a></li>
-<li><a class="reference internal" href="#high-frequency-asynchronous-polling">2. High-Frequency Asynchronous Polling</a></li>
-<li><a class="reference internal" href="#linux-gpio-hardware-interrupt-irq-driven-mode">3. Linux GPIO Hardware Interrupt (IRQ) Driven Mode</a></li>
-</ul>
-</li>
+<li><a class="reference internal" href="#high-performance-state-estimation-ekf-features">High-Performance &amp; State Estimation (EKF) Features</a></li>
 <li><a class="reference internal" href="#quick-start">Quick Start</a><ul>
 <li><a class="reference internal" href="#a-standalone-c-no-ros">A. Standalone C++ (No-ROS)</a></li>
 <li><a class="reference internal" href="#b-ros-2-colcon-workspace">B. ROS 2 (colcon workspace)</a></li>
