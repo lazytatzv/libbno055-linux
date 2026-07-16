@@ -30,11 +30,11 @@ public:
 
 // Standard 3D vector for physical readings
 struct Vector3 {
-    double x{0.0};
-    double y{0.0};
-    double z{0.0};
+    float x{0.0f};
+    float y{0.0f};
+    float z{0.0f};
 
-    double operator[](size_t index) const {
+    float operator[](size_t index) const {
         switch (index) {
             case 0:
                 return x;
@@ -47,7 +47,7 @@ struct Vector3 {
         }
     }
 
-    double& operator[](size_t index) {
+    float& operator[](size_t index) {
         switch (index) {
             case 0:
                 return x;
@@ -63,10 +63,10 @@ struct Vector3 {
 
 // Standard Quaternion for rotation representation
 struct Quaternion {
-    double w{1.0};
-    double x{0.0};
-    double y{0.0};
-    double z{0.0};
+    float w{1.0f};
+    float x{0.0f};
+    float y{0.0f};
+    float z{0.0f};
 };
 
 // Calibration offsets

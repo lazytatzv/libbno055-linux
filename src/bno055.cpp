@@ -30,8 +30,10 @@ inline int16_t read16_le(const uint8_t* buf) noexcept {
     return static_cast<int16_t>(buf[0] | (buf[1] << 8));
 }
 
-inline bno055lib::Vector3 parseVector3(const uint8_t* buffer, double scale) noexcept {
-    return bno055lib::Vector3{read16_le(buffer) * scale, read16_le(buffer + 2) * scale, read16_le(buffer + 4) * scale};
+inline bno055lib::Vector3 parseVector3(const uint8_t* buffer, float scale) noexcept {
+    return bno055lib::Vector3{static_cast<float>(read16_le(buffer)) * scale,
+                              static_cast<float>(read16_le(buffer + 2)) * scale,
+                              static_cast<float>(read16_le(buffer + 4)) * scale};
 }
 
 // BNO055 Constants
@@ -488,102 +490,122 @@ public:
 
     // Thread-safe methods with automatic reconnect and retries
     bool write8(uint8_t reg, uint8_t value, int retries = 3) {
-        std::lock_guard<std::mutex> lock(mutex_);
         for (int i = 0; i < retries; ++i) {
-            if (i2c_fd < 0 && !open_i2c()) {
-                std::this_thread::sleep_for(std::chrono::milliseconds(10));
-                continue;
+            {
+                std::lock_guard<std::mutex> lock(mutex_);
+                if (i2c_fd >= 0 || open_i2c()) {
+                    if (write8_raw(reg, value)) {
+                        return true;
+                    }
+                }
+                diagnostics_.write_failures++;
             }
-            if (write8_raw(reg, value)) {
-                return true;
-            }
-            diagnostics_.write_failures++;
             log(LogLevel::Warning, "I2C/UART write failed, retrying...");
             std::this_thread::sleep_for(std::chrono::milliseconds(5));
         }
 
-        if (reconnect()) {
-            if (write8_raw(reg, value)) {
-                return true;
+        bool rec_ok = false;
+        {
+            std::lock_guard<std::mutex> lock(mutex_);
+            rec_ok = reconnect();
+            if (rec_ok) {
+                if (write8_raw(reg, value)) {
+                    return true;
+                }
             }
+            diagnostics_.write_failures++;
         }
-        diagnostics_.write_failures++;
         log(LogLevel::Error, "I2C/UART write failed permanently");
         return false;
     }
 
     bool writeLen(uint8_t reg, const uint8_t* buffer, uint8_t len, int retries = 3) {
         if (len > 31) return false;
-        std::lock_guard<std::mutex> lock(mutex_);
         for (int i = 0; i < retries; ++i) {
-            if (i2c_fd < 0 && !open_i2c()) {
-                std::this_thread::sleep_for(std::chrono::milliseconds(10));
-                continue;
+            {
+                std::lock_guard<std::mutex> lock(mutex_);
+                if (i2c_fd >= 0 || open_i2c()) {
+                    if (writeLen_raw(reg, buffer, len)) {
+                        return true;
+                    }
+                }
+                diagnostics_.write_failures++;
             }
-            if (writeLen_raw(reg, buffer, len)) {
-                return true;
-            }
-            diagnostics_.write_failures++;
             log(LogLevel::Warning, "I2C/UART writeLen failed, retrying...");
             std::this_thread::sleep_for(std::chrono::milliseconds(5));
         }
 
-        if (reconnect()) {
-            if (writeLen_raw(reg, buffer, len)) {
-                return true;
+        bool rec_ok = false;
+        {
+            std::lock_guard<std::mutex> lock(mutex_);
+            rec_ok = reconnect();
+            if (rec_ok) {
+                if (writeLen_raw(reg, buffer, len)) {
+                    return true;
+                }
             }
+            diagnostics_.write_failures++;
         }
-        diagnostics_.write_failures++;
         log(LogLevel::Error, "I2C/UART writeLen failed permanently");
         return false;
     }
 
     bool read8(uint8_t reg, uint8_t& value, int retries = 3) {
-        std::lock_guard<std::mutex> lock(mutex_);
         for (int i = 0; i < retries; ++i) {
-            if (i2c_fd < 0 && !open_i2c()) {
-                std::this_thread::sleep_for(std::chrono::milliseconds(10));
-                continue;
+            {
+                std::lock_guard<std::mutex> lock(mutex_);
+                if (i2c_fd >= 0 || open_i2c()) {
+                    if (read8_raw(reg, value)) {
+                        return true;
+                    }
+                }
+                diagnostics_.read_failures++;
             }
-            if (read8_raw(reg, value)) {
-                return true;
-            }
-            diagnostics_.read_failures++;
             log(LogLevel::Warning, "I2C/UART read failed, retrying...");
             std::this_thread::sleep_for(std::chrono::milliseconds(5));
         }
 
-        if (reconnect()) {
-            if (read8_raw(reg, value)) {
-                return true;
+        bool rec_ok = false;
+        {
+            std::lock_guard<std::mutex> lock(mutex_);
+            rec_ok = reconnect();
+            if (rec_ok) {
+                if (read8_raw(reg, value)) {
+                    return true;
+                }
             }
+            diagnostics_.read_failures++;
         }
-        diagnostics_.read_failures++;
         log(LogLevel::Error, "I2C/UART read failed permanently");
         return false;
     }
 
     bool readLen(uint8_t reg, uint8_t* buffer, uint8_t len, int retries = 3) {
-        std::lock_guard<std::mutex> lock(mutex_);
         for (int i = 0; i < retries; ++i) {
-            if (i2c_fd < 0 && !open_i2c()) {
-                std::this_thread::sleep_for(std::chrono::milliseconds(10));
-                continue;
+            {
+                std::lock_guard<std::mutex> lock(mutex_);
+                if (i2c_fd >= 0 || open_i2c()) {
+                    if (readLen_raw(reg, buffer, len)) {
+                        return true;
+                    }
+                }
+                diagnostics_.read_failures++;
             }
-            if (readLen_raw(reg, buffer, len)) {
-                return true;
-            }
-            diagnostics_.read_failures++;
             log(LogLevel::Warning, "I2C/UART readLen failed, retrying...");
             std::this_thread::sleep_for(std::chrono::milliseconds(5));
         }
 
-        if (reconnect()) {
-            if (readLen_raw(reg, buffer, len)) {
-                return true;
+        bool rec_ok = false;
+        {
+            std::lock_guard<std::mutex> lock(mutex_);
+            rec_ok = reconnect();
+            if (rec_ok) {
+                if (readLen_raw(reg, buffer, len)) {
+                    return true;
+                }
             }
+            diagnostics_.read_failures++;
         }
-        diagnostics_.read_failures++;
         log(LogLevel::Error, "I2C/UART readLen failed permanently");
         return false;
     }
@@ -749,7 +771,7 @@ std::optional<Vector3> BNO055::getAccelerometerNoexcept() noexcept {
         return std::nullopt;
     }
     // 1 m/s^2 = 100 LSB
-    return parseVector3(buffer, 1.0 / 100.0);
+    return parseVector3(buffer, 1.0f / 100.0f);
 }
 
 Vector3 BNO055::getMagnetometer() {
@@ -766,7 +788,7 @@ std::optional<Vector3> BNO055::getMagnetometerNoexcept() noexcept {
         return std::nullopt;
     }
     // 1 uT = 16 LSB
-    return parseVector3(buffer, 1.0 / 16.0);
+    return parseVector3(buffer, 1.0f / 16.0f);
 }
 
 Vector3 BNO055::getGyroscope() {
@@ -783,7 +805,7 @@ std::optional<Vector3> BNO055::getGyroscopeNoexcept() noexcept {
         return std::nullopt;
     }
     // 1 dps = 16 LSB. Convert to rad/s (dps * M_PI / 180.0)
-    constexpr double scale = (1.0 / 16.0) * (M_PI / 180.0);
+    constexpr float scale = (1.0f / 16.0f) * (static_cast<float>(M_PI) / 180.0f);
     return parseVector3(buffer, scale);
 }
 
@@ -801,9 +823,11 @@ std::optional<Vector3> BNO055::getEulerAnglesNoexcept() noexcept {
         return std::nullopt;
     }
     // 1 degree = 16 LSB. Convert to rad (deg * M_PI / 180.0)
-    constexpr double scale = (1.0 / 16.0) * (M_PI / 180.0);
+    constexpr float scale = (1.0f / 16.0f) * (static_cast<float>(M_PI) / 180.0f);
     // buffer order: h(yaw), r(roll), p(pitch)
-    return Vector3{read16_le(buffer + 2) * scale, read16_le(buffer + 4) * scale, read16_le(buffer) * scale};
+    return Vector3{static_cast<float>(read16_le(buffer + 2)) * scale,
+                   static_cast<float>(read16_le(buffer + 4)) * scale,
+                   static_cast<float>(read16_le(buffer)) * scale};
 }
 
 Vector3 BNO055::getLinearAcceleration() {
@@ -820,7 +844,7 @@ std::optional<Vector3> BNO055::getLinearAccelerationNoexcept() noexcept {
         return std::nullopt;
     }
     // 1 m/s^2 = 100 LSB
-    return parseVector3(buffer, 1.0 / 100.0);
+    return parseVector3(buffer, 1.0f / 100.0f);
 }
 
 Vector3 BNO055::getGravity() {
@@ -837,7 +861,7 @@ std::optional<Vector3> BNO055::getGravityNoexcept() noexcept {
         return std::nullopt;
     }
     // 1 m/s^2 = 100 LSB
-    return parseVector3(buffer, 1.0 / 100.0);
+    return parseVector3(buffer, 1.0f / 100.0f);
 }
 
 Quaternion BNO055::getQuaternion() {
@@ -854,9 +878,11 @@ std::optional<Quaternion> BNO055::getQuaternionNoexcept() noexcept {
         return std::nullopt;
     }
     // 1 = 16384 LSB (scale factor 2^14)
-    constexpr double scale = 1.0 / 16384.0;
-    return Quaternion{read16_le(buffer) * scale, read16_le(buffer + 2) * scale, read16_le(buffer + 4) * scale,
-                      read16_le(buffer + 6) * scale};
+    constexpr float scale = 1.0f / 16384.0f;
+    return Quaternion{static_cast<float>(read16_le(buffer)) * scale,
+                      static_cast<float>(read16_le(buffer + 2)) * scale,
+                      static_cast<float>(read16_le(buffer + 4)) * scale,
+                      static_cast<float>(read16_le(buffer + 6)) * scale};
 }
 
 int8_t BNO055::getTemperature() {
@@ -1062,28 +1088,28 @@ int8_t BNO055::getTemperatureOrDefault() noexcept {
 }
 
 Vector3 toEulerDegrees(const Quaternion& q) noexcept {
-    double sinr_cosp = 2.0 * (q.w * q.x + q.y * q.z);
-    double cosr_cosp = 1.0 - 2.0 * (q.x * q.x + q.y * q.y);
-    double roll = std::atan2(sinr_cosp, cosr_cosp);
+    float sinr_cosp = 2.0f * (q.w * q.x + q.y * q.z);
+    float cosr_cosp = 1.0f - 2.0f * (q.x * q.x + q.y * q.y);
+    float roll = std::atan2f(sinr_cosp, cosr_cosp);
 
-    double sinp = 2.0 * (q.w * q.y - q.z * q.x);
-    double pitch = 0.0;
-    if (std::abs(sinp) >= 1.0) {
-        pitch = std::copysign(M_PI / 2.0, sinp);
+    float sinp = 2.0f * (q.w * q.y - q.z * q.x);
+    float pitch = 0.0f;
+    if (std::abs(sinp) >= 1.0f) {
+        pitch = std::copysignf(static_cast<float>(M_PI) / 2.0f, sinp);
     } else {
-        pitch = std::asin(sinp);
+        pitch = std::asinf(sinp);
     }
 
-    double siny_cosp = 2.0 * (q.w * q.z + q.x * q.y);
-    double cosy_cosp = 1.0 - 2.0 * (q.y * q.y + q.z * q.z);
-    double yaw = std::atan2(siny_cosp, cosy_cosp);
+    float siny_cosp = 2.0f * (q.w * q.z + q.x * q.y);
+    float cosy_cosp = 1.0f - 2.0f * (q.y * q.y + q.z * q.z);
+    float yaw = std::atan2f(siny_cosp, cosy_cosp);
 
-    double roll_deg = roll * 180.0 / M_PI;
-    double pitch_deg = pitch * 180.0 / M_PI;
-    double yaw_deg = yaw * 180.0 / M_PI;
+    float roll_deg = roll * 180.0f / static_cast<float>(M_PI);
+    float pitch_deg = pitch * 180.0f / static_cast<float>(M_PI);
+    float yaw_deg = yaw * 180.0f / static_cast<float>(M_PI);
 
-    if (yaw_deg < 0.0) {
-        yaw_deg += 360.0;
+    if (yaw_deg < 0.0f) {
+        yaw_deg += 360.0f;
     }
 
     return Vector3{roll_deg, pitch_deg, yaw_deg};
