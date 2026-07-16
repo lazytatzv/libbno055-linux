@@ -422,3 +422,53 @@ def generate_launch_description():
         ekf_node
     ])
 ```
+
+---
+
+## 8. High-Performance Read Modes & Hardware Wiring
+
+To enable the new high-performance features in standard C++ or ROS 2, you must select the appropriate `read_mode` parameter and configure the physical connections.
+
+### 8.1. Comparison of Read Modes
+
+| Read Mode | Data Gathered | I2C Transaction Length | Latency | Thread Model | Best For |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| **`standard`** | All (Quat, Euler, Accel, Gyro, Mag, Temp, Gravity) | Multiple separate reads | Medium (~3-5ms) | Timer Polling | General ROS 2 navigation, basic visualization, indoor orientation. |
+| **`raw_async`** | Raw Burst (Accel, Mag, Gyro) | Single 18-byte sequential read | Low (~450µs) | Background Polling | High-rate state estimation (EKF), custom math models on isolated CPU cores. |
+| **`interrupt`** | Raw Burst (Accel, Mag, Gyro) | Single 18-byte sequential read | Extremely Low (~450µs) | GPIO Edge Triggered (IRQ) | Absolute lowest latency and zero polling CPU cycles. Triggers only when sensor has new data. |
+
+---
+
+### 8.2. Hardware Wiring (With INT Pin Support)
+
+For **`interrupt`** mode, you must connect the BNO055's physical **INT (Interrupt)** pin to a GPIO pin on your SBC (e.g., GPIO 24 on Raspberry Pi).
+
+#### I2C Wiring Table (e.g., Raspberry Pi)
+| BNO055 Pin | Raspberry Pi Pin | Description |
+| :--- | :--- | :--- |
+| **Vin** | `3.3V` (Pin 1 or 17) | Power supply |
+| **GND** | `GND` (Pin 6 or 9) | Ground reference |
+| **SDA** | `GPIO 2` (Pin 3) | I2C Data line |
+| **SCL** | `GPIO 3` (Pin 5) | I2C Clock line |
+| **ADR** | `GND` (or open) | Sets I2C address to `0x28`. Connect to `3.3V` for `0x29`. |
+| **INT** | **`GPIO 24` (Pin 18)** | **Hardware Interrupt Line (Required for `interrupt` mode)** |
+
+---
+
+### 8.3. ROS 2 YAML Parameter Configuration
+To enable the interrupt mode, add the `read_mode` and `interrupt_gpio_pin` parameters to your `bno055_params.yaml`:
+
+```yaml
+bno055_node:
+  ros__parameters:
+    connection_type: "i2c"
+    device: "/dev/i2c-1"
+    address: 40                    # 0x28
+    
+    # Select read mode: "standard", "raw_async", or "interrupt"
+    read_mode: "interrupt"
+    interrupt_gpio_pin: 24         # GPIO Pin connected to INT
+    
+    publish_rate: 100.0            # Used for standard/raw_async. Ignored in interrupt mode.
+    frame_id: "imu_link"
+```
