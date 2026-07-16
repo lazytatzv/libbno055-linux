@@ -15,7 +15,6 @@
 
 namespace bno055lib {
 
-
 // Log levels for customization
 enum class LogLevel { Debug, Info, Warning, Error };
 

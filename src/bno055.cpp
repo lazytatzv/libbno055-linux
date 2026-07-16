@@ -1,10 +1,11 @@
 #include "libbno055-linux/bno055.hpp"
-#include "libbno055-linux/transport.hpp"
 
 #include <fcntl.h>
 #include <poll.h>
 #include <sys/ioctl.h>
 #include <termios.h>
+
+#include "libbno055-linux/transport.hpp"
 
 #ifdef __linux__
 #include <linux/i2c-dev.h>
@@ -22,9 +23,7 @@
 
 namespace bno055lib {
 
-
 namespace {
-
 
 inline int16_t read16_le(const uint8_t* buf) noexcept {
     return static_cast<int16_t>(buf[0] | (buf[1] << 8));
@@ -479,7 +478,7 @@ public:
         return ::read(i2c_fd, buffer, len) == len;
 #else
         std::memset(buffer, 0, len);
-        if (reg == 0x20 && len >= 8) { // QUATERNION_DATA_W_LSB
+        if (reg == 0x20 && len >= 8) {  // QUATERNION_DATA_W_LSB
             int16_t w = 16384;
             buffer[0] = w & 0xFF;
             buffer[1] = (w >> 8) & 0xFF;
@@ -616,8 +615,7 @@ BNO055::BNO055(const UARTConfig& uart_config) : impl_(std::make_unique<Impl>(uar
 BNO055::BNO055(uint8_t i2c_address, std::string_view i2c_device)
     : impl_(std::make_unique<Impl>(i2c_address, i2c_device)) {}
 
-BNO055::BNO055(std::unique_ptr<Transport> transport)
-    : impl_(std::make_unique<Impl>(std::move(transport))) {}
+BNO055::BNO055(std::unique_ptr<Transport> transport) : impl_(std::make_unique<Impl>(std::move(transport))) {}
 
 BNO055::~BNO055() = default;
 
@@ -825,8 +823,7 @@ std::optional<Vector3> BNO055::getEulerAnglesNoexcept() noexcept {
     // 1 degree = 16 LSB. Convert to rad (deg * M_PI / 180.0)
     constexpr float scale = (1.0f / 16.0f) * (static_cast<float>(M_PI) / 180.0f);
     // buffer order: h(yaw), r(roll), p(pitch)
-    return Vector3{static_cast<float>(read16_le(buffer + 2)) * scale,
-                   static_cast<float>(read16_le(buffer + 4)) * scale,
+    return Vector3{static_cast<float>(read16_le(buffer + 2)) * scale, static_cast<float>(read16_le(buffer + 4)) * scale,
                    static_cast<float>(read16_le(buffer)) * scale};
 }
 
@@ -879,8 +876,7 @@ std::optional<Quaternion> BNO055::getQuaternionNoexcept() noexcept {
     }
     // 1 = 16384 LSB (scale factor 2^14)
     constexpr float scale = 1.0f / 16384.0f;
-    return Quaternion{static_cast<float>(read16_le(buffer)) * scale,
-                      static_cast<float>(read16_le(buffer + 2)) * scale,
+    return Quaternion{static_cast<float>(read16_le(buffer)) * scale, static_cast<float>(read16_le(buffer + 2)) * scale,
                       static_cast<float>(read16_le(buffer + 4)) * scale,
                       static_cast<float>(read16_le(buffer + 6)) * scale};
 }
@@ -1127,7 +1123,7 @@ bool BNO055::startAsyncReading(double rate_hz, AsyncDataCallback callback) {
     impl_->async_thread_ = std::thread([this]() {
         impl_->log(LogLevel::Info, "Starting background async reading thread...");
         const auto period = std::chrono::microseconds(static_cast<int64_t>(1000000.0 / impl_->async_rate_hz_));
-        
+
         while (impl_->async_running_) {
             const auto start_time = std::chrono::steady_clock::now();
 

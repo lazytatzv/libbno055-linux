@@ -1,10 +1,10 @@
 #ifndef LIBBNO055_LINUX_MOCK_TRANSPORT_HPP
 #define LIBBNO055_LINUX_MOCK_TRANSPORT_HPP
 
-#include "libbno055-linux/transport.hpp"
-
 #include <cstring>
 #include <functional>
+
+#include "libbno055-linux/transport.hpp"
 
 namespace bno055lib {
 
@@ -107,9 +107,7 @@ public:
     }
 
     /// Set a callback for write operations (useful for verifying register writes).
-    void setOnWrite(std::function<void(uint8_t reg, uint8_t value)> callback) {
-        on_write_ = std::move(callback);
-    }
+    void setOnWrite(std::function<void(uint8_t reg, uint8_t value)> callback) { on_write_ = std::move(callback); }
 
 private:
     uint8_t registers_[256]{0};

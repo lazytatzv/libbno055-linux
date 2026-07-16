@@ -1,7 +1,9 @@
 #include <gtest/gtest.h>
+
+#include <cmath>
+
 #include "libbno055-linux/bno055.hpp"
 #include "libbno055-linux/mock_transport.hpp"
-#include <cmath>
 
 class BNO055MockTest : public ::testing::Test {
 protected:
@@ -18,7 +20,7 @@ protected:
 TEST_F(BNO055MockTest, ConstructorAndInitialization) {
     // Check initialization status
     EXPECT_EQ(mock_->getRegister(0x3D), static_cast<uint8_t>(bno055lib::OpMode::NDOF));
-    
+
     // Initial diagnostics check
     auto diag = imu_->getDiagnostics();
     EXPECT_EQ(diag.write_failures, 0u);
@@ -28,9 +30,9 @@ TEST_F(BNO055MockTest, ConstructorAndInitialization) {
 
 TEST_F(BNO055MockTest, SensorDataReading) {
     // 1. Accelerometer (Scale: 1 m/s^2 = 100 LSB)
-    mock_->setRegister16LE(0x08, 100);  // X
-    mock_->setRegister16LE(0x0A, -200); // Y
-    mock_->setRegister16LE(0x0C, 300);  // Z
+    mock_->setRegister16LE(0x08, 100);   // X
+    mock_->setRegister16LE(0x0A, -200);  // Y
+    mock_->setRegister16LE(0x0C, 300);   // Z
     auto accel = imu_->getAccelerometer();
     EXPECT_NEAR(accel.x, 1.0, 1e-4);
     EXPECT_NEAR(accel.y, -2.0, 1e-4);
@@ -56,10 +58,10 @@ TEST_F(BNO055MockTest, SensorDataReading) {
     EXPECT_NEAR(gyro.z, 48 * gyro_scale, 1e-4);
 
     // 4. Quaternion (Scale: 1 = 16384 LSB)
-    mock_->setRegister16LE(0x20, 16384); // W
-    mock_->setRegister16LE(0x22, 0);     // X
-    mock_->setRegister16LE(0x24, 0);     // Y
-    mock_->setRegister16LE(0x26, 0);     // Z
+    mock_->setRegister16LE(0x20, 16384);  // W
+    mock_->setRegister16LE(0x22, 0);      // X
+    mock_->setRegister16LE(0x24, 0);      // Y
+    mock_->setRegister16LE(0x26, 0);      // Z
     auto quat = imu_->getQuaternion();
     EXPECT_NEAR(quat.w, 1.0, 1e-4);
     EXPECT_NEAR(quat.x, 0.0, 1e-4);
@@ -136,7 +138,7 @@ TEST_F(BNO055MockTest, AxisRemap) {
 
 TEST_F(BNO055MockTest, ExtCrystalUse) {
     imu_->setExtCrystalUse(true);
-    EXPECT_EQ(mock_->getRegister(0x3F), 0x80); // SYS_TRIGGER bit 7 should be set
+    EXPECT_EQ(mock_->getRegister(0x3F), 0x80);  // SYS_TRIGGER bit 7 should be set
 
     imu_->setExtCrystalUse(false);
     EXPECT_EQ(mock_->getRegister(0x3F), 0x00);
@@ -194,9 +196,9 @@ TEST(BNO055Test, QuaternionToEulerDegrees) {
     q_rot.z = std::sin(M_PI / 4.0);
 
     auto euler = bno055lib::toEulerDegrees(q_rot);
-    EXPECT_NEAR(euler.x, 0.0, 1e-4); // Roll
-    EXPECT_NEAR(euler.y, 0.0, 1e-4); // Pitch
-    EXPECT_NEAR(euler.z, 90.0, 1e-4); // Yaw
+    EXPECT_NEAR(euler.x, 0.0, 1e-4);   // Roll
+    EXPECT_NEAR(euler.y, 0.0, 1e-4);   // Pitch
+    EXPECT_NEAR(euler.z, 90.0, 1e-4);  // Yaw
 }
 
 TEST_F(BNO055MockTest, AsyncReadingAndAutoCalibration) {

@@ -67,7 +67,8 @@ public:
         bool enable_auto_calib = this->get_parameter("enable_auto_calibration").as_bool();
         if (enable_auto_calib && !calib_file.empty()) {
             imu_->enableAutoCalibration(calib_file);
-            RCLCPP_INFO(this->get_logger(), "Automatic calibration loading and saving enabled for: %s", calib_file.c_str());
+            RCLCPP_INFO(this->get_logger(), "Automatic calibration loading and saving enabled for: %s",
+                        calib_file.c_str());
         } else if (!calib_file.empty()) {
             if (imu_->loadCalibrationFile(calib_file)) {
                 RCLCPP_INFO(this->get_logger(), "Loaded calibration offsets from: %s", calib_file.c_str());
