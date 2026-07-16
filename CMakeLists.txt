@@ -64,6 +64,9 @@ if(BUILD_EXAMPLES)
 
     add_executable(read_all_data examples/read_all_data.cpp)
     target_link_libraries(read_all_data PRIVATE libbno055-linux)
+
+    add_executable(benchmark_imu examples/benchmark_imu.cpp)
+    target_link_libraries(benchmark_imu PRIVATE libbno055-linux)
 endif()
 
 # Optional ROS 2 integration (conditional build of ROS 2 publisher samples)
@@ -125,7 +128,7 @@ install(TARGETS libbno055-linux
 )
 
 if(BUILD_EXAMPLES)
-    install(TARGETS calibrate_imu read_data_noexcept read_all_data
+    install(TARGETS calibrate_imu read_data_noexcept read_all_data benchmark_imu
         RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
     )
 endif()
