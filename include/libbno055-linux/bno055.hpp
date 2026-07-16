@@ -242,6 +242,33 @@ public:
     // Custom Logger hook
     void setLogger(LoggerCallback callback);
 
+    // Asynchronous & Callback-driven Reading API
+    struct AllData {
+        Vector3 accel;
+        Vector3 mag;
+        Vector3 gyro;
+        Vector3 euler;
+        Vector3 linear_accel;
+        Vector3 gravity;
+        Quaternion quat;
+        int8_t temp;
+    };
+    using AsyncDataCallback = std::function<void(const AllData& data)>;
+
+    /// Start a background thread to poll data asynchronously.
+    /// @param rate_hz The polling rate in Hz (e.g. 50.0).
+    /// @param callback Callback executed every time new data is retrieved.
+    bool startAsyncReading(double rate_hz, AsyncDataCallback callback);
+
+    /// Stop the background async reading thread.
+    void stopAsyncReading();
+
+    // Automatic Calibration load/save configuration
+    /// Configure automatic calibration files. If configured, calibration will be
+    /// loaded on begin(), and dynamically saved when the calibration status reaches maximum.
+    void enableAutoCalibration(std::string_view filepath);
+    void disableAutoCalibration();
+
 private:
     class Impl;
     std::unique_ptr<Impl> impl_;

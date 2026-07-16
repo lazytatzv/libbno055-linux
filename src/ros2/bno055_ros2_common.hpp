@@ -32,6 +32,7 @@ inline void declare_common_parameters(T* node) {
     node->template declare_parameter<std::string>("qos_reliability", "best_effort");
     node->template declare_parameter<int>("qos_history_depth", 10);
     node->template declare_parameter<std::string>("calibration_file", "");
+    node->template declare_parameter<bool>("enable_auto_calibration", false);
     node->template declare_parameter<std::vector<double>>("orientation_covariance", std::vector<double>(9, 0.0));
     node->template declare_parameter<std::vector<double>>("angular_velocity_covariance", std::vector<double>(9, 0.0));
     node->template declare_parameter<std::vector<double>>("linear_acceleration_covariance",

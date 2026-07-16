@@ -198,3 +198,39 @@ TEST(BNO055Test, QuaternionToEulerDegrees) {
     EXPECT_NEAR(euler.y, 0.0, 1e-4); // Pitch
     EXPECT_NEAR(euler.z, 90.0, 1e-4); // Yaw
 }
+
+TEST_F(BNO055MockTest, AsyncReadingAndAutoCalibration) {
+    // 1. Configure registers for valid data
+    mock_->setRegister16LE(0x08, 100);  // Accel X
+    mock_->setRegister(0x34, 25);       // Temp
+
+    std::mutex mtx;
+    std::condition_variable cv;
+    bool data_received = false;
+    bno055lib::BNO055::AllData received_data;
+
+    // Start async polling
+    bool success = imu_->startAsyncReading(100.0, [&](const bno055lib::BNO055::AllData& data) {
+        std::lock_guard<std::mutex> lock(mtx);
+        received_data = data;
+        data_received = true;
+        cv.notify_one();
+    });
+
+    ASSERT_TRUE(success);
+
+    // Wait for callback to execute
+    std::unique_lock<std::mutex> lock(mtx);
+    cv.wait_for(lock, std::chrono::milliseconds(200), [&]() { return data_received; });
+
+    EXPECT_TRUE(data_received);
+    EXPECT_NEAR(received_data.accel.x, 1.0, 1e-4);
+    EXPECT_EQ(received_data.temp, 25);
+
+    // Stop async reading
+    imu_->stopAsyncReading();
+
+    // 2. Test auto-calibration configuration methods
+    imu_->enableAutoCalibration("/tmp/test_auto_calib.bin");
+    imu_->disableAutoCalibration();
+}

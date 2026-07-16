@@ -139,13 +139,32 @@ public:
 
     std::unique_ptr<Transport> transport_;
 
+    // Asynchronous loop state
+    std::thread async_thread_;
+    std::atomic<bool> async_running_{false};
+    AsyncDataCallback async_callback_;
+    double async_rate_hz_{50.0};
+
+    // Auto-calibration state
+    std::string auto_calib_file_;
+    bool auto_calib_enabled_{false};
+    bool auto_calib_saved_{false};
+
     Impl(const UARTConfig& uart_config) : uart_config_(uart_config) { conn_type_ = ConnectionType::UART; }
 
     Impl(uint8_t address, std::string_view i2c_device) : address_(address), i2c_device_(std::string(i2c_device)) {}
 
     Impl(std::unique_ptr<Transport> transport) : transport_(std::move(transport)) {}
 
-    ~Impl() { close_i2c(); }
+    ~Impl() {
+        if (async_running_) {
+            async_running_ = false;
+            if (async_thread_.joinable()) {
+                async_thread_.join();
+            }
+        }
+        close_i2c();
+    }
 
     void log(LogLevel level, std::string_view msg) {
         if (logger_) {
@@ -650,6 +669,12 @@ bool BNO055::begin(OpMode mode) {
     setMode(mode);
     std::this_thread::sleep_for(std::chrono::milliseconds(20));
 
+    // Automatically load calibration file if configured
+    if (impl_->auto_calib_enabled_) {
+        impl_->auto_calib_saved_ = false;
+        loadCalibrationFile(impl_->auto_calib_file_);
+    }
+
     return true;
 }
 
@@ -1062,6 +1087,77 @@ Vector3 toEulerDegrees(const Quaternion& q) noexcept {
     }
 
     return Vector3{roll_deg, pitch_deg, yaw_deg};
+}
+
+bool BNO055::startAsyncReading(double rate_hz, AsyncDataCallback callback) {
+    if (impl_->async_running_) {
+        return false;
+    }
+
+    impl_->async_rate_hz_ = rate_hz;
+    impl_->async_callback_ = std::move(callback);
+    impl_->async_running_ = true;
+
+    impl_->async_thread_ = std::thread([this]() {
+        impl_->log(LogLevel::Info, "Starting background async reading thread...");
+        const auto period = std::chrono::microseconds(static_cast<int64_t>(1000000.0 / impl_->async_rate_hz_));
+        
+        while (impl_->async_running_) {
+            const auto start_time = std::chrono::steady_clock::now();
+
+            AllData data;
+            data.accel = getAccelerometerOrDefault();
+            data.mag = getMagnetometerOrDefault();
+            data.gyro = getGyroscopeOrDefault();
+            data.euler = getEulerAnglesOrDefault();
+            data.linear_accel = getLinearAccelerationOrDefault();
+            data.gravity = getGravityOrDefault();
+            data.quat = getQuaternionOrDefault();
+            data.temp = getTemperatureOrDefault();
+
+            if (impl_->async_callback_ && impl_->async_running_) {
+                impl_->async_callback_(data);
+            }
+
+            // Auto-calibration save check
+            if (impl_->auto_calib_enabled_ && !impl_->auto_calib_saved_) {
+                CalibrationStatus calib = getCalibrationStatus();
+                if (calib.isFullyCalibrated()) {
+                    impl_->log(LogLevel::Info, "Sensor fully calibrated. Auto-saving calibration offsets...");
+                    if (saveCalibrationFile(impl_->auto_calib_file_)) {
+                        impl_->auto_calib_saved_ = true;
+                    }
+                }
+            }
+
+            const auto elapsed = std::chrono::steady_clock::now() - start_time;
+            if (elapsed < period && impl_->async_running_) {
+                std::this_thread::sleep_for(period - elapsed);
+            }
+        }
+        impl_->log(LogLevel::Info, "Background async reading thread stopped.");
+    });
+
+    return true;
+}
+
+void BNO055::stopAsyncReading() {
+    if (!impl_->async_running_) {
+        return;
+    }
+    impl_->async_running_ = false;
+    if (impl_->async_thread_.joinable()) {
+        impl_->async_thread_.join();
+    }
+}
+
+void BNO055::enableAutoCalibration(std::string_view filepath) {
+    impl_->auto_calib_file_ = std::string(filepath);
+    impl_->auto_calib_enabled_ = true;
+}
+
+void BNO055::disableAutoCalibration() {
+    impl_->auto_calib_enabled_ = false;
 }
 
 }  // namespace bno055lib

@@ -76,8 +76,12 @@ public:
         // Apply advanced hardware configurations
         bno055_ros2::apply_advanced_features(this, imu_);
 
-        // Load calibration file if specified
-        if (!calib_file.empty()) {
+        // Setup automatic calibration saving or manual file load
+        bool enable_auto_calib = this->get_parameter("enable_auto_calibration").as_bool();
+        if (enable_auto_calib && !calib_file.empty()) {
+            imu_.enableAutoCalibration(calib_file);
+            RCLCPP_INFO(this->get_logger(), "Automatic calibration loading and saving enabled for: %s", calib_file.c_str());
+        } else if (!calib_file.empty()) {
             if (imu_.loadCalibrationFile(calib_file)) {
                 RCLCPP_INFO(this->get_logger(), "Loaded calibration offsets from: %s", calib_file.c_str());
             } else {
