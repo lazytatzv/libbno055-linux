@@ -102,7 +102,12 @@ enum Register : uint8_t {
     ACCEL_RADIUS_LSB = 0x67,
     ACCEL_RADIUS_MSB = 0x68,
     MAG_RADIUS_LSB = 0x69,
-    MAG_RADIUS_MSB = 0x6A
+    MAG_RADIUS_MSB = 0x6A,
+
+    // Page 1 Registers
+    ACC_CONFIG = 0x08,
+    GYR_CONFIG_0 = 0x0A,
+    GYR_CONFIG_1 = 0x0B
 };
 
 // Power Modes
@@ -713,6 +718,31 @@ bool BNO055::begin(OpMode mode) {
     // Set Operating Mode
     setMode(mode);
     std::this_thread::sleep_for(std::chrono::milliseconds(20));
+
+    // Hardware Overclocking for EKF/AMG Mode:
+    // If the sensor is set to raw sensor mode (AMG), configure sub-sensors to maximum physical limits.
+    if (mode == OpMode::AMG) {
+        impl_->log(LogLevel::Info, "Overclocking physical sub-sensors: Accel -> 1kHz ODR, Gyro -> 2kHz ODR");
+        // Open Page 1 config space
+        impl_->write8(PAGE_ID, 1);
+        std::this_thread::sleep_for(std::chrono::milliseconds(5));
+
+        // 1. Accel: ODR=1000Hz, Bandwidth=125Hz, Range=4g -> 0x0F
+        impl_->write8(ACC_CONFIG, 0x0F);
+        std::this_thread::sleep_for(std::chrono::milliseconds(5));
+
+        // 2. Gyro: ODR=2000Hz, Bandwidth=523Hz -> GYR_CONFIG_0 = 0x00
+        impl_->write8(GYR_CONFIG_0, 0x00);
+        std::this_thread::sleep_for(std::chrono::milliseconds(5));
+
+        // 3. Gyro Power: Normal mode -> GYR_CONFIG_1 = 0x00
+        impl_->write8(GYR_CONFIG_1, 0x00);
+        std::this_thread::sleep_for(std::chrono::milliseconds(5));
+
+        // Restore Page 0 configuration space
+        impl_->write8(PAGE_ID, 0);
+        std::this_thread::sleep_for(std::chrono::milliseconds(10));
+    }
 
     // Automatically load calibration file if configured
     if (impl_->auto_calib_enabled_) {

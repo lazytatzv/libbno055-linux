@@ -293,3 +293,37 @@ TEST_F(BNO055MockTest, EKFRawBurstReadingAndAsync) {
 
     imu_->stopInterruptDrivenReading();
 }
+
+TEST_F(BNO055MockTest, HardwareOverclockingInAMGMode) {
+    // Reinitialize a fresh MockTransport and IMU in AMG Mode to trigger overclocking
+    auto local_transport = std::make_unique<bno055lib::MockTransport>();
+    auto* local_mock = local_transport.get();
+
+    bool page1_selected = false;
+    bool accel_overclocked = false;
+    bool gyro_overclocked = false;
+
+    local_mock->setOnWrite([&](uint8_t reg, uint8_t value) {
+        if (reg == 0x07) {  // PAGE_ID
+            if (value == 1)
+                page1_selected = true;
+            else if (value == 0)
+                page1_selected = false;
+        }
+        if (page1_selected) {
+            if (reg == 0x08 && value == 0x0F) {  // ACC_CONFIG
+                accel_overclocked = true;
+            }
+            if (reg == 0x0A && value == 0x00) {  // GYR_CONFIG_0
+                gyro_overclocked = true;
+            }
+        }
+    });
+
+    // Boot IMU in AMG Mode
+    bno055lib::BNO055 amg_imu(std::move(local_transport));
+    ASSERT_TRUE(amg_imu.begin(bno055lib::OpMode::AMG));
+
+    EXPECT_TRUE(accel_overclocked);
+    EXPECT_TRUE(gyro_overclocked);
+}
