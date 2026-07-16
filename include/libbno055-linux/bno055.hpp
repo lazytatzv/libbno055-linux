@@ -210,6 +210,17 @@ public:
     std::optional<Quaternion> getQuaternionNoexcept() noexcept;
     std::optional<int8_t> getTemperatureNoexcept() noexcept;
 
+    // High-performance EKF Burst Reading APIs
+    struct RawSensorData {
+        Vector3 accel;
+        Vector3 mag;
+        Vector3 gyro;
+    };
+    /// Retrieve all raw sensor outputs (accelerometer, magnetometer, gyroscope) in a single burst read transaction.
+    /// Highly optimized to reduce I2C transaction latency for state estimation filters (EKF).
+    RawSensorData getRawSensorData();
+    std::optional<RawSensorData> getRawSensorDataNoexcept() noexcept;
+
     // Beginner-friendly data getters (returns zero/default values on failure, no exceptions, no optionals)
     Vector3 getAccelerometerOrDefault() noexcept;
     Vector3 getMagnetometerOrDefault() noexcept;
@@ -261,6 +272,11 @@ public:
 
     /// Stop the background async reading thread.
     void stopAsyncReading();
+
+    // High-performance Asynchronous Raw Reading API
+    using RawAsyncDataCallback = std::function<void(const RawSensorData& data)>;
+    bool startRawAsyncReading(double rate_hz, RawAsyncDataCallback callback);
+    void stopRawAsyncReading();
 
     // Automatic Calibration load/save configuration
     /// Configure automatic calibration files. If configured, calibration will be

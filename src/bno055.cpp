@@ -146,6 +146,12 @@ public:
     AsyncDataCallback async_callback_;
     double async_rate_hz_{50.0};
 
+    // Raw Asynchronous loop state
+    std::thread raw_async_thread_;
+    std::atomic<bool> raw_async_running_{false};
+    RawAsyncDataCallback raw_async_callback_;
+    double raw_async_rate_hz_{100.0};
+
     // Auto-calibration state
     std::string auto_calib_file_;
     bool auto_calib_enabled_{false};
@@ -162,6 +168,12 @@ public:
             async_running_ = false;
             if (async_thread_.joinable()) {
                 async_thread_.join();
+            }
+        }
+        if (raw_async_running_) {
+            raw_async_running_ = false;
+            if (raw_async_thread_.joinable()) {
+                raw_async_thread_.join();
             }
         }
         close_i2c();
@@ -763,6 +775,36 @@ Vector3 BNO055::getAccelerometer() {
     return *val;
 }
 
+BNO055::RawSensorData BNO055::getRawSensorData() {
+    auto val = getRawSensorDataNoexcept();
+    if (!val) {
+        throw IMUError("Failed to burst-read raw sensor data");
+    }
+    return *val;
+}
+
+std::optional<BNO055::RawSensorData> BNO055::getRawSensorDataNoexcept() noexcept {
+    // Burst read 18 contiguous bytes:
+    // 0x08 - 0x0D: Accel (6 bytes)
+    // 0x0E - 0x13: Mag (6 bytes)
+    // 0x14 - 0x19: Gyro (6 bytes)
+    uint8_t buffer[18]{0};
+    if (!impl_->readLen(ACCEL_DATA_X_LSB, buffer, 18)) {
+        return std::nullopt;
+    }
+
+    RawSensorData data;
+    // 1. Accel: 1 m/s^2 = 100 LSB
+    data.accel = parseVector3(buffer, 1.0f / 100.0f);
+    // 2. Mag: 1 uT = 16 LSB
+    data.mag = parseVector3(buffer + 6, 1.0f / 16.0f);
+    // 3. Gyro: 1 dps = 16 LSB. Convert to rad/s (dps * M_PI / 180.0)
+    constexpr float gyro_scale = (1.0f / 16.0f) * (static_cast<float>(M_PI) / 180.0f);
+    data.gyro = parseVector3(buffer + 12, gyro_scale);
+
+    return data;
+}
+
 std::optional<Vector3> BNO055::getAccelerometerNoexcept() noexcept {
     uint8_t buffer[6]{0};
     if (!impl_->readLen(ACCEL_DATA_X_LSB, buffer, 6)) {
@@ -1170,6 +1212,52 @@ void BNO055::stopAsyncReading() {
     impl_->async_running_ = false;
     if (impl_->async_thread_.joinable()) {
         impl_->async_thread_.join();
+    }
+}
+
+bool BNO055::startRawAsyncReading(double rate_hz, RawAsyncDataCallback callback) {
+    if (impl_->raw_async_running_) {
+        return false;
+    }
+
+    impl_->raw_async_rate_hz_ = rate_hz;
+    impl_->raw_async_callback_ = std::move(callback);
+    impl_->raw_async_running_ = true;
+
+    impl_->raw_async_thread_ = std::thread([this]() {
+        impl_->log(LogLevel::Info, "Starting background high-performance raw async reading thread...");
+        const auto period = std::chrono::microseconds(static_cast<int64_t>(1000000.0 / impl_->raw_async_rate_hz_));
+
+        while (impl_->raw_async_running_) {
+            const auto start_time = std::chrono::steady_clock::now();
+
+            auto raw_opt = getRawSensorDataNoexcept();
+            if (raw_opt) {
+                if (impl_->raw_async_callback_ && impl_->raw_async_running_) {
+                    impl_->raw_async_callback_(*raw_opt);
+                }
+            } else {
+                impl_->log(LogLevel::Warning, "Raw burst async read failed");
+            }
+
+            const auto elapsed = std::chrono::steady_clock::now() - start_time;
+            if (elapsed < period && impl_->raw_async_running_) {
+                std::this_thread::sleep_for(period - elapsed);
+            }
+        }
+        impl_->log(LogLevel::Info, "Background raw async reading thread stopped.");
+    });
+
+    return true;
+}
+
+void BNO055::stopRawAsyncReading() {
+    if (!impl_->raw_async_running_) {
+        return;
+    }
+    impl_->raw_async_running_ = false;
+    if (impl_->raw_async_thread_.joinable()) {
+        impl_->raw_async_thread_.join();
     }
 }
 
