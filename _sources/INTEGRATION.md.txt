@@ -229,3 +229,83 @@ Verify that the IMU data is streaming correctly:
 ```bash
 ros2 topic echo /imu/data
 ```
+
+---
+
+## 5. Linux Kernel Tuning & Hardware Optimization Guide
+
+To extract maximum performance and achieve deterministic execution for state estimation filters (such as EKF), you must eliminate latencies at both the hardware (I2C/UART bus) and OS kernel (scheduler jitter) levels.
+
+### 5.1. Hardware Bus Speed Tuning
+
+#### A. Overclocking the I2C Bus (Fast Mode 400kHz)
+By default, the I2C bus on Raspberry Pi and other Single Board Computers (SBCs) is clocked at 100kHz. Under 100kHz, transmitting 18 bytes of burst raw sensor data takes over 2 milliseconds. Overclocking the I2C bus to 400kHz reduces transaction latency to ~450 microseconds.
+
+For Raspberry Pi (Raspbian/Ubuntu), edit `/boot/firmware/config.txt` (or `/boot/config.txt`):
+```ini
+dtparam=i2c_arm=on
+dtparam=i2c_arm_baudrate=400000
+```
+Apply the changes and reboot:
+```bash
+sudo reboot
+```
+
+#### B. UART Driver Latency Optimization (FTDI Low Latency Mode)
+If using a USB-to-UART bridge (e.g., FTDI / CP210X) for UART mode, the Linux FTDI driver buffers data for 16 milliseconds by default to optimize USB packets. This is unacceptable for high-frequency EKF loops.
+
+Force the driver to flush immediately by setting the low latency flag on the serial device:
+```bash
+# Install setserial utility
+sudo apt-get install setserial -y
+
+# Configure the port to low latency mode
+sudo setserial /dev/ttyUSB0 low_latency
+```
+
+---
+
+### 5.2. Kernel & CPU Jitter Tuning
+
+#### A. Real-Time Kernel Patch (PREEMPT_RT)
+Standard Linux kernels are non-preemptible, meaning a high-frequency sensor thread can be stalled indefinitely by internal kernel interrupts or background disk writes.
+* For absolute determinism, compile or install a kernel patched with the **`PREEMPT_RT`** real-time patch.
+* Check if real-time preemption is active:
+  ```bash
+  uname -a | grep -i PREEMPT
+  # Outputs should contain "PREEMPT RT"
+  ```
+
+#### B. Isolating CPU Cores for the EKF Node
+Prevent the Linux scheduler from moving other background processes onto the CPU core where your high-rate IMU polling node is running.
+
+Edit the boot cmdline (e.g., `/boot/firmware/cmdline.txt` on Raspberry Pi):
+```text
+# Isolate CPU core 3 from general user-space processes
+isolcpus=3
+```
+After rebooting, launch your ROS 2 node bound specifically to the isolated core:
+```bash
+taskset -c 3 ros2 run libbno055_linux bno055_publisher_node
+```
+
+#### C. Setting Real-Time Thread Priorities (SCHED_FIFO)
+To ensure the polling thread within the `libbno055-linux` library preempts other processes, elevate the thread scheduling priority to real-time FIFO.
+
+Give your user account permission to run real-time threads. Edit `/etc/security/limits.conf`:
+```text
+# Allow robot-user to allocate real-time priority up to 99
+robot-user   rtprio   99
+robot-user   memlock  unlimited
+```
+
+Within your custom C++ execution nodes, prioritize your thread using POSIX thread API:
+```cpp
+#include <pthread.h>
+
+void elevate_thread_to_rt(std::thread& th) {
+    sched_param sch_params;
+    sch_params.sched_priority = 80; // High real-time priority
+    pthread_setschedparam(th.native_handle(), SCHED_FIFO, &sch_params);
+}
+```

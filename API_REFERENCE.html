@@ -262,18 +262,58 @@
 <div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="k">namespace</span><span class="w"> </span><span class="nn">bno055lib</span><span class="w"> </span><span class="p">{</span>
 <span class="w">    </span><span class="c1">// 3D coordinate vector (used for accelerometer, gyroscope, magnetometer, euler, gravity, linear accel)</span>
 <span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">Vector3</span><span class="w"> </span><span class="p">{</span>
-<span class="w">        </span><span class="kt">double</span><span class="w"> </span><span class="n">x</span><span class="p">;</span>
-<span class="w">        </span><span class="kt">double</span><span class="w"> </span><span class="n">y</span><span class="p">;</span>
-<span class="w">        </span><span class="kt">double</span><span class="w"> </span><span class="n">z</span><span class="p">;</span>
+<span class="w">        </span><span class="kt">float</span><span class="w"> </span><span class="n">x</span><span class="p">;</span>
+<span class="w">        </span><span class="kt">float</span><span class="w"> </span><span class="n">y</span><span class="p">;</span>
+<span class="w">        </span><span class="kt">float</span><span class="w"> </span><span class="n">z</span><span class="p">;</span>
 <span class="w">    </span><span class="p">};</span>
 
 <span class="w">    </span><span class="c1">// 3D orientation quaternion representation</span>
 <span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">Quaternion</span><span class="w"> </span><span class="p">{</span>
-<span class="w">        </span><span class="kt">double</span><span class="w"> </span><span class="n">w</span><span class="p">;</span><span class="w"> </span><span class="c1">// Real part</span>
-<span class="w">        </span><span class="kt">double</span><span class="w"> </span><span class="n">x</span><span class="p">;</span><span class="w"> </span><span class="c1">// Imaginary X</span>
-<span class="w">        </span><span class="kt">double</span><span class="w"> </span><span class="n">y</span><span class="p">;</span><span class="w"> </span><span class="c1">// Imaginary Y</span>
-<span class="w">        </span><span class="kt">double</span><span class="w"> </span><span class="n">z</span><span class="p">;</span><span class="w"> </span><span class="c1">// Imaginary Z</span>
+<span class="w">        </span><span class="kt">float</span><span class="w"> </span><span class="n">w</span><span class="p">;</span><span class="w"> </span><span class="c1">// Real part</span>
+<span class="w">        </span><span class="kt">float</span><span class="w"> </span><span class="n">x</span><span class="p">;</span><span class="w"> </span><span class="c1">// Imaginary X</span>
+<span class="w">        </span><span class="kt">float</span><span class="w"> </span><span class="n">y</span><span class="p">;</span><span class="w"> </span><span class="c1">// Imaginary Y</span>
+<span class="w">        </span><span class="kt">float</span><span class="w"> </span><span class="n">z</span><span class="p">;</span><span class="w"> </span><span class="c1">// Imaginary Z</span>
 <span class="w">    </span><span class="p">};</span>
+
+<span class="w">    </span><span class="c1">// Transport interface representing I/O connection to the BNO055 hardware</span>
+<span class="w">    </span><span class="k">class</span><span class="w"> </span><span class="nc">Transport</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="k">public</span><span class="o">:</span>
+<span class="w">        </span><span class="k">virtual</span><span class="w"> </span><span class="o">~</span><span class="n">Transport</span><span class="p">()</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">default</span><span class="p">;</span>
+<span class="w">        </span><span class="k">virtual</span><span class="w"> </span><span class="kt">bool</span><span class="w"> </span><span class="nf">open</span><span class="p">()</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span>
+<span class="w">        </span><span class="k">virtual</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="nf">close</span><span class="p">()</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span>
+<span class="w">        </span><span class="k">virtual</span><span class="w"> </span><span class="kt">bool</span><span class="w"> </span><span class="nf">isOpen</span><span class="p">()</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span>
+<span class="w">        </span><span class="k">virtual</span><span class="w"> </span><span class="kt">bool</span><span class="w"> </span><span class="nf">write8</span><span class="p">(</span><span class="kt">uint8_t</span><span class="w"> </span><span class="n">reg</span><span class="p">,</span><span class="w"> </span><span class="kt">uint8_t</span><span class="w"> </span><span class="n">value</span><span class="p">)</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span>
+<span class="w">        </span><span class="k">virtual</span><span class="w"> </span><span class="kt">bool</span><span class="w"> </span><span class="nf">writeLen</span><span class="p">(</span><span class="kt">uint8_t</span><span class="w"> </span><span class="n">reg</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="kt">uint8_t</span><span class="o">*</span><span class="w"> </span><span class="n">buffer</span><span class="p">,</span><span class="w"> </span><span class="kt">uint8_t</span><span class="w"> </span><span class="n">len</span><span class="p">)</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span>
+<span class="w">        </span><span class="k">virtual</span><span class="w"> </span><span class="kt">bool</span><span class="w"> </span><span class="nf">read8</span><span class="p">(</span><span class="kt">uint8_t</span><span class="w"> </span><span class="n">reg</span><span class="p">,</span><span class="w"> </span><span class="kt">uint8_t</span><span class="o">&amp;</span><span class="w"> </span><span class="n">value</span><span class="p">)</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span>
+<span class="w">        </span><span class="k">virtual</span><span class="w"> </span><span class="kt">bool</span><span class="w"> </span><span class="nf">readLen</span><span class="p">(</span><span class="kt">uint8_t</span><span class="w"> </span><span class="n">reg</span><span class="p">,</span><span class="w"> </span><span class="kt">uint8_t</span><span class="o">*</span><span class="w"> </span><span class="n">buffer</span><span class="p">,</span><span class="w"> </span><span class="kt">uint8_t</span><span class="w"> </span><span class="n">len</span><span class="p">)</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span>
+<span class="w">    </span><span class="p">};</span>
+
+<span class="w">    </span><span class="c1">// Mock implementation of Transport for hardware-independent verification</span>
+<span class="w">    </span><span class="k">class</span><span class="w"> </span><span class="nc">MockTransport</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="k">public</span><span class="w"> </span><span class="n">Transport</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="k">public</span><span class="o">:</span>
+<span class="w">        </span><span class="n">MockTransport</span><span class="p">();</span>
+<span class="w">        </span><span class="kt">void</span><span class="w"> </span><span class="nf">setRegister</span><span class="p">(</span><span class="kt">uint8_t</span><span class="w"> </span><span class="n">reg</span><span class="p">,</span><span class="w"> </span><span class="kt">uint8_t</span><span class="w"> </span><span class="n">value</span><span class="p">);</span>
+<span class="w">        </span><span class="kt">void</span><span class="w"> </span><span class="nf">setRegister16LE</span><span class="p">(</span><span class="kt">uint8_t</span><span class="w"> </span><span class="n">reg</span><span class="p">,</span><span class="w"> </span><span class="kt">int16_t</span><span class="w"> </span><span class="n">value</span><span class="p">);</span>
+<span class="w">        </span><span class="kt">void</span><span class="w"> </span><span class="nf">setFailOpen</span><span class="p">(</span><span class="kt">bool</span><span class="w"> </span><span class="n">fail</span><span class="p">);</span>
+<span class="w">        </span><span class="kt">void</span><span class="w"> </span><span class="nf">setFailReads</span><span class="p">(</span><span class="kt">bool</span><span class="w"> </span><span class="n">fail</span><span class="p">);</span>
+<span class="w">        </span><span class="kt">void</span><span class="w"> </span><span class="nf">setFailWrites</span><span class="p">(</span><span class="kt">bool</span><span class="w"> </span><span class="n">fail</span><span class="p">);</span>
+<span class="w">        </span><span class="kt">uint32_t</span><span class="w"> </span><span class="nf">getWriteCount</span><span class="p">()</span><span class="w"> </span><span class="k">const</span><span class="p">;</span>
+<span class="w">        </span><span class="kt">uint32_t</span><span class="w"> </span><span class="nf">getReadCount</span><span class="p">()</span><span class="w"> </span><span class="k">const</span><span class="p">;</span>
+<span class="w">        </span><span class="kt">void</span><span class="w"> </span><span class="nf">reset</span><span class="p">();</span>
+<span class="w">    </span><span class="p">};</span>
+
+<span class="w">    </span><span class="c1">// Bundled structure representing all sensor physical data</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">AllData</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="n">Vector3</span><span class="w"> </span><span class="n">accel</span><span class="p">;</span>
+<span class="w">        </span><span class="n">Vector3</span><span class="w"> </span><span class="n">mag</span><span class="p">;</span>
+<span class="w">        </span><span class="n">Vector3</span><span class="w"> </span><span class="n">gyro</span><span class="p">;</span>
+<span class="w">        </span><span class="n">Vector3</span><span class="w"> </span><span class="n">euler</span><span class="p">;</span>
+<span class="w">        </span><span class="n">Vector3</span><span class="w"> </span><span class="n">linear_accel</span><span class="p">;</span>
+<span class="w">        </span><span class="n">Vector3</span><span class="w"> </span><span class="n">gravity</span><span class="p">;</span>
+<span class="w">        </span><span class="n">Quaternion</span><span class="w"> </span><span class="n">quat</span><span class="p">;</span>
+<span class="w">        </span><span class="kt">int8_t</span><span class="w"> </span><span class="n">temp</span><span class="p">;</span>
+<span class="w">    </span><span class="p">};</span>
+<span class="w">    </span><span class="k">using</span><span class="w"> </span><span class="n">AsyncDataCallback</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">function</span><span class="o">&lt;</span><span class="kt">void</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="n">AllData</span><span class="o">&amp;</span><span class="w"> </span><span class="n">data</span><span class="p">)</span><span class="o">&gt;</span><span class="p">;</span>
 <span class="w">    </span>
 <span class="w">    </span><span class="c1">// Binary calibration offsets (22 bytes total) for saving/restoring sensor profile</span>
 <span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">Offsets</span><span class="w"> </span><span class="p">{</span>
@@ -339,6 +379,17 @@
 </li>
 <li><p><em>Returns</em>: None (Constructor).</p></li>
 <li><p><em>Description</em>: Creates a BNO055 handler. If compiled on macOS/Windows, it falls back to the mock mode and accepts any mock device name.</p></li>
+</ul>
+</li>
+<li><p><strong>explicit BNO055(std::unique_ptr<Transport> transport)</strong></p>
+<ul>
+<li><p><em>Parameters</em>:</p>
+<ul>
+<li><p><code class="docutils literal notranslate"><span class="pre">transport</span></code>: <code class="docutils literal notranslate"><span class="pre">std::unique_ptr&lt;Transport&gt;</span></code>. Custom transport implementation (e.g., a <code class="docutils literal notranslate"><span class="pre">MockTransport</span></code> instance).</p></li>
+</ul>
+</li>
+<li><p><em>Returns</em>: None (Constructor).</p></li>
+<li><p><em>Description</em>: Creates a BNO055 handler using a custom transport layer. Extremely useful for unit testing (dependency injection) and porting.</p></li>
 </ul>
 </li>
 <li><p><strong>bool begin(OpMode mode = OpMode::NDOF)</strong></p>
@@ -478,6 +529,14 @@
 <li><p><em>Exceptions</em>: Throws <code class="docutils literal notranslate"><span class="pre">bno055lib::IMUError</span></code>.</p></li>
 </ul>
 </li>
+<li><p><strong>RawSensorData getRawSensorData()</strong></p>
+<ul>
+<li><p><em>Parameters</em>: None.</p></li>
+<li><p><em>Returns</em>: <code class="docutils literal notranslate"><span class="pre">RawSensorData</span></code>. Struct containing converted raw accelerometer, magnetometer, and gyroscope vectors.</p></li>
+<li><p><em>Exceptions</em>: Throws <code class="docutils literal notranslate"><span class="pre">bno055lib::IMUError</span></code>.</p></li>
+<li><p><em>Description</em>: Sequentially reads 18 bytes of raw sensor data in a single burst I2C transaction, minimizing bus occupancy.</p></li>
+</ul>
+</li>
 </ul>
 </section>
 <section id="sensor-data-exception-free-noexcept-apis">
@@ -491,7 +550,8 @@
 <li><p><strong>std::optional&lt;Vector3&gt; getLinearAccelerationNoexcept() noexcept</strong></p></li>
 <li><p><strong>std::optional&lt;Vector3&gt; getGravityNoexcept() noexcept</strong></p></li>
 <li><p><strong>std::optional&lt;Quaternion&gt; getQuaternionNoexcept() noexcept</strong></p></li>
-<li><p><strong>std::optional&lt;int8_t&gt; getTemperatureNoexcept() noexcept</strong></p>
+<li><p><strong>std::optional&lt;int8_t&gt; getTemperatureNoexcept() noexcept</strong></p></li>
+<li><p><strong>std::optional&lt;RawSensorData&gt; getRawSensorDataNoexcept() noexcept</strong></p>
 <ul>
 <li><p><em>Parameters</em>: None.</p></li>
 <li><p><em>Returns</em>: <code class="docutils literal notranslate"><span class="pre">std::optional&lt;T&gt;</span></code>. Contains the requested struct on success; <code class="docutils literal notranslate"><span class="pre">std::nullopt</span></code> on communication failure.</p></li>
@@ -621,6 +681,96 @@
 </li>
 </ul>
 </section>
+<section id="asynchronous-reading">
+<h4>Asynchronous Reading<a class="headerlink" href="#asynchronous-reading" title="Link to this heading">¶</a></h4>
+<ul class="simple">
+<li><p><strong>bool startAsyncReading(double rate_hz, AsyncDataCallback callback)</strong></p>
+<ul>
+<li><p><em>Parameters</em>:</p>
+<ul>
+<li><p><code class="docutils literal notranslate"><span class="pre">rate_hz</span></code>: <code class="docutils literal notranslate"><span class="pre">double</span></code>. The target frequency in Hz to query the sensor data.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">callback</span></code>: <code class="docutils literal notranslate"><span class="pre">AsyncDataCallback</span></code>. Callback function executed on the background thread whenever new measurements are gathered.</p></li>
+</ul>
+</li>
+<li><p><em>Returns</em>: <code class="docutils literal notranslate"><span class="pre">bool</span></code>. <code class="docutils literal notranslate"><span class="pre">true</span></code> if background polling thread successfully spawned; <code class="docutils literal notranslate"><span class="pre">false</span></code> if already running.</p></li>
+<li><p><em>Description</em>: Spawns a high-priority background polling thread that sleeps to minimize timing jitter. Calls <code class="docutils literal notranslate"><span class="pre">callback</span></code> with a thread-safe copy of <code class="docutils literal notranslate"><span class="pre">AllData</span></code>.</p></li>
+</ul>
+</li>
+<li><p><strong>void stopAsyncReading()</strong></p>
+<ul>
+<li><p><em>Parameters</em>: None.</p></li>
+<li><p><em>Returns</em>: <code class="docutils literal notranslate"><span class="pre">void</span></code>.</p></li>
+<li><p><em>Description</em>: Signals the background async thread to terminate and blocks until it joins.</p></li>
+</ul>
+</li>
+<li><p><strong>bool startRawAsyncReading(double rate_hz, RawAsyncDataCallback callback)</strong></p>
+<ul>
+<li><p><em>Parameters</em>:</p>
+<ul>
+<li><p><code class="docutils literal notranslate"><span class="pre">rate_hz</span></code>: <code class="docutils literal notranslate"><span class="pre">double</span></code>. Polling frequency.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">callback</span></code>: <code class="docutils literal notranslate"><span class="pre">RawAsyncDataCallback</span></code>. Callback executing with raw 3-axis readings.</p></li>
+</ul>
+</li>
+<li><p><em>Returns</em>: <code class="docutils literal notranslate"><span class="pre">bool</span></code>.</p></li>
+<li><p><em>Description</em>: Spawns a lightweight async thread polling only raw IMU data via burst transaction.</p></li>
+</ul>
+</li>
+<li><p><strong>void stopRawAsyncReading()</strong></p>
+<ul>
+<li><p><em>Parameters</em>: None.</p></li>
+<li><p><em>Returns</em>: <code class="docutils literal notranslate"><span class="pre">void</span></code>.</p></li>
+<li><p><em>Description</em>: Stops the raw async polling thread.</p></li>
+</ul>
+</li>
+</ul>
+</section>
+<section id="interrupt-driven-reading-irq">
+<h4>Interrupt Driven Reading (IRQ)<a class="headerlink" href="#interrupt-driven-reading-irq" title="Link to this heading">¶</a></h4>
+<ul class="simple">
+<li><p><strong>bool startInterruptDrivenReading(int gpio_pin, RawAsyncDataCallback callback)</strong></p>
+<ul>
+<li><p><em>Parameters</em>:</p>
+<ul>
+<li><p><code class="docutils literal notranslate"><span class="pre">gpio_pin</span></code>: <code class="docutils literal notranslate"><span class="pre">int</span></code>. Linux GPIO pin connected to the BNO055 INT pin.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">callback</span></code>: <code class="docutils literal notranslate"><span class="pre">RawAsyncDataCallback</span></code>. Handler triggered on interrupt.</p></li>
+</ul>
+</li>
+<li><p><em>Returns</em>: <code class="docutils literal notranslate"><span class="pre">bool</span></code>. <code class="docutils literal notranslate"><span class="pre">true</span></code> if background IRQ waiting thread spawned.</p></li>
+<li><p><em>Description</em>: Registers a rising-edge trigger on the specified Linux GPIO pin. When BNO055 triggers INT, the kernel interrupt immediately unblocks POSIX <code class="docutils literal notranslate"><span class="pre">poll()</span></code> on the GPIO sysfs file descriptors, firing the callback with raw burst readings at sub-millisecond latency.</p></li>
+</ul>
+</li>
+<li><p><strong>void stopInterruptDrivenReading()</strong></p>
+<ul>
+<li><p><em>Parameters</em>: None.</p></li>
+<li><p><em>Returns</em>: <code class="docutils literal notranslate"><span class="pre">void</span></code>.</p></li>
+<li><p><em>Description</em>: Stops the interrupt-driven IRQ monitoring thread.</p></li>
+</ul>
+</li>
+</ul>
+</section>
+<section id="automatic-calibration">
+<h4>Automatic Calibration<a class="headerlink" href="#automatic-calibration" title="Link to this heading">¶</a></h4>
+<ul class="simple">
+<li><p><strong>void enableAutoCalibration(std::string_view filepath)</strong></p>
+<ul>
+<li><p><em>Parameters</em>:</p>
+<ul>
+<li><p><code class="docutils literal notranslate"><span class="pre">filepath</span></code>: <code class="docutils literal notranslate"><span class="pre">std::string_view</span></code>. The binary calibration profile path to load from on <code class="docutils literal notranslate"><span class="pre">begin()</span></code> and save to.</p></li>
+</ul>
+</li>
+<li><p><em>Returns</em>: <code class="docutils literal notranslate"><span class="pre">void</span></code>.</p></li>
+<li><p><em>Description</em>: Activates automated calibration loading on startup and writes offsets back to the disk target once fully calibrated status is reached.</p></li>
+</ul>
+</li>
+<li><p><strong>void disableAutoCalibration()</strong></p>
+<ul>
+<li><p><em>Parameters</em>: None.</p></li>
+<li><p><em>Returns</em>: <code class="docutils literal notranslate"><span class="pre">void</span></code>.</p></li>
+<li><p><em>Description</em>: Deactivates the automated calibration load/save helper logic.</p></li>
+</ul>
+</li>
+</ul>
+</section>
 </section>
 <section id="utilities-class-external">
 <h3>Utilities (Class-External)<a class="headerlink" href="#utilities-class-external" title="Link to this heading">¶</a></h3>
@@ -633,7 +783,7 @@
 </ul>
 </li>
 <li><p><em>Returns</em>: <code class="docutils literal notranslate"><span class="pre">Vector3</span></code>. Roll, Pitch, and Yaw in degrees (Mapping: <code class="docutils literal notranslate"><span class="pre">x</span></code> = Roll <code class="docutils literal notranslate"><span class="pre">[-180,</span> <span class="pre">180]</span></code>, <code class="docutils literal notranslate"><span class="pre">y</span></code> = Pitch <code class="docutils literal notranslate"><span class="pre">[-90,</span> <span class="pre">90]</span></code>, <code class="docutils literal notranslate"><span class="pre">z</span></code> = Yaw <code class="docutils literal notranslate"><span class="pre">[0,</span> <span class="pre">360)</span></code>).</p></li>
-<li><p><em>Description</em>: Utility function to convert Quaternion orientation into human-readable Euler angles in degrees.</p></li>
+<li><p><em>Description</em>: Utility function to convert Quaternion orientation into human-readable Euler angles in degrees (now executing on single-precision <code class="docutils literal notranslate"><span class="pre">float</span></code> elements).</p></li>
 </ul>
 </li>
 </ul>
@@ -706,6 +856,9 @@
 <li><a class="reference internal" href="#diagnostics-calibration">Diagnostics &amp; Calibration</a></li>
 <li><a class="reference internal" href="#power-management">Power Management</a></li>
 <li><a class="reference internal" href="#logging">Logging</a></li>
+<li><a class="reference internal" href="#asynchronous-reading">Asynchronous Reading</a></li>
+<li><a class="reference internal" href="#interrupt-driven-reading-irq">Interrupt Driven Reading (IRQ)</a></li>
+<li><a class="reference internal" href="#automatic-calibration">Automatic Calibration</a></li>
 </ul>
 </li>
 <li><a class="reference internal" href="#utilities-class-external">Utilities (Class-External)</a></li>

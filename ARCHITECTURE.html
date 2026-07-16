@@ -323,20 +323,46 @@
 <li><p><strong>Telemetry Thread (1Hz)</strong>: Reading <code class="docutils literal notranslate"><span class="pre">getDiagnostics()</span></code> to monitor I2C health.</p></li>
 <li><p><strong>Service Callbacks</strong>: Saving calibration profiles on demand.</p></li>
 </ol>
-<p>The internal <code class="docutils literal notranslate"><span class="pre">Impl</span></code> struct is protected by a lightweight <code class="docutils literal notranslate"><span class="pre">std::mutex</span></code>, ensuring that multi-byte I2C register reads (which require sequential <code class="docutils literal notranslate"><span class="pre">write</span></code> (register address) followed by <code class="docutils literal notranslate"><span class="pre">read</span></code> (data)) are strictly atomic and cannot be interleaved by the Linux scheduler.</p>
+<p>The internal <code class="docutils literal notranslate"><span class="pre">Impl</span></code> struct is protected by a lightweight <code class="docutils literal notranslate"><span class="pre">std::mutex</span></code>.</p>
+<p>To maximize throughput and prevent blocking critical loops, <strong>lock granularity is minimized</strong>:</p>
+<ul class="simple">
+<li><p>Lock acquisition is strictly scoped to raw I/O read/write transactions.</p></li>
+<li><p>Mutex locks are explicitly released during retries (<code class="docutils literal notranslate"><span class="pre">std::this_thread::sleep_for</span></code>) and during the long self-healing <code class="docutils literal notranslate"><span class="pre">reconnect()</span></code> sequence.</p></li>
+<li><p>This guarantees that threads querying diagnostics (<code class="docutils literal notranslate"><span class="pre">getDiagnostics()</span></code>) or invoking non-blocking APIs are never starved by blocking I2C operations.</p></li>
+</ul>
 </section>
 <hr class="docutils" />
-<section id="cross-platform-mocking-ci-cd-ready">
-<h2>5. Cross-Platform Mocking (CI/CD Ready)<a class="headerlink" href="#cross-platform-mocking-ci-cd-ready" title="Link to this heading">¶</a></h2>
-<p>Modern C++ development relies heavily on Continuous Integration (GitHub Actions, GitLab CI). If a library strictly requires <code class="docutils literal notranslate"><span class="pre">&lt;linux/i2c-dev.h&gt;</span></code>, it cannot be compiled on macOS or Windows, breaking the CI pipeline for developers working on MacBooks.</p>
-<p><code class="docutils literal notranslate"><span class="pre">libbno055-linux</span></code> detects the host OS at compile time via CMake. If compiled on a non-Linux platform, it automatically swaps the internal <code class="docutils literal notranslate"><span class="pre">Impl</span></code> to a <strong>Mocked I2C Interface</strong>.</p>
+<section id="transport-abstraction-layer-dependency-injection">
+<h2>5. Transport Abstraction Layer &amp; Dependency Injection<a class="headerlink" href="#transport-abstraction-layer-dependency-injection" title="Link to this heading">¶</a></h2>
+<p>To decouple the library from the underlying Linux kernel file descriptors and hardware registers during test execution, the library introduces a <strong>Transport Abstraction Layer</strong>:</p>
 <ul class="simple">
-<li><p><strong>Result</strong>: You can compile your ROS 2 packages natively on macOS/Windows, write GTest unit tests against the IMU logic, and verify your math without needing a physical Raspberry Pi or sensor.</p></li>
+<li><p><strong>Interface</strong>: The <code class="docutils literal notranslate"><span class="pre">Transport</span></code> abstract base class provides pure virtual methods for single and multi-byte read/write access.</p></li>
+<li><p><strong>Mock Implementation</strong>: <code class="docutils literal notranslate"><span class="pre">MockTransport</span></code> эmulates a 256-byte virtual register map, providing hardware-free logic verification.</p></li>
+<li><p><strong>Dependency Injection</strong>: The core <code class="docutils literal notranslate"><span class="pre">BNO055</span></code> class can accept a <code class="docutils literal notranslate"><span class="pre">std::unique_ptr&lt;Transport&gt;</span></code> constructor parameter. When injected, the class routes all raw requests through the abstract interface instead of opening <code class="docutils literal notranslate"><span class="pre">/dev/i2c-*</span></code> or <code class="docutils literal notranslate"><span class="pre">/dev/ttyUSB*</span></code>.</p></li>
+<li><p><strong>Testing Capability</strong>: This architecture allows unit tests to verify register modifications, error counters, power states, and auto-calibration save mechanisms cleanly in any platform-agnostic CI/CD pipelines (such as macOS or Windows environments) with 100% test deterministic repeatability.</p></li>
+</ul>
+</section>
+<hr class="docutils" />
+<section id="single-precision-floating-point-optimization">
+<h2>6. Single-Precision Floating-Point Optimization<a class="headerlink" href="#single-precision-floating-point-optimization" title="Link to this heading">¶</a></h2>
+<p>For robotics and high-frequency control loops executing on embedded Linux platforms (e.g., Raspberry Pi, BeagleBone ARM cores), floating-point math throughput is critical.</p>
+<ul class="simple">
+<li><p><strong>Single vs. Double Precision</strong>: Previous architectures utilized <code class="docutils literal notranslate"><span class="pre">double</span></code> (64-bit) for physical variables. However, ARM microcontrollers and application processors feature dedicated single-precision Hardware FPUs.</p></li>
+<li><p><strong>Performance Enhancements</strong>: All physical coordinates (<code class="docutils literal notranslate"><span class="pre">Vector3</span></code>), orientations (<code class="docutils literal notranslate"><span class="pre">Quaternion</span></code>), scale conversion factors, and Euler calculations (<code class="docutils literal notranslate"><span class="pre">toEulerDegrees</span></code>) are modified to use <code class="docutils literal notranslate"><span class="pre">float</span></code> (32-bit) type signatures.</p></li>
+<li><p><strong>Result</strong>: Enables vectorization optimization and lowers CPU cycle consumption during raw IMU parsing and rotation conversions.</p></li>
+</ul>
+</section>
+<hr class="docutils" />
+<section id="asynchronous-polling-auto-calibration-helplers">
+<h2>7. Asynchronous Polling &amp; Auto-Calibration Helplers<a class="headerlink" href="#asynchronous-polling-auto-calibration-helplers" title="Link to this heading">¶</a></h2>
+<ul class="simple">
+<li><p><strong>Asynchronous Thread Engine</strong>: The library provides an asynchronous execution engine via <code class="docutils literal notranslate"><span class="pre">startAsyncReading()</span></code>. This spawns a high-priority background polling thread that sleeps deterministically to minimize latency jitter.</p></li>
+<li><p><strong>Auto-Calibration Pipeline</strong>: Manually checking calibration values and writing offsets to storage in client code adds boilerplate. The library features an autonomous calibration pipeline: when enabled, it reads offset files on startup and automatically saves new calibration profiles to disk the exact moment the hardware reaches maximum calibration (<code class="docutils literal notranslate"><span class="pre">CalibrationStatus::isFullyCalibrated()</span></code>).</p></li>
 </ul>
 </section>
 <hr class="docutils" />
 <section id="ros-2-node-architectures-zero-copy-communication">
-<h2>6. ROS 2 Node Architectures &amp; Zero-Copy Communication<a class="headerlink" href="#ros-2-node-architectures-zero-copy-communication" title="Link to this heading">¶</a></h2>
+<h2>8. ROS 2 Node Architectures &amp; Zero-Copy Communication<a class="headerlink" href="#ros-2-node-architectures-zero-copy-communication" title="Link to this heading">¶</a></h2>
 <p>The library includes two ROS 2 node implementations located in the <code class="docutils literal notranslate"><span class="pre">src/ros2/</span></code> directory, designed to cover various robotics system requirements:</p>
 <section id="standard-standalone-node-bno055-publisher-node">
 <h3>Standard Standalone Node (<code class="docutils literal notranslate"><span class="pre">bno055_publisher_node</span></code>)<a class="headerlink" href="#standard-standalone-node-bno055-publisher-node" title="Link to this heading">¶</a></h3>
@@ -438,8 +464,10 @@
 </ul>
 </li>
 <li><a class="reference internal" href="#thread-safety-concurrency">4. Thread Safety &amp; Concurrency</a></li>
-<li><a class="reference internal" href="#cross-platform-mocking-ci-cd-ready">5. Cross-Platform Mocking (CI/CD Ready)</a></li>
-<li><a class="reference internal" href="#ros-2-node-architectures-zero-copy-communication">6. ROS 2 Node Architectures &amp; Zero-Copy Communication</a><ul>
+<li><a class="reference internal" href="#transport-abstraction-layer-dependency-injection">5. Transport Abstraction Layer &amp; Dependency Injection</a></li>
+<li><a class="reference internal" href="#single-precision-floating-point-optimization">6. Single-Precision Floating-Point Optimization</a></li>
+<li><a class="reference internal" href="#asynchronous-polling-auto-calibration-helplers">7. Asynchronous Polling &amp; Auto-Calibration Helplers</a></li>
+<li><a class="reference internal" href="#ros-2-node-architectures-zero-copy-communication">8. ROS 2 Node Architectures &amp; Zero-Copy Communication</a><ul>
 <li><a class="reference internal" href="#standard-standalone-node-bno055-publisher-node">Standard Standalone Node (<code class="docutils literal notranslate"><span class="pre">bno055_publisher_node</span></code>)</a></li>
 <li><a class="reference internal" href="#managed-lifecycle-node-bno055-lifecycle-publisher-node">Managed Lifecycle Node (<code class="docutils literal notranslate"><span class="pre">bno055_lifecycle_publisher_node</span></code>)</a></li>
 </ul>

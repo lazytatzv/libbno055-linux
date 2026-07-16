@@ -23,6 +23,64 @@ C++17 BNO055 library and ROS 2 nodes for Linux.
 - **No heap allocations**: Avoids dynamic memory allocation in hot sensor readout paths.
 - **Zero-copy publishers**: Implements zero-copy memory transport (`std::unique_ptr`) for ROS 2 publishers.
 - **Built-in I2C mocking**: Provides built-in I2C mocking for compilation and testing on macOS/Windows.
+- **High-Performance EKF Burst Read (New)**: Sequentially reads 18 bytes of raw sensor outputs (Accel, Mag, Gyro) in a single transaction, reducing bus latency by 3x.
+- **Linux GPIO Interrupt (IRQ) Driven Mode (New)**: Bypasses polling loops. Detects rising edge events on the physical INT pin using Linux `poll()`, triggering callbacks at sub-millisecond latency.
+- **Single-Precision float Optimizations (New)**: Swapped double-precision floats to 32-bit floats across all vectors and quaternion math to unlock hardware FPU speeds on ARM processors (e.g., Raspberry Pi).
+
+---
+
+## High-Performance & State Estimation (EKF) Features
+
+If you are developing a custom state estimator (Extended Kalman Filter / Complementary Filter), raw sensor throughput and latency determinism are critical. `libbno055-linux` provides specialized APIs to meet these requirements.
+
+### 1. 18-Byte Raw Sensor Burst Reading
+Reading accelerometer, magnetometer, and gyroscope data through separate function calls causes severe I2C transaction overhead. 
+
+Using `getRawSensorData()`, the library issues a single sequential read transaction of 18 bytes from register `0x08` (Accel X LSB) to `0x19` (Gyro Z MSB), reducing latency on a 400kHz bus to **~450 microseconds**.
+
+```cpp
+#include <libbno055-linux/bno055.hpp>
+#include <iostream>
+
+void read_ekf_inputs(bno055lib::BNO055& imu) {
+    // Single 18-byte sequential read transaction
+    if (auto raw = imu.getRawSensorDataNoexcept()) {
+        // raw->accel (Vector3 float)
+        // raw->gyro (Vector3 float in rad/s)
+        // raw->mag (Vector3 float in uT)
+        std::cout << "Accel X: " << raw->accel.x << " Gyro X: " << raw->gyro.x << "\n";
+    }
+}
+```
+
+### 2. High-Frequency Asynchronous Polling
+Spawns a dedicated background thread to poll raw sensor data at a high frequency (up to 100-200Hz) with minimized scheduling jitter.
+
+```cpp
+imu.startRawAsyncReading(100.0, [](const bno055lib::BNO055::RawSensorData& data) {
+    // Executed on high-rate background thread
+    process_ekf_prediction(data.accel, data.gyro);
+});
+
+// To stop the background polling
+imu.stopRawAsyncReading();
+```
+
+### 3. Linux GPIO Hardware Interrupt (IRQ) Driven Mode
+Rather than wasting CPU cycles polling the sensor, you can connect the BNO055's physical **INT (Interrupt) pin** to a GPIO pin on your SBC. 
+
+The library uses POSIX `poll()` on the Linux GPIO sysfs node (`/sys/class/gpio`). The moment the sensor has new measurements ready, the kernel wakes the waiting thread, triggering your callback with raw burst data in sub-milliseconds.
+
+```cpp
+// Wait on GPIO 24 hardware interrupt (INT pin rising edge)
+imu.startInterruptDrivenReading(24, [](const bno055lib::BNO055::RawSensorData& data) {
+    // Executed instantly on hardware interrupt event
+    process_ekf_prediction(data.accel, data.gyro);
+});
+
+// To stop waiting on interrupts
+imu.stopInterruptDrivenReading();
+```
 
 ---
 
@@ -35,7 +93,7 @@ C++17 BNO055 library and ROS 2 nodes for Linux.
    sudo apt update && sudo apt install -y build-essential cmake
    git clone https://github.com/lazytatzv/libbno055-linux.git
    cd libbno055-linux && mkdir build && cd build
-   cmake .. -DBUILD_TESTING=OFF
+   cmake .. -DBUILD_TESTING=OFF -DBUILD_EXAMPLES=ON
    make -j$(nproc) && sudo make install
    ```
 
@@ -60,6 +118,9 @@ C++17 BNO055 library and ROS 2 nodes for Linux.
            std::cerr << "Sensor initialization failed!\n";
            return 1;
        }
+
+       // Configure automatic calibration loading & saving
+       imu.enableAutoCalibration("/etc/robot_config/bno055_offsets.bin");
 
        for (int i = 0; i < 10; ++i) {
            // Orientation (Euler Angles converted from Quaternion)
@@ -89,7 +150,7 @@ C++17 BNO055 library and ROS 2 nodes for Linux.
 
 3. **Compile and Run**:
    ```bash
-   g++ -std=c++17 main.cpp -lbno055-linux -o imu_demo
+   g++ -std=c++17 main.cpp -lbno055-linux -lpthread -o imu_demo
    ./imu_demo
    ```
 
@@ -148,6 +209,7 @@ C++17 BNO055 library and ROS 2 nodes for Linux.
 | `operation_mode` | `"ndof"` | Sensor fusion mode (`"ndof"`, `"imu_plus"`, `"compass"`, etc.). |
 | `publish_rate` | `100.0` | Publishing frequency in Hz. |
 | `frame_id` | `"imu_link"` | TF frame ID attached to message headers. |
+| `enable_auto_calibration` | `false` | Enable automatic loading and saving of the calibration binary profile. |
 
 ---
 
@@ -156,8 +218,8 @@ C++17 BNO055 library and ROS 2 nodes for Linux.
 For advanced configuration, integration, and detailed specifications, please refer to the dedicated markdown files in the `docs/` directory or view the [Official Web Documentation](https://lazytatzv.github.io/libbno055-linux/).
 
 *   **[API Reference](docs/API_REFERENCE.md)**: Full class, struct, and function reference for `bno055lib::BNO055`.
-*   **[Advanced Integration Guide](docs/INTEGRATION.md)**: Detailed instructions for CMake integration (FetchContent, add_subdirectory), custom ROS 2 parameters YAML, launch configurations, and QoS profiles.
-*   **[Architecture & Design Decisions](docs/ARCHITECTURE.md)**: Details on PIMPL compilation firewall, thread safety, auto-recovery state machine, and zero-copy intra-process transport.
+*   **[Advanced Integration & Kernel Tuning Guide](docs/INTEGRATION.md)**: Details on CMake integration, ROS 2 configuration parameters, I2C speed configurations (400kHz), UART driver optimizations, `PREEMPT_RT` scheduler priorities, and isolated CPU cores.
+*   **[Architecture & Design Decisions](docs/ARCHITECTURE.md)**: Details on PIMPL compilation firewall, thread safety, auto-recovery state machine, `Transport` DI abstraction, float math FPU optimizations, and lock granularity scopes.
 *   **[Sensor Overview & Calibration](docs/SENSOR_OVERVIEW.md)**: Detailed specs on BNO055 fusion modes, sensor coordinate systems, and saving/restoring calibration offsets.
 *   **[Troubleshooting & FAQ](docs/TROUBLESHOOTING.md)**: Solutions for I2C permission denied, Raspberry Pi clock stretching lockups, and indoor magnetic interference.
 
