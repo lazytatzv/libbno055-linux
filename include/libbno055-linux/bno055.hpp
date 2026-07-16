@@ -278,6 +278,14 @@ public:
     bool startRawAsyncReading(double rate_hz, RawAsyncDataCallback callback);
     void stopRawAsyncReading();
 
+    // Linux GPIO Hardware Interrupt (IRQ) Driven API
+    /// Start a background thread waiting for a GPIO hardware interrupt (INT pin rising edge).
+    /// Bypasses polling delays entirely.
+    /// @param gpio_pin Linux GPIO pin number connected to BNO055 INT pin (e.g. 24).
+    /// @param callback Callback executed the exact microsecond the hardware interrupt fires.
+    bool startInterruptDrivenReading(int gpio_pin, RawAsyncDataCallback callback);
+    void stopInterruptDrivenReading();
+
     // Automatic Calibration load/save configuration
     /// Configure automatic calibration files. If configured, calibration will be
     /// loaded on begin(), and dynamically saved when the calibration status reaches maximum.

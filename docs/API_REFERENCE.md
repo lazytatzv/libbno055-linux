@@ -213,6 +213,11 @@ These functions query raw data registers and convert them to SI units. They thro
     *   *Parameters*: None.
     *   *Returns*: `int8_t`. Chip temperature in degrees Celsius (C).
     *   *Exceptions*: Throws `bno055lib::IMUError`.
+*   **RawSensorData getRawSensorData()**
+    *   *Parameters*: None.
+    *   *Returns*: `RawSensorData`. Struct containing converted raw accelerometer, magnetometer, and gyroscope vectors.
+    *   *Exceptions*: Throws `bno055lib::IMUError`.
+    *   *Description*: Sequentially reads 18 bytes of raw sensor data in a single burst I2C transaction, minimizing bus occupancy.
 
 #### Sensor Data (Exception-free / noexcept APIs)
 
@@ -226,6 +231,7 @@ These companion APIs perform the exact same register queries and conversions but
 *   **std::optional\<Vector3\> getGravityNoexcept() noexcept**
 *   **std::optional\<Quaternion\> getQuaternionNoexcept() noexcept**
 *   **std::optional\<int8_t\> getTemperatureNoexcept() noexcept**
+*   **std::optional\<RawSensorData\> getRawSensorDataNoexcept() noexcept**
     *   *Parameters*: None.
     *   *Returns*: `std::optional<T>`. Contains the requested struct on success; `std::nullopt` on communication failure.
     *   *Description*: Safety-hardened read path that increments I2C diagnostic counters upon failure without generating CPU exceptions.
@@ -304,6 +310,29 @@ These companion APIs perform the exact same register queries and conversions but
     *   *Parameters*: None.
     *   *Returns*: `void`.
     *   *Description*: Signals the background async thread to terminate and blocks until it joins.
+*   **bool startRawAsyncReading(double rate_hz, RawAsyncDataCallback callback)**
+    *   *Parameters*:
+        *   `rate_hz`: `double`. Polling frequency.
+        *   `callback`: `RawAsyncDataCallback`. Callback executing with raw 3-axis readings.
+    *   *Returns*: `bool`.
+    *   *Description*: Spawns a lightweight async thread polling only raw IMU data via burst transaction.
+*   **void stopRawAsyncReading()**
+    *   *Parameters*: None.
+    *   *Returns*: `void`.
+    *   *Description*: Stops the raw async polling thread.
+
+#### Interrupt Driven Reading (IRQ)
+
+*   **bool startInterruptDrivenReading(int gpio_pin, RawAsyncDataCallback callback)**
+    *   *Parameters*:
+        *   `gpio_pin`: `int`. Linux GPIO pin connected to the BNO055 INT pin.
+        *   `callback`: `RawAsyncDataCallback`. Handler triggered on interrupt.
+    *   *Returns*: `bool`. `true` if background IRQ waiting thread spawned.
+    *   *Description*: Registers a rising-edge trigger on the specified Linux GPIO pin. When BNO055 triggers INT, the kernel interrupt immediately unblocks POSIX `poll()` on the GPIO sysfs file descriptors, firing the callback with raw burst readings at sub-millisecond latency.
+*   **void stopInterruptDrivenReading()**
+    *   *Parameters*: None.
+    *   *Returns*: `void`.
+    *   *Description*: Stops the interrupt-driven IRQ monitoring thread.
 
 #### Automatic Calibration
 
