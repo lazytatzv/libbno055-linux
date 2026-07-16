@@ -236,3 +236,41 @@ TEST_F(BNO055MockTest, AsyncReadingAndAutoCalibration) {
     imu_->enableAutoCalibration("/tmp/test_auto_calib.bin");
     imu_->disableAutoCalibration();
 }
+
+TEST_F(BNO055MockTest, EKFRawBurstReadingAndAsync) {
+    // Set Accelerometer (0x08), Magnetometer (0x0E), Gyroscope (0x14)
+    mock_->setRegister16LE(0x08, 100);  // Accel X (1.0 m/s^2)
+    mock_->setRegister16LE(0x0E, 16);   // Mag X (1.0 uT)
+    mock_->setRegister16LE(0x14, 16);   // Gyro X (1 dps -> converted to rad/s)
+
+    // Verify burst read
+    auto raw_data = imu_->getRawSensorData();
+    EXPECT_NEAR(raw_data.accel.x, 1.0f, 1e-4);
+    EXPECT_NEAR(raw_data.mag.x, 1.0f, 1e-4);
+    double gyro_scale = (1.0 / 16.0) * (M_PI / 180.0);
+    EXPECT_NEAR(raw_data.gyro.x, static_cast<float>(16 * gyro_scale), 1e-4);
+
+    // Verify raw async reader
+    std::mutex mtx;
+    std::condition_variable cv;
+    bool data_received = false;
+    bno055lib::BNO055::RawSensorData async_raw;
+
+    bool success = imu_->startRawAsyncReading(100.0, [&](const bno055lib::BNO055::RawSensorData& data) {
+        std::lock_guard<std::mutex> lock(mtx);
+        async_raw = data;
+        data_received = true;
+        cv.notify_one();
+    });
+
+    ASSERT_TRUE(success);
+
+    std::unique_lock<std::mutex> lock(mtx);
+    cv.wait_for(lock, std::chrono::milliseconds(200), [&]() { return data_received; });
+
+    EXPECT_TRUE(data_received);
+    EXPECT_NEAR(async_raw.accel.x, 1.0f, 1e-4);
+    EXPECT_NEAR(async_raw.mag.x, 1.0f, 1e-4);
+
+    imu_->stopRawAsyncReading();
+}
