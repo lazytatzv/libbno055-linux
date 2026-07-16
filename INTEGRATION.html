@@ -782,6 +782,72 @@ The raw burst request/response packets take <strong>~2.17 milliseconds</strong> 
 </div>
 </section>
 </section>
+<hr class="docutils" />
+<section id="ultra-extreme-tuning-for-hardware-limits">
+<h2>9. Ultra-Extreme Tuning for Hardware Limits<a class="headerlink" href="#ultra-extreme-tuning-for-hardware-limits" title="Link to this heading">¶</a></h2>
+<p>When pushing state estimation latency to the absolute theoretical limit, you must tune the physical bus transactions to eliminate CPU blocking and transmission overhead.</p>
+<section id="enabling-i2c-dma-direct-memory-access">
+<h3>9.1. Enabling I2C DMA (Direct Memory Access)<a class="headerlink" href="#enabling-i2c-dma-direct-memory-access" title="Link to this heading">¶</a></h3>
+<p>By default, the Linux kernel uses CPU-driven polling to handle I2C bytes. Reading the 18-byte raw sensor burst occupies the CPU during the transaction, causing minor timing jitter in high-rate control loops.</p>
+<ul>
+<li><p><strong>DMA Optimization</strong>: Offloads the I2C transfer to a dedicated DMA channel. The hardware directly transfers the 18 bytes from the I2C controller into RAM, waking the CPU only once the entire burst is complete.</p></li>
+<li><p><strong>Configuration (Raspberry Pi)</strong>:
+Edit <code class="docutils literal notranslate"><span class="pre">/boot/firmware/config.txt</span></code> (or <code class="docutils literal notranslate"><span class="pre">/boot/config.txt</span></code>):</p>
+<div class="highlight-ini notranslate"><div class="highlight"><pre><span></span><span class="c1"># Force enable DMA on the Broadcom I2C controller</span>
+<span class="na">dtoverlay</span><span class="o">=</span><span class="s">i2c-dma</span>
+</pre></div>
+</div>
+<p>Reboot to apply: <code class="docutils literal notranslate"><span class="pre">sudo</span> <span class="pre">reboot</span></code>.</p>
+</li>
+</ul>
+</section>
+<hr class="docutils" />
+<section id="forcing-i2c-repeated-start-conditions">
+<h3>9.2. Forcing I2C Repeated Start Conditions<a class="headerlink" href="#forcing-i2c-repeated-start-conditions" title="Link to this heading">¶</a></h3>
+<p>A standard I2C register read involves two distinct operations: a Write (sending the register address) and a Read (fetching data), separated by a “Stop” and “Start” bus condition.</p>
+<ul>
+<li><p><strong>The Flaw</strong>: Stopping the bus allows other high-priority multi-master I2C devices to intercept the bus, creating latency spikes.</p></li>
+<li><p><strong>The Solution</strong>: Use a <strong>Repeated Start</strong> condition. This glues the Write and Read transactions together without releasing the bus.</p></li>
+<li><p><strong>Configuration (Ubuntu/Debian Linux)</strong>:
+Configure the kernel module parameter for the design-ware or BCM I2C controller:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Enable repeated starts globally in the kernel I2C module</span>
+sudo<span class="w"> </span>sh<span class="w"> </span>-c<span class="w"> </span><span class="s1">&#39;echo &quot;Y&quot; &gt; /sys/module/i2c_bcm2835/parameters/combined&#39;</span>
+</pre></div>
+</div>
+<p>To make this persistent across boots, create <code class="docutils literal notranslate"><span class="pre">/etc/modprobe.d/i2c.conf</span></code>:</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>options i2c_bcm2835 combined=Y
+</pre></div>
+</div>
+</li>
+</ul>
+</section>
+<hr class="docutils" />
+<section id="uart-overclocking-921-600-bps">
+<h3>9.3. UART Overclocking (921,600 bps)<a class="headerlink" href="#uart-overclocking-921-600-bps" title="Link to this heading">¶</a></h3>
+<p>If your system requires UART (serial) rather than I2C, the default <code class="docutils literal notranslate"><span class="pre">115200</span> <span class="pre">bps</span></code> baudrate is a bottleneck, taking <strong>~2.17ms</strong> per 18-byte read.</p>
+<ul>
+<li><p><strong>BNO055 Limit</strong>: The BNO055 hardware supports overclocking the UART interface to <strong>921,600 bps</strong> when configured via its physical hardware configuration pins (<code class="docutils literal notranslate"><span class="pre">PS0</span></code> / <code class="docutils literal notranslate"><span class="pre">PS1</span></code>).</p></li>
+<li><p><strong>Latency Reduction</strong>:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">115200</span> <span class="pre">bps</span></code> ➔ <strong>2.17 ms</strong> transaction latency.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">921600</span> <span class="pre">bps</span></code> ➔ <strong>0.27 ms</strong> (270 microseconds) transaction latency.</p></li>
+</ul>
+</li>
+<li><p><strong>Configuration</strong>:
+Modify your application launch parameters or ROS 2 YAML parameter file:</p>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">bno055_node</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">ros__parameters</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">connection_type</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;uart&quot;</span>
+<span class="w">    </span><span class="nt">uart_port</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;/dev/ttyUSB0&quot;</span>
+<span class="w">    </span><span class="nt">uart_baudrate</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">921600</span><span class="w">        </span><span class="c1"># Overclocked speed</span>
+</pre></div>
+</div>
+<p>Ensure you also configure your USB-to-UART bridge (e.g. CP2102N / FT232RL) to support this baudrate.
+<em>(Note: Apply the <code class="docutils literal notranslate"><span class="pre">setserial</span> <span class="pre">/dev/ttyUSB0</span> <span class="pre">low_latency</span></code> optimization described in Section 5.1 alongside this settings.)</em></p>
+</li>
+</ul>
+</section>
+</section>
 </section>
 
         </article>
@@ -885,6 +951,12 @@ The raw burst request/response packets take <strong>~2.17 milliseconds</strong> 
 </ul>
 </li>
 <li><a class="reference internal" href="#ros-2-yaml-parameter-configuration">8.3. ROS 2 YAML Parameter Configuration</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#ultra-extreme-tuning-for-hardware-limits">9. Ultra-Extreme Tuning for Hardware Limits</a><ul>
+<li><a class="reference internal" href="#enabling-i2c-dma-direct-memory-access">9.1. Enabling I2C DMA (Direct Memory Access)</a></li>
+<li><a class="reference internal" href="#forcing-i2c-repeated-start-conditions">9.2. Forcing I2C Repeated Start Conditions</a></li>
+<li><a class="reference internal" href="#uart-overclocking-921-600-bps">9.3. UART Overclocking (921,600 bps)</a></li>
 </ul>
 </li>
 </ul>

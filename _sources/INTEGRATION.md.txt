@@ -472,3 +472,57 @@ bno055_node:
     publish_rate: 100.0            # Used for standard/raw_async. Ignored in interrupt mode.
     frame_id: "imu_link"
 ```
+
+---
+
+## 9. Ultra-Extreme Tuning for Hardware Limits
+
+When pushing state estimation latency to the absolute theoretical limit, you must tune the physical bus transactions to eliminate CPU blocking and transmission overhead.
+
+### 9.1. Enabling I2C DMA (Direct Memory Access)
+By default, the Linux kernel uses CPU-driven polling to handle I2C bytes. Reading the 18-byte raw sensor burst occupies the CPU during the transaction, causing minor timing jitter in high-rate control loops.
+* **DMA Optimization**: Offloads the I2C transfer to a dedicated DMA channel. The hardware directly transfers the 18 bytes from the I2C controller into RAM, waking the CPU only once the entire burst is complete.
+* **Configuration (Raspberry Pi)**:
+  Edit `/boot/firmware/config.txt` (or `/boot/config.txt`):
+  ```ini
+  # Force enable DMA on the Broadcom I2C controller
+  dtoverlay=i2c-dma
+  ```
+  Reboot to apply: `sudo reboot`.
+
+---
+
+### 9.2. Forcing I2C Repeated Start Conditions
+A standard I2C register read involves two distinct operations: a Write (sending the register address) and a Read (fetching data), separated by a "Stop" and "Start" bus condition. 
+* **The Flaw**: Stopping the bus allows other high-priority multi-master I2C devices to intercept the bus, creating latency spikes.
+* **The Solution**: Use a **Repeated Start** condition. This glues the Write and Read transactions together without releasing the bus.
+* **Configuration (Ubuntu/Debian Linux)**:
+  Configure the kernel module parameter for the design-ware or BCM I2C controller:
+  ```bash
+  # Enable repeated starts globally in the kernel I2C module
+  sudo sh -c 'echo "Y" > /sys/module/i2c_bcm2835/parameters/combined'
+  ```
+  To make this persistent across boots, create `/etc/modprobe.d/i2c.conf`:
+  ```text
+  options i2c_bcm2835 combined=Y
+  ```
+
+---
+
+### 9.3. UART Overclocking (921,600 bps)
+If your system requires UART (serial) rather than I2C, the default `115200 bps` baudrate is a bottleneck, taking **~2.17ms** per 18-byte read.
+* **BNO055 Limit**: The BNO055 hardware supports overclocking the UART interface to **921,600 bps** when configured via its physical hardware configuration pins (`PS0` / `PS1`).
+* **Latency Reduction**:
+  * `115200 bps` ➔ **2.17 ms** transaction latency.
+  * `921600 bps` ➔ **0.27 ms** (270 microseconds) transaction latency.
+* **Configuration**:
+  Modify your application launch parameters or ROS 2 YAML parameter file:
+  ```yaml
+  bno055_node:
+    ros__parameters:
+      connection_type: "uart"
+      uart_port: "/dev/ttyUSB0"
+      uart_baudrate: 921600        # Overclocked speed
+  ```
+  Ensure you also configure your USB-to-UART bridge (e.g. CP2102N / FT232RL) to support this baudrate.
+  *(Note: Apply the `setserial /dev/ttyUSB0 low_latency` optimization described in Section 5.1 alongside this settings.)*
