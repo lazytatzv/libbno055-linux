@@ -31,56 +31,16 @@ C++17 BNO055 library and ROS 2 nodes for Linux.
 
 ## High-Performance & State Estimation (EKF) Features
 
-If you are developing a custom state estimator (Extended Kalman Filter / Complementary Filter), raw sensor throughput and latency determinism are critical. `libbno055-linux` provides specialized APIs to meet these requirements.
+If you are developing a custom state estimator (Extended Kalman Filter / Complementary Filter) or using **`robot_localization`**, raw sensor throughput and latency determinism are critical.
 
-### 1. 18-Byte Raw Sensor Burst Reading
-Reading accelerometer, magnetometer, and gyroscope data through separate function calls causes severe I2C transaction overhead. 
+`libbno055-linux` provides:
+1. **18-Byte Burst Read**: Reads Accelerometer, Magnetometer, and Gyroscope raw variables in a single sequential bus transaction (~450µs at 400kHz I2C).
+2. **High-Frequency Polling**: Low-jitter background polling threads up to 200Hz.
+3. **GPIO Interrupt (IRQ) Driven Mode**: POSIX `poll()` edge event detection on the physical INT pin for sub-millisecond response.
 
-Using `getRawSensorData()`, the library issues a single sequential read transaction of 18 bytes from register `0x08` (Accel X LSB) to `0x19` (Gyro Z MSB), reducing latency on a 400kHz bus to **~450 microseconds**.
-
-```cpp
-#include <libbno055-linux/bno055.hpp>
-#include <iostream>
-
-void read_ekf_inputs(bno055lib::BNO055& imu) {
-    // Single 18-byte sequential read transaction
-    if (auto raw = imu.getRawSensorDataNoexcept()) {
-        // raw->accel (Vector3 float)
-        // raw->gyro (Vector3 float in rad/s)
-        // raw->mag (Vector3 float in uT)
-        std::cout << "Accel X: " << raw->accel.x << " Gyro X: " << raw->gyro.x << "\n";
-    }
-}
-```
-
-### 2. High-Frequency Asynchronous Polling
-Spawns a dedicated background thread to poll raw sensor data at a high frequency (up to 100-200Hz) with minimized scheduling jitter.
-
-```cpp
-imu.startRawAsyncReading(100.0, [](const bno055lib::BNO055::RawSensorData& data) {
-    // Executed on high-rate background thread
-    process_ekf_prediction(data.accel, data.gyro);
-});
-
-// To stop the background polling
-imu.stopRawAsyncReading();
-```
-
-### 3. Linux GPIO Hardware Interrupt (IRQ) Driven Mode
-Rather than wasting CPU cycles polling the sensor, you can connect the BNO055's physical **INT (Interrupt) pin** to a GPIO pin on your SBC. 
-
-The library uses POSIX `poll()` on the Linux GPIO sysfs node (`/sys/class/gpio`). The moment the sensor has new measurements ready, the kernel wakes the waiting thread, triggering your callback with raw burst data in sub-milliseconds.
-
-```cpp
-// Wait on GPIO 24 hardware interrupt (INT pin rising edge)
-imu.startInterruptDrivenReading(24, [](const bno055lib::BNO055::RawSensorData& data) {
-    // Executed instantly on hardware interrupt event
-    process_ekf_prediction(data.accel, data.gyro);
-});
-
-// To stop waiting on interrupts
-imu.stopInterruptDrivenReading();
-```
+> [!TIP]
+> Complete C++ code examples for these APIs, EKF configuration files (`ekf.yaml`) for ROS 2 `robot_localization`, and kernel real-time scheduling setup are located in the **[Advanced Integration & Kernel Tuning Guide](docs/INTEGRATION.md)**.
+> For function signatures and types, see the **[API Reference](docs/API_REFERENCE.md)**.
 
 ---
 
