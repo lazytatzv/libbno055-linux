@@ -526,3 +526,12 @@ If your system requires UART (serial) rather than I2C, the default `115200 bps` 
   ```
   Ensure you also configure your USB-to-UART bridge (e.g. CP2102N / FT232RL) to support this baudrate.
   *(Note: Apply the `setserial /dev/ttyUSB0 low_latency` optimization described in Section 5.1 alongside this settings.)*
+
+---
+
+### 9.4. Physical Sub-Sensor Overclocking (1kHz Accel / 2kHz Gyro ODR)
+When BNO055 runs in standard fusion modes (like `NDOF`), the sensor output rate is limited to 100Hz. However, when using the sensor in **`OpMode::AMG` (Raw Sensor Mode)**, you can unlock and overclock the physical sensing silicon:
+* **Automatic Application**: The library automatically configures BNO055 Page 1 registers upon booting into `AMG` mode.
+* **Gyroscope Overclocking**: Overrides the default ODR. Configures Gyroscope Output Data Rate (ODR) to **2000 Hz** and sets its internal filter bandwidth to **523 Hz**.
+* **Accelerometer Overclocking**: Configures Accelerometer Output Data Rate (ODR) to **1000 Hz** (1kHz).
+* **Usage**: Best when combined with high-frequency EKF algorithms running in custom nodes, reducing physical sensor integration delay to less than 1 millisecond.

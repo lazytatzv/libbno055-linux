@@ -847,6 +847,17 @@ Modify your application launch parameters or ROS 2 YAML parameter file:</p>
 </li>
 </ul>
 </section>
+<hr class="docutils" />
+<section id="physical-sub-sensor-overclocking-1khz-accel-2khz-gyro-odr">
+<h3>9.4. Physical Sub-Sensor Overclocking (1kHz Accel / 2kHz Gyro ODR)<a class="headerlink" href="#physical-sub-sensor-overclocking-1khz-accel-2khz-gyro-odr" title="Link to this heading">¶</a></h3>
+<p>When BNO055 runs in standard fusion modes (like <code class="docutils literal notranslate"><span class="pre">NDOF</span></code>), the sensor output rate is limited to 100Hz. However, when using the sensor in <strong><code class="docutils literal notranslate"><span class="pre">OpMode::AMG</span></code> (Raw Sensor Mode)</strong>, you can unlock and overclock the physical sensing silicon:</p>
+<ul class="simple">
+<li><p><strong>Automatic Application</strong>: The library automatically configures BNO055 Page 1 registers upon booting into <code class="docutils literal notranslate"><span class="pre">AMG</span></code> mode.</p></li>
+<li><p><strong>Gyroscope Overclocking</strong>: Overrides the default ODR. Configures Gyroscope Output Data Rate (ODR) to <strong>2000 Hz</strong> and sets its internal filter bandwidth to <strong>523 Hz</strong>.</p></li>
+<li><p><strong>Accelerometer Overclocking</strong>: Configures Accelerometer Output Data Rate (ODR) to <strong>1000 Hz</strong> (1kHz).</p></li>
+<li><p><strong>Usage</strong>: Best when combined with high-frequency EKF algorithms running in custom nodes, reducing physical sensor integration delay to less than 1 millisecond.</p></li>
+</ul>
+</section>
 </section>
 </section>
 
@@ -957,6 +968,7 @@ Modify your application launch parameters or ROS 2 YAML parameter file:</p>
 <li><a class="reference internal" href="#enabling-i2c-dma-direct-memory-access">9.1. Enabling I2C DMA (Direct Memory Access)</a></li>
 <li><a class="reference internal" href="#forcing-i2c-repeated-start-conditions">9.2. Forcing I2C Repeated Start Conditions</a></li>
 <li><a class="reference internal" href="#uart-overclocking-921-600-bps">9.3. UART Overclocking (921,600 bps)</a></li>
+<li><a class="reference internal" href="#physical-sub-sensor-overclocking-1khz-accel-2khz-gyro-odr">9.4. Physical Sub-Sensor Overclocking (1kHz Accel / 2kHz Gyro ODR)</a></li>
 </ul>
 </li>
 </ul>
