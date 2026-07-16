@@ -273,4 +273,23 @@ TEST_F(BNO055MockTest, EKFRawBurstReadingAndAsync) {
     EXPECT_NEAR(async_raw.mag.x, 1.0f, 1e-4);
 
     imu_->stopRawAsyncReading();
+
+    // Verify GPIO Interrupt driven mode (mock fallback mode)
+    data_received = false;
+    success = imu_->startInterruptDrivenReading(24, [&](const bno055lib::BNO055::RawSensorData& data) {
+        std::lock_guard<std::mutex> lock(mtx);
+        async_raw = data;
+        data_received = true;
+        cv.notify_one();
+    });
+
+    ASSERT_TRUE(success);
+
+    std::unique_lock<std::mutex> lock2(mtx);
+    cv.wait_for(lock2, std::chrono::milliseconds(200), [&]() { return data_received; });
+
+    EXPECT_TRUE(data_received);
+    EXPECT_NEAR(async_raw.accel.x, 1.0f, 1e-4);
+
+    imu_->stopInterruptDrivenReading();
 }
