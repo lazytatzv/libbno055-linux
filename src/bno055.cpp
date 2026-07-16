@@ -12,6 +12,7 @@
 #endif
 #include <unistd.h>
 
+#include <atomic>
 #include <chrono>
 #include <cmath>
 #include <cstring>
@@ -1140,19 +1141,19 @@ int8_t BNO055::getTemperatureOrDefault() noexcept {
 Vector3 toEulerDegrees(const Quaternion& q) noexcept {
     float sinr_cosp = 2.0f * (q.w * q.x + q.y * q.z);
     float cosr_cosp = 1.0f - 2.0f * (q.x * q.x + q.y * q.y);
-    float roll = std::atan2f(sinr_cosp, cosr_cosp);
+    float roll = std::atan2(sinr_cosp, cosr_cosp);
 
     float sinp = 2.0f * (q.w * q.y - q.z * q.x);
     float pitch = 0.0f;
     if (std::abs(sinp) >= 1.0f) {
-        pitch = std::copysignf(static_cast<float>(M_PI) / 2.0f, sinp);
+        pitch = std::copysign(static_cast<float>(M_PI) / 2.0f, sinp);
     } else {
-        pitch = std::asinf(sinp);
+        pitch = std::asin(sinp);
     }
 
     float siny_cosp = 2.0f * (q.w * q.z + q.x * q.y);
     float cosy_cosp = 1.0f - 2.0f * (q.y * q.y + q.z * q.z);
-    float yaw = std::atan2f(siny_cosp, cosy_cosp);
+    float yaw = std::atan2(siny_cosp, cosy_cosp);
 
     float roll_deg = roll * 180.0f / static_cast<float>(M_PI);
     float pitch_deg = pitch * 180.0f / static_cast<float>(M_PI);
