@@ -141,11 +141,25 @@ public:
 
         diag_publisher_ = this->create_publisher<diagnostic_msgs::msg::DiagnosticArray>("/diagnostics", 10);
 
-        auto interval = std::chrono::duration<double>(1.0 / rate_hz);
-        timer_ = this->create_wall_timer(interval, std::bind(&BNO055PublisherNode::timer_callback, this));
-        diag_timer_ = this->create_wall_timer(1s, std::bind(&BNO055PublisherNode::publish_diagnostics, this));
+        std::string read_mode = this->get_parameter("read_mode").as_string();
+        int gpio_pin = this->get_parameter("interrupt_gpio_pin").as_int();
 
-        RCLCPP_INFO(this->get_logger(), "IMU Node started. Publishing on 'imu/data' at %.1f Hz", rate_hz);
+        if (read_mode == "raw_async") {
+            RCLCPP_INFO(this->get_logger(), "Starting in High-Performance RAW ASYNC Mode at %.1f Hz", rate_hz);
+            imu_->startRawAsyncReading(rate_hz,
+                                       std::bind(&BNO055PublisherNode::raw_data_callback, this, std::placeholders::_1));
+        } else if (read_mode == "interrupt") {
+            RCLCPP_INFO(this->get_logger(), "Starting in High-Performance HARDWARE INTERRUPT (IRQ) Mode on GPIO Pin %d",
+                        gpio_pin);
+            imu_->startInterruptDrivenReading(
+                gpio_pin, std::bind(&BNO055PublisherNode::raw_data_callback, this, std::placeholders::_1));
+        } else {
+            RCLCPP_INFO(this->get_logger(), "Starting in STANDARD Polling Mode at %.1f Hz", rate_hz);
+            auto interval = std::chrono::duration<double>(1.0 / rate_hz);
+            timer_ = this->create_wall_timer(interval, std::bind(&BNO055PublisherNode::timer_callback, this));
+        }
+
+        diag_timer_ = this->create_wall_timer(1s, std::bind(&BNO055PublisherNode::publish_diagnostics, this));
     }
 
 private:
@@ -235,6 +249,37 @@ private:
         gravity_publisher_->publish(std::move(grav_msg));
     }
 
+    void raw_data_callback(const bno055lib::BNO055::RawSensorData& data) {
+        auto stamp = this->now();
+
+        // 1. Publish to imu/raw (Raw sensor readings)
+        auto raw_msg = std::make_unique<sensor_msgs::msg::Imu>();
+        raw_msg->header.stamp = stamp;
+        raw_msg->header.frame_id = frame_id_;
+
+        raw_msg->linear_acceleration.x = data.accel.x;
+        raw_msg->linear_acceleration.y = data.accel.y;
+        raw_msg->linear_acceleration.z = data.accel.z;
+
+        raw_msg->angular_velocity.x = data.gyro.x;
+        raw_msg->angular_velocity.y = data.gyro.y;
+        raw_msg->angular_velocity.z = data.gyro.z;
+
+        raw_msg->orientation.w = 1.0;  // Fill identity orientation for raw topic
+        bno055_ros2::fill_imu_covariances(this, *raw_msg);
+        raw_publisher_->publish(std::move(raw_msg));
+
+        // 2. Publish to imu/mag
+        auto mag_msg = std::make_unique<sensor_msgs::msg::MagneticField>();
+        mag_msg->header.stamp = stamp;
+        mag_msg->header.frame_id = frame_id_;
+        mag_msg->magnetic_field.x = data.mag.x * 1e-6;
+        mag_msg->magnetic_field.y = data.mag.y * 1e-6;
+        mag_msg->magnetic_field.z = data.mag.z * 1e-6;
+        bno055_ros2::fill_mag_covariance(this, *mag_msg);
+        mag_publisher_->publish(std::move(mag_msg));
+    }
+
     void publish_diagnostics() {
         auto diag_arr = bno055_ros2::build_diagnostics(this, *imu_, "IMU Sensor Monitor");
         diag_publisher_->publish(*diag_arr);
@@ -258,6 +303,15 @@ private:
         status_pub_->publish(status_msg);
     }
 
+public:
+    ~BNO055PublisherNode() override {
+        if (imu_) {
+            imu_->stopRawAsyncReading();
+            imu_->stopInterruptDrivenReading();
+        }
+    }
+
+private:
     std::optional<bno055lib::BNO055> imu_;
     std::string frame_id_;
     rclcpp::Publisher<sensor_msgs::msg::Imu>::SharedPtr publisher_;

@@ -188,8 +188,23 @@ public:
         status_pub_->on_activate();
         diag_publisher_->on_activate();
 
-        // Restart timers
-        timer_->reset();
+        std::string read_mode = this->get_parameter("read_mode").as_string();
+        int gpio_pin = this->get_parameter("interrupt_gpio_pin").as_int();
+        double rate_hz = this->get_parameter("publish_rate").as_double();
+
+        if (read_mode == "raw_async") {
+            RCLCPP_INFO(this->get_logger(), "Activating raw_async mode at %.1f Hz", rate_hz);
+            imu_.startRawAsyncReading(
+                rate_hz, std::bind(&BNO055LifecyclePublisherNode::raw_data_callback, this, std::placeholders::_1));
+        } else if (read_mode == "interrupt") {
+            RCLCPP_INFO(this->get_logger(), "Activating hardware interrupt mode on GPIO %d", gpio_pin);
+            imu_.startInterruptDrivenReading(
+                gpio_pin, std::bind(&BNO055LifecyclePublisherNode::raw_data_callback, this, std::placeholders::_1));
+        } else {
+            RCLCPP_INFO(this->get_logger(), "Activating standard timer polling mode");
+            timer_->reset();
+        }
+
         diag_timer_->reset();
 
         RCLCPP_INFO(this->get_logger(), "Activation successful. Publishing started.");
@@ -200,6 +215,10 @@ public:
     CallbackReturn on_deactivate(const rclcpp_lifecycle::State& state) override {
         (void)state;
         RCLCPP_INFO(this->get_logger(), "Deactivating BNO055...");
+
+        // Stop background reading threads if running
+        imu_.stopRawAsyncReading();
+        imu_.stopInterruptDrivenReading();
 
         // Stop timers
         timer_->cancel();
@@ -218,7 +237,7 @@ public:
         // Suspend sensor to save power
         imu_.enterSuspendMode();
 
-        RCLCPP_INFO(this->get_logger(), "Deactivation successful. Sensor suspended.");
+        RCLCPP_INFO(this->get_deactivate_state().label().c_str(), "Deactivation successful. Sensor suspended.");
         return CallbackReturn::SUCCESS;
     }
 
@@ -226,6 +245,9 @@ public:
     CallbackReturn on_cleanup(const rclcpp_lifecycle::State& state) override {
         (void)state;
         RCLCPP_INFO(this->get_logger(), "Cleaning up BNO055 resources...");
+
+        imu_.stopRawAsyncReading();
+        imu_.stopInterruptDrivenReading();
 
         // Release structures
         timer_.reset();
@@ -250,6 +272,9 @@ public:
     CallbackReturn on_shutdown(const rclcpp_lifecycle::State& state) override {
         (void)state;
         RCLCPP_INFO(this->get_logger(), "Shutting down BNO055 Node...");
+
+        imu_.stopRawAsyncReading();
+        imu_.stopInterruptDrivenReading();
 
         // Ensure device is suspended
         imu_.enterSuspendMode();
@@ -358,6 +383,46 @@ private:
         grav_msg->y = grav->y;
         grav_msg->z = grav->z;
         gravity_publisher_->publish(std::move(grav_msg));
+    }
+
+    void raw_data_callback(const bno055lib::BNO055::RawSensorData& data) {
+        // Guard callback execution to only run when node is in ACTIVE lifecycle state
+        if (this->get_current_state().id() != lifecycle_msgs::msg::State::PRIMARY_STATE_ACTIVE) {
+            return;
+        }
+        auto stamp = this->now();
+
+        // 1. Publish to imu/raw (Raw sensor readings)
+        auto raw_msg = std::make_unique<sensor_msgs::msg::Imu>();
+        raw_msg->header.stamp = stamp;
+        raw_msg->header.frame_id = frame_id_;
+
+        raw_msg->linear_acceleration.x = data.accel.x;
+        raw_msg->linear_acceleration.y = data.accel.y;
+        raw_msg->linear_acceleration.z = data.accel.z;
+
+        raw_msg->angular_velocity.x = data.gyro.x;
+        raw_msg->angular_velocity.y = data.gyro.y;
+        raw_msg->angular_velocity.z = data.gyro.z;
+
+        raw_msg->orientation.w = 1.0;  // Fill identity orientation for raw topic
+        bno055_ros2::fill_imu_covariances(this, *raw_msg);
+        raw_publisher_->publish(std::move(raw_msg));
+
+        // 2. Publish to imu/mag
+        auto mag_msg = std::make_unique<sensor_msgs::msg::MagneticField>();
+        mag_msg->header.stamp = stamp;
+        mag_msg->header.frame_id = frame_id_;
+        mag_msg->magnetic_field.x = data.mag.x * 1e-6;
+        mag_msg->magnetic_field.y = data.mag.y * 1e-6;
+        mag_msg->magnetic_field.z = data.mag.z * 1e-6;
+        bno055_ros2::fill_mag_covariance(this, *mag_msg);
+        mag_publisher_->publish(std::move(mag_msg));
+    }
+
+    ~BNO055LifecyclePublisherNode() override {
+        imu_.stopRawAsyncReading();
+        imu_.stopInterruptDrivenReading();
     }
 
     void publish_diagnostics() {
