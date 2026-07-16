@@ -11,7 +11,10 @@
 #include <string_view>
 #include <system_error>
 
+#include "libbno055-linux/transport.hpp"
+
 namespace bno055lib {
+
 
 // Log levels for customization
 enum class LogLevel { Debug, Info, Warning, Error };
@@ -157,6 +160,9 @@ public:
 
     // UART mode: Connect using a USB-to-UART bridge
     explicit BNO055(const UARTConfig& uart_config);
+
+    // Custom transport mode for testing / dependency injection
+    explicit BNO055(std::unique_ptr<Transport> transport);
 
     // Destructor
     ~BNO055();

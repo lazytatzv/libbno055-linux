@@ -1,4 +1,5 @@
 #include "libbno055-linux/bno055.hpp"
+#include "libbno055-linux/transport.hpp"
 
 #include <fcntl.h>
 #include <poll.h>
@@ -21,7 +22,9 @@
 
 namespace bno055lib {
 
+
 namespace {
+
 
 inline int16_t read16_le(const uint8_t* buf) noexcept {
     return static_cast<int16_t>(buf[0] | (buf[1] << 8));
@@ -134,9 +137,13 @@ public:
     bool has_offsets_{false};
     std::array<uint8_t, 22> offsets_data_{0};
 
+    std::unique_ptr<Transport> transport_;
+
     Impl(const UARTConfig& uart_config) : uart_config_(uart_config) { conn_type_ = ConnectionType::UART; }
 
     Impl(uint8_t address, std::string_view i2c_device) : address_(address), i2c_device_(std::string(i2c_device)) {}
+
+    Impl(std::unique_ptr<Transport> transport) : transport_(std::move(transport)) {}
 
     ~Impl() { close_i2c(); }
 
@@ -166,6 +173,13 @@ public:
     bool open_i2c() {
         if (i2c_fd >= 0) {
             return true;
+        }
+        if (transport_) {
+            if (transport_->open()) {
+                i2c_fd = 999;
+                return true;
+            }
+            return false;
         }
 #ifdef __linux__
         if (conn_type_ == ConnectionType::UART) {
@@ -224,9 +238,13 @@ public:
 
     void close_i2c() {
         if (i2c_fd >= 0) {
+            if (transport_) {
+                transport_->close();
+            } else {
 #ifdef __linux__
-            close(i2c_fd);
+                close(i2c_fd);
 #endif
+            }
             i2c_fd = -1;
         }
     }
@@ -339,6 +357,9 @@ public:
 
     // Low-level raw methods
     bool write8_raw(uint8_t reg, uint8_t value) {
+        if (transport_) {
+            return transport_->write8(reg, value);
+        }
         if (i2c_fd < 0) return false;
 #ifdef __linux__
         if (conn_type_ == ConnectionType::UART) {
@@ -358,6 +379,9 @@ public:
     }
 
     bool writeLen_raw(uint8_t reg, const uint8_t* buffer, uint8_t len) {
+        if (transport_) {
+            return transport_->writeLen(reg, buffer, len);
+        }
         if (i2c_fd < 0 || len > 31) return false;
 #ifdef __linux__
         if (conn_type_ == ConnectionType::UART) {
@@ -385,6 +409,9 @@ public:
     }
 
     bool read8_raw(uint8_t reg, uint8_t& value) {
+        if (transport_) {
+            return transport_->read8(reg, value);
+        }
         if (i2c_fd < 0) return false;
 #ifdef __linux__
         if (conn_type_ == ConnectionType::UART) {
@@ -410,6 +437,36 @@ public:
 #endif
     }
 
+    bool readLen_raw(uint8_t reg, uint8_t* buffer, uint8_t len) {
+        if (transport_) {
+            return transport_->readLen(reg, buffer, len);
+        }
+        if (i2c_fd < 0) return false;
+#ifdef __linux__
+        if (conn_type_ == ConnectionType::UART) {
+            uint8_t buf[4] = {0xAA, 0x01, reg, len};
+            if (::write(i2c_fd, buf, 4) != 4) return false;
+            uint8_t resp[2];
+            if (!uart_read_exact(resp, 2)) return false;
+            if (resp[0] == 0xBB && resp[1] == len) {
+                return uart_read_exact(buffer, len);
+            }
+            return false;
+        }
+        uint8_t reg_buf[1] = {reg};
+        if (::write(i2c_fd, reg_buf, 1) != 1) return false;
+        return ::read(i2c_fd, buffer, len) == len;
+#else
+        std::memset(buffer, 0, len);
+        if (reg == 0x20 && len >= 8) { // QUATERNION_DATA_W_LSB
+            int16_t w = 16384;
+            buffer[0] = w & 0xFF;
+            buffer[1] = (w >> 8) & 0xFF;
+        }
+        return true;
+#endif
+    }
+
     // Thread-safe methods with automatic reconnect and retries
     bool write8(uint8_t reg, uint8_t value, int retries = 3) {
         std::lock_guard<std::mutex> lock(mutex_);
@@ -418,73 +475,47 @@ public:
                 std::this_thread::sleep_for(std::chrono::milliseconds(10));
                 continue;
             }
-#ifdef __linux__
-            uint8_t buffer[2] = {reg, value};
-            if (::write(i2c_fd, buffer, 2) == 2) {
+            if (write8_raw(reg, value)) {
                 return true;
             }
-#else
-            (void)reg;
-            (void)value;
-            return true;
-#endif
             diagnostics_.write_failures++;
-            log(LogLevel::Warning, "I2C write failed, retrying...");
+            log(LogLevel::Warning, "I2C/UART write failed, retrying...");
             std::this_thread::sleep_for(std::chrono::milliseconds(5));
         }
 
         if (reconnect()) {
-#ifdef __linux__
-            uint8_t buffer[2] = {reg, value};
-            if (::write(i2c_fd, buffer, 2) == 2) {
+            if (write8_raw(reg, value)) {
                 return true;
             }
-#else
-            (void)reg;
-            (void)value;
-            return true;
-#endif
         }
         diagnostics_.write_failures++;
-        log(LogLevel::Error, "I2C write failed permanently");
+        log(LogLevel::Error, "I2C/UART write failed permanently");
         return false;
     }
 
     bool writeLen(uint8_t reg, const uint8_t* buffer, uint8_t len, int retries = 3) {
         if (len > 31) return false;
         std::lock_guard<std::mutex> lock(mutex_);
-        uint8_t write_buf[32];  // Stack allocation instead of vector
-        write_buf[0] = reg;
-        std::memcpy(write_buf + 1, buffer, len);
-
         for (int i = 0; i < retries; ++i) {
             if (i2c_fd < 0 && !open_i2c()) {
                 std::this_thread::sleep_for(std::chrono::milliseconds(10));
                 continue;
             }
-#ifdef __linux__
-            if (::write(i2c_fd, write_buf, len + 1) == len + 1) {
+            if (writeLen_raw(reg, buffer, len)) {
                 return true;
             }
-#else
-            return true;
-#endif
             diagnostics_.write_failures++;
-            log(LogLevel::Warning, "I2C writeLen failed, retrying...");
+            log(LogLevel::Warning, "I2C/UART writeLen failed, retrying...");
             std::this_thread::sleep_for(std::chrono::milliseconds(5));
         }
 
         if (reconnect()) {
-#ifdef __linux__
-            if (::write(i2c_fd, write_buf, len + 1) == len + 1) {
+            if (writeLen_raw(reg, buffer, len)) {
                 return true;
             }
-#else
-            return true;
-#endif
         }
         diagnostics_.write_failures++;
-        log(LogLevel::Error, "I2C writeLen failed permanently");
+        log(LogLevel::Error, "I2C/UART writeLen failed permanently");
         return false;
     }
 
@@ -495,67 +526,21 @@ public:
                 std::this_thread::sleep_for(std::chrono::milliseconds(10));
                 continue;
             }
-#ifdef __linux__
-            if (conn_type_ == ConnectionType::UART) {
-                uint8_t buf[4] = {0xAA, 0x01, reg, 1};
-                if (::write(i2c_fd, buf, 4) == 4) {
-                    uint8_t resp[2];
-                    if (uart_read_exact(resp, 2)) {
-                        if (resp[0] == 0xBB && resp[1] == 1) {
-                            if (uart_read_exact(&value, 1)) return true;
-                        } else if (resp[0] == 0xEE && resp[1] == 0x07) {
-                            // continue loop, wait and retry
-                        }
-                    }
-                }
-            } else {
-                uint8_t reg_buf[1] = {reg};
-                if (::write(i2c_fd, reg_buf, 1) == 1) {
-                    if (::read(i2c_fd, &value, 1) == 1) {
-                        return true;
-                    }
-                }
+            if (read8_raw(reg, value)) {
+                return true;
             }
-#else
-            value = 0;
-            if (reg == CHIP_ID) value = BNO055_ID;
-            return true;
-#endif
             diagnostics_.read_failures++;
-            log(LogLevel::Warning, "I2C read failed, retrying...");
+            log(LogLevel::Warning, "I2C/UART read failed, retrying...");
             std::this_thread::sleep_for(std::chrono::milliseconds(5));
         }
 
         if (reconnect()) {
-#ifdef __linux__
-            if (conn_type_ == ConnectionType::UART) {
-                uint8_t buf[4] = {0xAA, 0x01, reg, 1};
-                if (::write(i2c_fd, buf, 4) == 4) {
-                    uint8_t resp[2];
-                    if (uart_read_exact(resp, 2)) {
-                        if (resp[0] == 0xBB && resp[1] == 1) {
-                            if (uart_read_exact(&value, 1)) return true;
-                        } else if (resp[0] == 0xEE && resp[1] == 0x07) {
-                            // continue loop, wait and retry
-                        }
-                    }
-                }
-            } else {
-                uint8_t reg_buf[1] = {reg};
-                if (::write(i2c_fd, reg_buf, 1) == 1) {
-                    if (::read(i2c_fd, &value, 1) == 1) {
-                        return true;
-                    }
-                }
+            if (read8_raw(reg, value)) {
+                return true;
             }
-#else
-            value = 0;
-            if (reg == CHIP_ID) value = BNO055_ID;
-            return true;
-#endif
         }
         diagnostics_.read_failures++;
-        log(LogLevel::Error, "I2C read failed permanently");
+        log(LogLevel::Error, "I2C/UART read failed permanently");
         return false;
     }
 
@@ -566,70 +551,21 @@ public:
                 std::this_thread::sleep_for(std::chrono::milliseconds(10));
                 continue;
             }
-#ifdef __linux__
-            if (conn_type_ == ConnectionType::UART) {
-                uint8_t buf[4] = {0xAA, 0x01, reg, len};
-                if (::write(i2c_fd, buf, 4) == 4) {
-                    uint8_t resp[2];
-                    if (uart_read_exact(resp, 2)) {
-                        if (resp[0] == 0xBB && resp[1] == len) {
-                            if (uart_read_exact(buffer, len)) return true;
-                        } else if (resp[0] == 0xEE && resp[1] == 0x07) {
-                            // continue loop, wait and retry
-                        }
-                    }
-                }
-            } else {
-                uint8_t reg_buf[1] = {reg};
-                if (::write(i2c_fd, reg_buf, 1) == 1) {
-                    if (::read(i2c_fd, buffer, len) == len) {
-                        return true;
-                    }
-                }
+            if (readLen_raw(reg, buffer, len)) {
+                return true;
             }
-#else
-            std::memset(buffer, 0, len);
-            if (reg == QUATERNION_DATA_W_LSB && len >= 8) {
-                int16_t w = 16384;
-                buffer[0] = w & 0xFF;
-                buffer[1] = (w >> 8) & 0xFF;
-            }
-            return true;
-#endif
             diagnostics_.read_failures++;
-            log(LogLevel::Warning, "I2C readLen failed, retrying...");
+            log(LogLevel::Warning, "I2C/UART readLen failed, retrying...");
             std::this_thread::sleep_for(std::chrono::milliseconds(5));
         }
 
         if (reconnect()) {
-#ifdef __linux__
-            if (conn_type_ == ConnectionType::UART) {
-                uint8_t buf[4] = {0xAA, 0x01, reg, len};
-                if (::write(i2c_fd, buf, 4) == 4) {
-                    uint8_t resp[2];
-                    if (uart_read_exact(resp, 2)) {
-                        if (resp[0] == 0xBB && resp[1] == len) {
-                            if (uart_read_exact(buffer, len)) return true;
-                        } else if (resp[0] == 0xEE && resp[1] == 0x07) {
-                            // continue loop, wait and retry
-                        }
-                    }
-                }
-            } else {
-                uint8_t reg_buf[1] = {reg};
-                if (::write(i2c_fd, reg_buf, 1) == 1) {
-                    if (::read(i2c_fd, buffer, len) == len) {
-                        return true;
-                    }
-                }
+            if (readLen_raw(reg, buffer, len)) {
+                return true;
             }
-#else
-            std::memset(buffer, 0, len);
-            return true;
-#endif
         }
         diagnostics_.read_failures++;
-        log(LogLevel::Error, "I2C readLen failed permanently");
+        log(LogLevel::Error, "I2C/UART readLen failed permanently");
         return false;
     }
 };
@@ -638,6 +574,9 @@ BNO055::BNO055(const UARTConfig& uart_config) : impl_(std::make_unique<Impl>(uar
 
 BNO055::BNO055(uint8_t i2c_address, std::string_view i2c_device)
     : impl_(std::make_unique<Impl>(i2c_address, i2c_device)) {}
+
+BNO055::BNO055(std::unique_ptr<Transport> transport)
+    : impl_(std::make_unique<Impl>(std::move(transport))) {}
 
 BNO055::~BNO055() = default;
 
