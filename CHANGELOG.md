@@ -5,6 +5,31 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.4.1] - 2026-07-17
+
+### Added
+- Introduced `benchmark_imu` example utility to measure burst read latency, scheduling jitter, and standard deviation to validate real-time CPU isolation.
+
+### Fixed
+- Fixed compilation errors in `BNO055LifecyclePublisherNode` (incorrect logger call in `on_deactivate` and private destructor).
+- Explicitly included `lifecycle_msgs` headers (`state.hpp` and `transition.hpp`) to fix compilation on ROS 2 Jazzy.
+
+## [1.4.0] - 2026-07-16
+
+### Added
+- Implemented ultra-low-latency 18-byte sequential raw burst-read and background polling async API optimized for EKF state estimation.
+- Added hardware interrupts (IRQ) support for async reading.
+- Upgraded ROS 2 standard and lifecycle nodes to support high-performance raw async and interrupt driver modes.
+- Introduced transport abstraction layer and `MockTransport` for hardware-independent unit testing.
+- Added comprehensive integration guides (robot_localization EKF integration, Linux kernel tuning, I2C DMA, and UART overclocking) to `docs/INTEGRATION.md`.
+
+### Changed
+- Converted `Vector3` and `Quaternion` to float precision for FPU acceleration.
+- Reduced thread synchronization lock granularity to optimize library performance.
+
+### Fixed
+- Fixed GCC 13 compiler compatibility by including `<atomic>` and using overloaded std math functions.
+
 ## [1.3.2] - 2026-07-16
 
 ### Added
