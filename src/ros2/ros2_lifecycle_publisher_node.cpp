@@ -14,10 +14,10 @@
 #include <algorithm>
 #include <diagnostic_msgs/msg/diagnostic_array.hpp>
 #include <geometry_msgs/msg/vector3.hpp>
+#include <lifecycle_msgs/msg/state.hpp>
 #include <memory>
 #include <rclcpp/rclcpp.hpp>
 #include <rclcpp_lifecycle/lifecycle_node.hpp>
-#include <lifecycle_msgs/msg/state.hpp>
 #include <sensor_msgs/msg/imu.hpp>
 #include <sensor_msgs/msg/magnetic_field.hpp>
 #include <sensor_msgs/msg/temperature.hpp>

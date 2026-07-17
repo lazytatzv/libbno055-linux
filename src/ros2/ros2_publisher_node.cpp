@@ -149,8 +149,7 @@ public:
             imu_->startRawAsyncReading(rate_hz,
                                        std::bind(&BNO055PublisherNode::raw_data_callback, this, std::placeholders::_1));
         } else if (read_mode == "interrupt") {
-            RCLCPP_INFO(this->get_logger(), "Starting in HARDWARE INTERRUPT (IRQ) Mode on GPIO Pin %d",
-                        gpio_pin);
+            RCLCPP_INFO(this->get_logger(), "Starting in HARDWARE INTERRUPT (IRQ) Mode on GPIO Pin %d", gpio_pin);
             imu_->startInterruptDrivenReading(
                 gpio_pin, std::bind(&BNO055PublisherNode::raw_data_callback, this, std::placeholders::_1));
         } else {
