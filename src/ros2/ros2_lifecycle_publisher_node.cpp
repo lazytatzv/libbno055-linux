@@ -39,6 +39,11 @@ public:
         bno055_ros2::declare_common_parameters(this);
     }
 
+    ~BNO055LifecyclePublisherNode() override {
+        imu_.stopRawAsyncReading();
+        imu_.stopInterruptDrivenReading();
+    }
+
     // Configure Transition: Initialize hardware, setup communications
     CallbackReturn on_configure(const rclcpp_lifecycle::State& state) override {
         (void)state;
@@ -237,7 +242,7 @@ public:
         // Suspend sensor to save power
         imu_.enterSuspendMode();
 
-        RCLCPP_INFO(this->get_deactivate_state().label().c_str(), "Deactivation successful. Sensor suspended.");
+        RCLCPP_INFO(this->get_logger(), "Deactivation successful. Sensor suspended.");
         return CallbackReturn::SUCCESS;
     }
 
@@ -418,11 +423,6 @@ private:
         mag_msg->magnetic_field.z = data.mag.z * 1e-6;
         bno055_ros2::fill_mag_covariance(this, *mag_msg);
         mag_publisher_->publish(std::move(mag_msg));
-    }
-
-    ~BNO055LifecyclePublisherNode() override {
-        imu_.stopRawAsyncReading();
-        imu_.stopInterruptDrivenReading();
     }
 
     void publish_diagnostics() {
