@@ -1,7 +1,10 @@
+#include <algorithm>
 #include <chrono>
 #include <cmath>
+#include <condition_variable>
 #include <iomanip>
 #include <iostream>
+#include <mutex>
 #include <numeric>
 #include <thread>
 #include <vector>
@@ -21,7 +24,7 @@ int main(int argc, char** argv) {
     }
 
     std::cout << "=========================================================\n";
-    std::cout << "        BNO055 High-Performance Benchmark Utility        \n";
+    std::cout << "        BNO055 Benchmark Utility        \n";
     std::cout << "=========================================================\n";
     std::cout << "Device: " << device << "\n";
     std::cout << "Interrupt GPIO Pin: " << pin << "\n";
@@ -78,7 +81,7 @@ int main(int argc, char** argv) {
 
     auto start_bench = std::chrono::high_resolution_clock::now();
     
-    // Register high-performance GPIO hardware interrupt listener
+    // Register GPIO hardware interrupt listener
     imu.startInterruptDrivenReading(pin, callback);
 
     // Wait until collection completes

@@ -307,7 +307,7 @@ private:
         // Record timestamp immediately before I2C communication starts to minimize jitter
         auto stamp = this->now();
 
-        // High-performance noexcept reads
+        // Noexcept reads
         auto quat = imu_.getQuaternionNoexcept();
         auto gyro = imu_.getGyroscopeNoexcept();
         auto accel = imu_.getLinearAccelerationNoexcept();
