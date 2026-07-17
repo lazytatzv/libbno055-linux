@@ -1,3 +1,15 @@
+libbno055-linux (1.4.1-1) jammy; urgency=medium
+
+  * Fix lifecycle node build errors, add benchmark utility.
+
+ -- lazytatzv <lazytatzv@users.noreply.github.com>  Fri, 17 Jul 2026 12:00:00 +0900
+
+libbno055-linux (1.4.0-1) jammy; urgency=medium
+
+  * Add raw async polling, hardware interrupts (IRQ), and custom integration guides.
+
+ -- lazytatzv <lazytatzv@users.noreply.github.com>  Thu, 16 Jul 2026 12:00:00 +0900
+
 libbno055-linux (1.3.2-1) jammy; urgency=medium
 
   * Add reset service, DiagnosticStatus publisher, and macOS build fixes.
