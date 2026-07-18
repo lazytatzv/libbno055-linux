@@ -14,7 +14,6 @@
 int main(int argc, char** argv) {
     std::string device = "/dev/i2c-1";
     int pin = 24;
-    bool use_interrupt = true;
 
     if (argc > 1) {
         device = argv[1];
