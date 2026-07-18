@@ -1,6 +1,8 @@
 #include <gtest/gtest.h>
 
 #include <cmath>
+#include <condition_variable>
+#include <mutex>
 
 #include "libbno055-linux/bno055.hpp"
 #include "libbno055-linux/mock_transport.hpp"

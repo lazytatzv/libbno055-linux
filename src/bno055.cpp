@@ -1384,7 +1384,9 @@ bool BNO055::startInterruptDrivenReading(int gpio_pin, RawAsyncDataCallback call
 
         // Clear initial state
         char dummy;
-        (void)::read(val_fd, &dummy, 1);  // NOLINT(readability-magic-numbers)
+        if (::read(val_fd, &dummy, 1) < 0) {  // NOLINT(readability-magic-numbers)
+            // Ignore error
+        }
 
         struct pollfd pfd;
         pfd.fd = val_fd;
@@ -1397,7 +1399,9 @@ bool BNO055::startInterruptDrivenReading(int gpio_pin, RawAsyncDataCallback call
                 if (pfd.revents & POLLPRI) {
                     // Seek back to start to clear interrupt flag
                     ::lseek(val_fd, 0, SEEK_SET);
-                    (void)::read(val_fd, &dummy, 1);  // NOLINT(readability-magic-numbers)
+                    if (::read(val_fd, &dummy, 1) < 0) {  // NOLINT(readability-magic-numbers)
+                        // Ignore error
+                    }
 
                     // Execute burst read Immediately on interrupt
                     auto raw_opt = getRawSensorDataNoexcept();
