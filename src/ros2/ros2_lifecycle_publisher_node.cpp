@@ -61,8 +61,9 @@ public:
             uart_config.port = this->get_parameter("uart_port").as_string();
             uart_config.baudrate = this->get_parameter("uart_baudrate").as_int();
             uart_config.timeout = this->get_parameter("uart_timeout").as_double();
-            RCLCPP_INFO(this->get_logger(), "Configuring BNO055 on UART %s (%d bps)", uart_config.port.c_str(),
-                        uart_config.baudrate);
+            uart_config.low_latency = this->get_parameter("uart_low_latency").as_bool();
+            RCLCPP_INFO(this->get_logger(), "Initializing BNO055 on UART %s (%d bps, low_latency: %s)", uart_config.port.c_str(),
+                        uart_config.baudrate, uart_config.low_latency ? "true" : "false");
             imu_ = bno055lib::BNO055(uart_config);
         } else {
             RCLCPP_INFO(this->get_logger(), "Configuring BNO055 on I2C %s (address: 0x%02X)", device.c_str(), address);

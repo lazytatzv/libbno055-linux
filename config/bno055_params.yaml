@@ -13,6 +13,7 @@
     # UART Specifics (Ignored if connection_type is "i2c")
     uart_baudrate: 115200            # Overclock to 921600 if supported by your hardware
     uart_timeout: 0.1
+    uart_low_latency: false          # Set to true to disable USB-UART driver buffering (Linux only)
 
     # ---------------------------------------------------------
     # 2. Execution & Read Mode (The "Ultimate" Settings)
@@ -28,6 +29,9 @@
     
     # Target publishing rate in Hz (max 100Hz for standard modes). Ignored in "interrupt" mode.
     publish_rate: 100.0
+
+    # Thread priority for polling loop. Set to > 0 (e.g. 80) to enable SCHED_FIFO real-time priority (requires root/rtprio limits)
+    thread_priority: 0
 
     # ---------------------------------------------------------
     # 3. Sensor Operation Mode

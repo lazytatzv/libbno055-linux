@@ -4,6 +4,8 @@
 #include <poll.h>
 #include <sys/ioctl.h>
 #include <termios.h>
+#include <unistd.h>
+#include <linux/serial.h>
 
 #include "libbno055-linux/transport.hpp"
 
@@ -265,6 +267,18 @@ public:
                 i2c_fd = -1;
                 return false;
             }
+
+            if (uart_config_.low_latency) {
+                struct serial_struct serial;
+                if (ioctl(i2c_fd, TIOCGSERIAL, &serial) == 0) {
+                    serial.flags |= ASYNC_LOW_LATENCY;
+                    ioctl(i2c_fd, TIOCSSERIAL, &serial);
+                    log(LogLevel::Info, "UART Low Latency mode enabled via TIOCSSERIAL.");
+                } else {
+                    log(LogLevel::Warning, "Failed to enable UART Low Latency mode (TIOCGSERIAL failed).");
+                }
+            }
+
             return true;
         }
 
