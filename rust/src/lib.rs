@@ -101,6 +101,13 @@ pub struct Quaternion {
     pub z: f32,
 }
 
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub struct RawSensorData {
+    pub accel: Vector3,
+    pub mag: Vector3,
+    pub gyro: Vector3,
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct CalibrationStatus {
     pub sys: u8,
@@ -239,6 +246,23 @@ impl BNO055 {
         let mut raw = sys::bno055_vector3_t { x: 0.0, y: 0.0, z: 0.0 };
         if unsafe { sys::bno055_get_euler_angles(self.handle, &mut raw) } {
             Some(Vector3 { x: raw.x, y: raw.y, z: raw.z })
+        } else {
+            None
+        }
+    }
+
+    pub fn get_raw_sensor_data(&self) -> Option<RawSensorData> {
+        let mut raw = sys::bno055_raw_sensor_data_t {
+            accel: sys::bno055_vector3_t { x: 0.0, y: 0.0, z: 0.0 },
+            mag: sys::bno055_vector3_t { x: 0.0, y: 0.0, z: 0.0 },
+            gyro: sys::bno055_vector3_t { x: 0.0, y: 0.0, z: 0.0 },
+        };
+        if unsafe { sys::bno055_get_raw_sensor_data(self.handle, &mut raw) } {
+            Some(RawSensorData {
+                accel: Vector3 { x: raw.accel.x, y: raw.accel.y, z: raw.accel.z },
+                mag: Vector3 { x: raw.mag.x, y: raw.mag.y, z: raw.mag.z },
+                gyro: Vector3 { x: raw.gyro.x, y: raw.gyro.y, z: raw.gyro.z },
+            })
         } else {
             None
         }
