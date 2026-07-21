@@ -5,6 +5,21 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.6.0] - 2026-07-22
+
+### Added
+- **Hardware Overclocking**: Added automatic 1kHz/2kHz hardware ODR overclocking in `amg` mode (raw mode) by configuring Page 1 sensor registers.
+- **UART Low Latency Mode**: Introduced `uart_low_latency` flag (via `ASYNC_LOW_LATENCY` ioctl) to bypass the default 16ms USB packet buffer delay in Linux FTDI drivers.
+- **Real-time Scheduling**: Added `thread_priority` parameter to elevate the C++ polling thread to OS-level `SCHED_FIFO` real-time priority.
+- **EKF Pro Tuning Profiles**: Completely overhauled `bno055_params.yaml` to include professional EKF tuning guides, matrix layout formatting, and sensible default covariances.
+- **Covariance Tuning Guide**: Appended a comprehensive "How to Determine IMU Covariance" guide to `docs/INTEGRATION.md`.
+
+### Fixed
+- **ROS 2 REP-145 Compliance**: Fixed `/imu/raw` topic to correctly publish `-1.0` in `orientation_covariance[0]` to indicate the absence of orientation data, preventing EKF divergence.
+- **ROS 2 Buildfarm Error**: Corrected `rclcpp_components` dependency declaration in `package.xml` and `CMakeLists.txt` to fix Jenkins CI builds.
+- **macOS CI Build**: Wrapped Linux-specific `<linux/serial.h>` imports inside `#ifdef __linux__` to fix macOS compilation on GitHub Actions.
+- **README Structure**: Refined `README.md` to be significantly more concise and developer-friendly.
+
 ## [1.5.6] - 2026-07-22
 
 ### Added
