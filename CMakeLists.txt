@@ -78,6 +78,26 @@ if(BUILD_EXAMPLES)
     target_link_libraries(c_demo PRIVATE libbno055-linux)
 endif()
 
+# Python Bindings (pybind11)
+option(BUILD_PYTHON_BINDINGS "Build Python bindings using pybind11" ON)
+if(BUILD_PYTHON_BINDINGS)
+    find_package(pybind11 QUIET)
+    if(NOT pybind11_FOUND)
+        message(STATUS "pybind11 not found locally. Fetching pybind11 from GitHub...")
+        include(FetchContent)
+        FetchContent_Declare(
+            pybind11
+            GIT_REPOSITORY https://github.com/pybind/pybind11.git
+            GIT_TAG        v2.12.0
+        )
+        FetchContent_MakeAvailable(pybind11)
+    endif()
+
+    pybind11_add_module(libbno055_py src/python/bindings.cpp)
+    target_link_libraries(libbno055_py PRIVATE libbno055-linux)
+    set_target_properties(libbno055_py PROPERTIES OUTPUT_NAME "libbno055")
+endif()
+
 # Optional ROS 2 integration (conditional build of ROS 2 publisher samples)
 find_package(rclcpp QUIET)
 find_package(rclcpp_lifecycle QUIET)
