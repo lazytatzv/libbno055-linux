@@ -150,6 +150,7 @@ public:
         std::string port{"/dev/ttyUSB0"};
         uint32_t baudrate{115200};
         double timeout{0.1};
+        bool low_latency{false};
     };
 
     // Constructors

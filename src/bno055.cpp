@@ -1,7 +1,6 @@
 #include "libbno055-linux/bno055.hpp"
 
 #include <fcntl.h>
-#include <linux/serial.h>
 #include <poll.h>
 #include <sys/ioctl.h>
 #include <termios.h>
@@ -12,6 +11,7 @@
 #ifdef __linux__
 #include <linux/i2c-dev.h>
 #include <linux/i2c.h>
+#include <linux/serial.h>
 #endif
 #include <unistd.h>
 
