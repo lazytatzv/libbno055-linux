@@ -383,32 +383,57 @@ bno055_destroy(imu);
 
 ## Python API Reference (`import libbno055`)
 
-The Python module is built using `pybind11` and mirrors the C++17 API.
+The Python module is built using `pybind11` and strictly mirrors the C++17 API, providing native C++ performance with Pythonic syntax. All hardware exceptions are caught at the C++ boundary, and failed reads gracefully return `None`.
 
-```python
-import libbno055
+### Classes & Types
 
-# Instantiate I2C or UART
-imu = libbno055.BNO055(address=0x28, device="/dev/i2c-1")
+*   **`libbno055.Vector3`**: Has properties `x`, `y`, `z` (floats).
+*   **`libbno055.Quaternion`**: Has properties `w`, `x`, `y`, `z` (floats).
+*   **`libbno055.CalibrationStatus`**: Has properties `sys`, `gyro`, `accel`, `mag` (integers 0-3), and method `is_fully_calibrated() -> bool`.
+*   **`libbno055.Diagnostics`**: Has properties `write_failures`, `read_failures`, `reconnect_attempts` (integers).
+*   **`libbno055.OpMode`**: Enum (e.g., `libbno055.OpMode.NDOF`, `libbno055.OpMode.IMUPlus`, `libbno055.OpMode.Config`).
 
-# Initialize in fusion mode
-if imu.begin(libbno055.OpMode.NDOF):
-    # Fetch Quaternion
-    q = imu.get_quaternion()
-    if q:
-        euler = libbno055.to_euler_degrees(q)
-        print(f"Roll: {euler.x:.2f}, Pitch: {euler.y:.2f}, Yaw: {euler.z:.2f}")
+### Class: `BNO055`
 
-    # Fetch Accelerometer & Calibration Status
-    accel = imu.get_accelerometer()
-    calib = imu.get_calibration_status()
-```
+#### Constructors
+*   **`__init__(self, address: int = 0x28, device: str = "/dev/i2c-1")`**
+    Initializes the IMU for I2C communication.
+*   **`__init__(self, port: str, baudrate: int = 115200, timeout: float = 0.1)`**
+    Initializes the IMU for USB-to-UART serial communication.
+
+#### Configuration & Lifecycle
+*   **`begin(self, mode: OpMode = OpMode.NDOF) -> bool`**
+    Resets the sensor, verifies connection, and sets the target operation mode. Returns `True` on success.
+*   **`reset(self) -> bool`**
+    Triggers a soft hardware-reset and restores the current operation mode.
+*   **`set_mode(self, mode: OpMode) -> None`**
+    Switches the operating mode dynamically.
+
+#### Sensor Data Reading
+*These methods return the corresponding data structure on success, or `None` if an I2C/UART communication failure occurs.*
+
+*   **`get_accelerometer(self) -> Vector3 | None`**: Returns acceleration (m/s^2).
+*   **`get_magnetometer(self) -> Vector3 | None`**: Returns magnetic field (uT).
+*   **`get_gyroscope(self) -> Vector3 | None`**: Returns angular velocity (rad/s).
+*   **`get_euler_angles(self) -> Vector3 | None`**: Returns Roll, Pitch, Yaw (rad).
+*   **`get_linear_acceleration(self) -> Vector3 | None`**: Returns linear accel (m/s^2).
+*   **`get_gravity(self) -> Vector3 | None`**: Returns gravity vector (m/s^2).
+*   **`get_quaternion(self) -> Quaternion | None`**: Returns unit quaternion.
+*   **`get_temperature(self) -> int | None`**: Returns chip temperature (°C).
+
+#### Diagnostics & Utilities
+*   **`get_calibration_status(self) -> CalibrationStatus | None`**
+    Fetches the live calibration status (0 to 3) for all sensor blocks.
+*   **`get_diagnostics(self) -> Diagnostics`**
+    Returns internal telemetry tracking auto-reconnects and dropped frames.
+*   **`libbno055.to_euler_degrees(q: Quaternion) -> Vector3`**
+    (Module-level function). Converts a quaternion into Euler angles in degrees (`x`=Roll, `y`=Pitch, `z`=Yaw).
 
 ---
 
-## Rust API Reference (`use libbno055::{BNO055, OpMode}`)
+## Rust API Reference (`use libbno055::*`)
 
-The Rust crate (`libbno055`) is published on [crates.io](https://crates.io/crates/libbno055) and provides safe, idiomatic Rust wrappers around the C++ engine.
+The Rust crate (`libbno055`) is published on [crates.io](https://crates.io/crates/libbno055) and provides safe, idiomatic Rust wrappers around the C++ engine using Foreign Function Interfaces (FFI). 
 
 ### Installation
 ```bash
@@ -416,34 +441,51 @@ cargo add libbno055
 ```
 
 ### Types & Structs
-* `struct Vector3 { pub x: f32, pub y: f32, pub z: f32 }`
-* `struct Quaternion { pub w: f32, pub x: f32, pub y: f32, pub z: f32 }`
-* `struct CalibrationStatus { pub sys: u8, pub gyro: u8, pub accel: u8, pub mag: u8 }`
-* `struct Diagnostics { pub write_failures: u32, pub read_failures: u32, pub reconnect_attempts: u32 }`
-* `enum OpMode`: `Config`, `AccOnly`, `MagOnly`, `GyroOnly`, `AccMag`, `AccGyro`, `MagGyro`, `AMG`, `IMUPlus`, `Compass`, `M4G`, `NDOFFmcOff`, `NDOF`
+All structures implement `Clone`, `Copy`, and `Debug`.
 
-### Key Methods (`BNO055`)
-* `BNO055::new_i2c(address: u8, device: &str) -> Result<BNO055, &'static str>`
-* `BNO055::new_uart(port: &str, baudrate: u32) -> Result<BNO055, &'static str>`
-* `imu.begin(mode: OpMode) -> bool`
-* `imu.reset() -> bool`
-* `imu.get_quaternion() -> Option<Quaternion>`
-* `imu.get_accelerometer() -> Option<Vector3>`
-* `imu.get_gyroscope() -> Option<Vector3>`
-* `imu.get_magnetometer() -> Option<Vector3>`
-* `imu.get_euler_angles() -> Option<Vector3>`
-* `imu.get_calibration_status() -> Option<CalibrationStatus>`
-* `imu.get_diagnostics() -> Diagnostics`
-* `BNO055::to_euler_degrees(q: &Quaternion) -> Vector3`
+*   **`pub struct Vector3 { pub x: f32, pub y: f32, pub z: f32 }`**
+*   **`pub struct Quaternion { pub w: f32, pub x: f32, pub y: f32, pub z: f32 }`**
+*   **`pub struct CalibrationStatus { pub sys: u8, pub gyro: u8, pub accel: u8, pub mag: u8 }`**
+    *   `impl CalibrationStatus { pub fn is_fully_calibrated(&self) -> bool }`
+*   **`pub struct Diagnostics { pub write_failures: u32, pub read_failures: u32, pub reconnect_attempts: u32 }`**
+*   **`pub enum OpMode`**: Includes variants like `Config`, `AccOnly`, `IMUPlus`, `NDOF`, etc.
+
+### Struct: `BNO055`
+
+#### Constructors
+*   **`pub fn new_i2c(address: u8, device: &str) -> Result<BNO055, &'static str>`**
+    Attempts to create a BNO055 handler targeting an I2C device node. Fails if the C++ handler cannot be allocated.
+*   **`pub fn new_uart(port: &str, baudrate: u32) -> Result<BNO055, &'static str>`**
+    Attempts to create a BNO055 handler targeting a Serial UART port.
+
+#### Lifecycle & Configuration
+*   **`pub fn begin(&mut self, mode: OpMode) -> bool`**
+    Initializes hardware communication and puts the sensor into the requested fusion mode.
+*   **`pub fn reset(&mut self) -> bool`**
+    Issues a software reset to the IMU and restores the current configuration.
+
+#### Data Fetching
+*Methods return `Some(T)` on successful hardware reads, and `None` if an I2C bus error or lockup occurs.*
+
+*   **`pub fn get_accelerometer(&mut self) -> Option<Vector3>`**
+*   **`pub fn get_magnetometer(&mut self) -> Option<Vector3>`**
+*   **`pub fn get_gyroscope(&mut self) -> Option<Vector3>`**
+*   **`pub fn get_euler_angles(&mut self) -> Option<Vector3>`**
+*   **`pub fn get_linear_acceleration(&mut self) -> Option<Vector3>`**
+*   **`pub fn get_gravity(&mut self) -> Option<Vector3>`**
+*   **`pub fn get_quaternion(&mut self) -> Option<Quaternion>`**
+*   **`pub fn get_temperature(&mut self) -> Option<i8>`**
+
+#### Diagnostics & Utilities
+*   **`pub fn get_calibration_status(&mut self) -> Option<CalibrationStatus>`**
+*   **`pub fn get_diagnostics(&self) -> Diagnostics`**
+*   **`pub fn to_euler_degrees(q: &Quaternion) -> Vector3`** (Static method on `BNO055`).
 
 ```rust
 use libbno055::{BNO055, OpMode, Quaternion};
 
 fn main() -> Result<(), &'static str> {
-    // 1. Construct via I2C (or new_uart)
     let mut imu = BNO055::new_i2c(0x28, "/dev/i2c-1")?;
-
-    // 2. Initialize in NDOF fusion mode
     if imu.begin(OpMode::NDOF) {
         if let Some(q) = imu.get_quaternion() {
             let euler = BNO055::to_euler_degrees(&q);

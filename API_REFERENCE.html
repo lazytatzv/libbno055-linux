@@ -815,30 +815,70 @@
 <hr class="docutils" />
 <section id="python-api-reference-import-libbno055">
 <h2>Python API Reference (<code class="docutils literal notranslate"><span class="pre">import</span> <span class="pre">libbno055</span></code>)<a class="headerlink" href="#python-api-reference-import-libbno055" title="Link to this heading">¶</a></h2>
-<p>The Python module is built using <code class="docutils literal notranslate"><span class="pre">pybind11</span></code> and mirrors the C++17 API.</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">libbno055</span>
-
-<span class="c1"># Instantiate I2C or UART</span>
-<span class="n">imu</span> <span class="o">=</span> <span class="n">libbno055</span><span class="o">.</span><span class="n">BNO055</span><span class="p">(</span><span class="n">address</span><span class="o">=</span><span class="mh">0x28</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="s2">&quot;/dev/i2c-1&quot;</span><span class="p">)</span>
-
-<span class="c1"># Initialize in fusion mode</span>
-<span class="k">if</span> <span class="n">imu</span><span class="o">.</span><span class="n">begin</span><span class="p">(</span><span class="n">libbno055</span><span class="o">.</span><span class="n">OpMode</span><span class="o">.</span><span class="n">NDOF</span><span class="p">):</span>
-    <span class="c1"># Fetch Quaternion</span>
-    <span class="n">q</span> <span class="o">=</span> <span class="n">imu</span><span class="o">.</span><span class="n">get_quaternion</span><span class="p">()</span>
-    <span class="k">if</span> <span class="n">q</span><span class="p">:</span>
-        <span class="n">euler</span> <span class="o">=</span> <span class="n">libbno055</span><span class="o">.</span><span class="n">to_euler_degrees</span><span class="p">(</span><span class="n">q</span><span class="p">)</span>
-        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Roll: </span><span class="si">{</span><span class="n">euler</span><span class="o">.</span><span class="n">x</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2">, Pitch: </span><span class="si">{</span><span class="n">euler</span><span class="o">.</span><span class="n">y</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2">, Yaw: </span><span class="si">{</span><span class="n">euler</span><span class="o">.</span><span class="n">z</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-
-    <span class="c1"># Fetch Accelerometer &amp; Calibration Status</span>
-    <span class="n">accel</span> <span class="o">=</span> <span class="n">imu</span><span class="o">.</span><span class="n">get_accelerometer</span><span class="p">()</span>
-    <span class="n">calib</span> <span class="o">=</span> <span class="n">imu</span><span class="o">.</span><span class="n">get_calibration_status</span><span class="p">()</span>
-</pre></div>
-</div>
+<p>The Python module is built using <code class="docutils literal notranslate"><span class="pre">pybind11</span></code> and strictly mirrors the C++17 API, providing native C++ performance with Pythonic syntax. All hardware exceptions are caught at the C++ boundary, and failed reads gracefully return <code class="docutils literal notranslate"><span class="pre">None</span></code>.</p>
+<section id="classes-types">
+<h3>Classes &amp; Types<a class="headerlink" href="#classes-types" title="Link to this heading">¶</a></h3>
+<ul class="simple">
+<li><p><strong><code class="docutils literal notranslate"><span class="pre">libbno055.Vector3</span></code></strong>: Has properties <code class="docutils literal notranslate"><span class="pre">x</span></code>, <code class="docutils literal notranslate"><span class="pre">y</span></code>, <code class="docutils literal notranslate"><span class="pre">z</span></code> (floats).</p></li>
+<li><p><strong><code class="docutils literal notranslate"><span class="pre">libbno055.Quaternion</span></code></strong>: Has properties <code class="docutils literal notranslate"><span class="pre">w</span></code>, <code class="docutils literal notranslate"><span class="pre">x</span></code>, <code class="docutils literal notranslate"><span class="pre">y</span></code>, <code class="docutils literal notranslate"><span class="pre">z</span></code> (floats).</p></li>
+<li><p><strong><code class="docutils literal notranslate"><span class="pre">libbno055.CalibrationStatus</span></code></strong>: Has properties <code class="docutils literal notranslate"><span class="pre">sys</span></code>, <code class="docutils literal notranslate"><span class="pre">gyro</span></code>, <code class="docutils literal notranslate"><span class="pre">accel</span></code>, <code class="docutils literal notranslate"><span class="pre">mag</span></code> (integers 0-3), and method <code class="docutils literal notranslate"><span class="pre">is_fully_calibrated()</span> <span class="pre">-&gt;</span> <span class="pre">bool</span></code>.</p></li>
+<li><p><strong><code class="docutils literal notranslate"><span class="pre">libbno055.Diagnostics</span></code></strong>: Has properties <code class="docutils literal notranslate"><span class="pre">write_failures</span></code>, <code class="docutils literal notranslate"><span class="pre">read_failures</span></code>, <code class="docutils literal notranslate"><span class="pre">reconnect_attempts</span></code> (integers).</p></li>
+<li><p><strong><code class="docutils literal notranslate"><span class="pre">libbno055.OpMode</span></code></strong>: Enum (e.g., <code class="docutils literal notranslate"><span class="pre">libbno055.OpMode.NDOF</span></code>, <code class="docutils literal notranslate"><span class="pre">libbno055.OpMode.IMUPlus</span></code>, <code class="docutils literal notranslate"><span class="pre">libbno055.OpMode.Config</span></code>).</p></li>
+</ul>
+</section>
+<section id="id1">
+<h3>Class: <code class="docutils literal notranslate"><span class="pre">BNO055</span></code><a class="headerlink" href="#id1" title="Link to this heading">¶</a></h3>
+<section id="constructors">
+<h4>Constructors<a class="headerlink" href="#constructors" title="Link to this heading">¶</a></h4>
+<ul class="simple">
+<li><p><strong><code class="docutils literal notranslate"><span class="pre">__init__(self,</span> <span class="pre">address:</span> <span class="pre">int</span> <span class="pre">=</span> <span class="pre">0x28,</span> <span class="pre">device:</span> <span class="pre">str</span> <span class="pre">=</span> <span class="pre">&quot;/dev/i2c-1&quot;)</span></code></strong>
+Initializes the IMU for I2C communication.</p></li>
+<li><p><strong><code class="docutils literal notranslate"><span class="pre">__init__(self,</span> <span class="pre">port:</span> <span class="pre">str,</span> <span class="pre">baudrate:</span> <span class="pre">int</span> <span class="pre">=</span> <span class="pre">115200,</span> <span class="pre">timeout:</span> <span class="pre">float</span> <span class="pre">=</span> <span class="pre">0.1)</span></code></strong>
+Initializes the IMU for USB-to-UART serial communication.</p></li>
+</ul>
+</section>
+<section id="configuration-lifecycle">
+<h4>Configuration &amp; Lifecycle<a class="headerlink" href="#configuration-lifecycle" title="Link to this heading">¶</a></h4>
+<ul class="simple">
+<li><p><strong><code class="docutils literal notranslate"><span class="pre">begin(self,</span> <span class="pre">mode:</span> <span class="pre">OpMode</span> <span class="pre">=</span> <span class="pre">OpMode.NDOF)</span> <span class="pre">-&gt;</span> <span class="pre">bool</span></code></strong>
+Resets the sensor, verifies connection, and sets the target operation mode. Returns <code class="docutils literal notranslate"><span class="pre">True</span></code> on success.</p></li>
+<li><p><strong><code class="docutils literal notranslate"><span class="pre">reset(self)</span> <span class="pre">-&gt;</span> <span class="pre">bool</span></code></strong>
+Triggers a soft hardware-reset and restores the current operation mode.</p></li>
+<li><p><strong><code class="docutils literal notranslate"><span class="pre">set_mode(self,</span> <span class="pre">mode:</span> <span class="pre">OpMode)</span> <span class="pre">-&gt;</span> <span class="pre">None</span></code></strong>
+Switches the operating mode dynamically.</p></li>
+</ul>
+</section>
+<section id="sensor-data-reading">
+<h4>Sensor Data Reading<a class="headerlink" href="#sensor-data-reading" title="Link to this heading">¶</a></h4>
+<p><em>These methods return the corresponding data structure on success, or <code class="docutils literal notranslate"><span class="pre">None</span></code> if an I2C/UART communication failure occurs.</em></p>
+<ul class="simple">
+<li><p><strong><code class="docutils literal notranslate"><span class="pre">get_accelerometer(self)</span> <span class="pre">-&gt;</span> <span class="pre">Vector3</span> <span class="pre">|</span> <span class="pre">None</span></code></strong>: Returns acceleration (m/s^2).</p></li>
+<li><p><strong><code class="docutils literal notranslate"><span class="pre">get_magnetometer(self)</span> <span class="pre">-&gt;</span> <span class="pre">Vector3</span> <span class="pre">|</span> <span class="pre">None</span></code></strong>: Returns magnetic field (uT).</p></li>
+<li><p><strong><code class="docutils literal notranslate"><span class="pre">get_gyroscope(self)</span> <span class="pre">-&gt;</span> <span class="pre">Vector3</span> <span class="pre">|</span> <span class="pre">None</span></code></strong>: Returns angular velocity (rad/s).</p></li>
+<li><p><strong><code class="docutils literal notranslate"><span class="pre">get_euler_angles(self)</span> <span class="pre">-&gt;</span> <span class="pre">Vector3</span> <span class="pre">|</span> <span class="pre">None</span></code></strong>: Returns Roll, Pitch, Yaw (rad).</p></li>
+<li><p><strong><code class="docutils literal notranslate"><span class="pre">get_linear_acceleration(self)</span> <span class="pre">-&gt;</span> <span class="pre">Vector3</span> <span class="pre">|</span> <span class="pre">None</span></code></strong>: Returns linear accel (m/s^2).</p></li>
+<li><p><strong><code class="docutils literal notranslate"><span class="pre">get_gravity(self)</span> <span class="pre">-&gt;</span> <span class="pre">Vector3</span> <span class="pre">|</span> <span class="pre">None</span></code></strong>: Returns gravity vector (m/s^2).</p></li>
+<li><p><strong><code class="docutils literal notranslate"><span class="pre">get_quaternion(self)</span> <span class="pre">-&gt;</span> <span class="pre">Quaternion</span> <span class="pre">|</span> <span class="pre">None</span></code></strong>: Returns unit quaternion.</p></li>
+<li><p><strong><code class="docutils literal notranslate"><span class="pre">get_temperature(self)</span> <span class="pre">-&gt;</span> <span class="pre">int</span> <span class="pre">|</span> <span class="pre">None</span></code></strong>: Returns chip temperature (°C).</p></li>
+</ul>
+</section>
+<section id="diagnostics-utilities">
+<h4>Diagnostics &amp; Utilities<a class="headerlink" href="#diagnostics-utilities" title="Link to this heading">¶</a></h4>
+<ul class="simple">
+<li><p><strong><code class="docutils literal notranslate"><span class="pre">get_calibration_status(self)</span> <span class="pre">-&gt;</span> <span class="pre">CalibrationStatus</span> <span class="pre">|</span> <span class="pre">None</span></code></strong>
+Fetches the live calibration status (0 to 3) for all sensor blocks.</p></li>
+<li><p><strong><code class="docutils literal notranslate"><span class="pre">get_diagnostics(self)</span> <span class="pre">-&gt;</span> <span class="pre">Diagnostics</span></code></strong>
+Returns internal telemetry tracking auto-reconnects and dropped frames.</p></li>
+<li><p><strong><code class="docutils literal notranslate"><span class="pre">libbno055.to_euler_degrees(q:</span> <span class="pre">Quaternion)</span> <span class="pre">-&gt;</span> <span class="pre">Vector3</span></code></strong>
+(Module-level function). Converts a quaternion into Euler angles in degrees (<code class="docutils literal notranslate"><span class="pre">x</span></code>=Roll, <code class="docutils literal notranslate"><span class="pre">y</span></code>=Pitch, <code class="docutils literal notranslate"><span class="pre">z</span></code>=Yaw).</p></li>
+</ul>
+</section>
+</section>
 </section>
 <hr class="docutils" />
-<section id="rust-api-reference-use-libbno055-bno055-opmode">
-<h2>Rust API Reference (<code class="docutils literal notranslate"><span class="pre">use</span> <span class="pre">libbno055::{BNO055,</span> <span class="pre">OpMode}</span></code>)<a class="headerlink" href="#rust-api-reference-use-libbno055-bno055-opmode" title="Link to this heading">¶</a></h2>
-<p>The Rust crate (<code class="docutils literal notranslate"><span class="pre">libbno055</span></code>) is published on <a class="reference external" href="https://crates.io/crates/libbno055">crates.io</a> and provides safe, idiomatic Rust wrappers around the C++ engine.</p>
+<section id="rust-api-reference-use-libbno055">
+<h2>Rust API Reference (<code class="docutils literal notranslate"><span class="pre">use</span> <span class="pre">libbno055::*</span></code>)<a class="headerlink" href="#rust-api-reference-use-libbno055" title="Link to this heading">¶</a></h2>
+<p>The Rust crate (<code class="docutils literal notranslate"><span class="pre">libbno055</span></code>) is published on <a class="reference external" href="https://crates.io/crates/libbno055">crates.io</a> and provides safe, idiomatic Rust wrappers around the C++ engine using Foreign Function Interfaces (FFI).</p>
 <section id="installation">
 <h3>Installation<a class="headerlink" href="#installation" title="Link to this heading">¶</a></h3>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>cargo<span class="w"> </span>add<span class="w"> </span>libbno055
@@ -847,37 +887,64 @@
 </section>
 <section id="types-structs">
 <h3>Types &amp; Structs<a class="headerlink" href="#types-structs" title="Link to this heading">¶</a></h3>
+<p>All structures implement <code class="docutils literal notranslate"><span class="pre">Clone</span></code>, <code class="docutils literal notranslate"><span class="pre">Copy</span></code>, and <code class="docutils literal notranslate"><span class="pre">Debug</span></code>.</p>
 <ul class="simple">
-<li><p><code class="docutils literal notranslate"><span class="pre">struct</span> <span class="pre">Vector3</span> <span class="pre">{</span> <span class="pre">pub</span> <span class="pre">x:</span> <span class="pre">f32,</span> <span class="pre">pub</span> <span class="pre">y:</span> <span class="pre">f32,</span> <span class="pre">pub</span> <span class="pre">z:</span> <span class="pre">f32</span> <span class="pre">}</span></code></p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">struct</span> <span class="pre">Quaternion</span> <span class="pre">{</span> <span class="pre">pub</span> <span class="pre">w:</span> <span class="pre">f32,</span> <span class="pre">pub</span> <span class="pre">x:</span> <span class="pre">f32,</span> <span class="pre">pub</span> <span class="pre">y:</span> <span class="pre">f32,</span> <span class="pre">pub</span> <span class="pre">z:</span> <span class="pre">f32</span> <span class="pre">}</span></code></p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">struct</span> <span class="pre">CalibrationStatus</span> <span class="pre">{</span> <span class="pre">pub</span> <span class="pre">sys:</span> <span class="pre">u8,</span> <span class="pre">pub</span> <span class="pre">gyro:</span> <span class="pre">u8,</span> <span class="pre">pub</span> <span class="pre">accel:</span> <span class="pre">u8,</span> <span class="pre">pub</span> <span class="pre">mag:</span> <span class="pre">u8</span> <span class="pre">}</span></code></p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">struct</span> <span class="pre">Diagnostics</span> <span class="pre">{</span> <span class="pre">pub</span> <span class="pre">write_failures:</span> <span class="pre">u32,</span> <span class="pre">pub</span> <span class="pre">read_failures:</span> <span class="pre">u32,</span> <span class="pre">pub</span> <span class="pre">reconnect_attempts:</span> <span class="pre">u32</span> <span class="pre">}</span></code></p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">enum</span> <span class="pre">OpMode</span></code>: <code class="docutils literal notranslate"><span class="pre">Config</span></code>, <code class="docutils literal notranslate"><span class="pre">AccOnly</span></code>, <code class="docutils literal notranslate"><span class="pre">MagOnly</span></code>, <code class="docutils literal notranslate"><span class="pre">GyroOnly</span></code>, <code class="docutils literal notranslate"><span class="pre">AccMag</span></code>, <code class="docutils literal notranslate"><span class="pre">AccGyro</span></code>, <code class="docutils literal notranslate"><span class="pre">MagGyro</span></code>, <code class="docutils literal notranslate"><span class="pre">AMG</span></code>, <code class="docutils literal notranslate"><span class="pre">IMUPlus</span></code>, <code class="docutils literal notranslate"><span class="pre">Compass</span></code>, <code class="docutils literal notranslate"><span class="pre">M4G</span></code>, <code class="docutils literal notranslate"><span class="pre">NDOFFmcOff</span></code>, <code class="docutils literal notranslate"><span class="pre">NDOF</span></code></p></li>
+<li><p><strong><code class="docutils literal notranslate"><span class="pre">pub</span> <span class="pre">struct</span> <span class="pre">Vector3</span> <span class="pre">{</span> <span class="pre">pub</span> <span class="pre">x:</span> <span class="pre">f32,</span> <span class="pre">pub</span> <span class="pre">y:</span> <span class="pre">f32,</span> <span class="pre">pub</span> <span class="pre">z:</span> <span class="pre">f32</span> <span class="pre">}</span></code></strong></p></li>
+<li><p><strong><code class="docutils literal notranslate"><span class="pre">pub</span> <span class="pre">struct</span> <span class="pre">Quaternion</span> <span class="pre">{</span> <span class="pre">pub</span> <span class="pre">w:</span> <span class="pre">f32,</span> <span class="pre">pub</span> <span class="pre">x:</span> <span class="pre">f32,</span> <span class="pre">pub</span> <span class="pre">y:</span> <span class="pre">f32,</span> <span class="pre">pub</span> <span class="pre">z:</span> <span class="pre">f32</span> <span class="pre">}</span></code></strong></p></li>
+<li><p><strong><code class="docutils literal notranslate"><span class="pre">pub</span> <span class="pre">struct</span> <span class="pre">CalibrationStatus</span> <span class="pre">{</span> <span class="pre">pub</span> <span class="pre">sys:</span> <span class="pre">u8,</span> <span class="pre">pub</span> <span class="pre">gyro:</span> <span class="pre">u8,</span> <span class="pre">pub</span> <span class="pre">accel:</span> <span class="pre">u8,</span> <span class="pre">pub</span> <span class="pre">mag:</span> <span class="pre">u8</span> <span class="pre">}</span></code></strong></p>
+<ul>
+<li><p><code class="docutils literal notranslate"><span class="pre">impl</span> <span class="pre">CalibrationStatus</span> <span class="pre">{</span> <span class="pre">pub</span> <span class="pre">fn</span> <span class="pre">is_fully_calibrated(&amp;self)</span> <span class="pre">-&gt;</span> <span class="pre">bool</span> <span class="pre">}</span></code></p></li>
+</ul>
+</li>
+<li><p><strong><code class="docutils literal notranslate"><span class="pre">pub</span> <span class="pre">struct</span> <span class="pre">Diagnostics</span> <span class="pre">{</span> <span class="pre">pub</span> <span class="pre">write_failures:</span> <span class="pre">u32,</span> <span class="pre">pub</span> <span class="pre">read_failures:</span> <span class="pre">u32,</span> <span class="pre">pub</span> <span class="pre">reconnect_attempts:</span> <span class="pre">u32</span> <span class="pre">}</span></code></strong></p></li>
+<li><p><strong><code class="docutils literal notranslate"><span class="pre">pub</span> <span class="pre">enum</span> <span class="pre">OpMode</span></code></strong>: Includes variants like <code class="docutils literal notranslate"><span class="pre">Config</span></code>, <code class="docutils literal notranslate"><span class="pre">AccOnly</span></code>, <code class="docutils literal notranslate"><span class="pre">IMUPlus</span></code>, <code class="docutils literal notranslate"><span class="pre">NDOF</span></code>, etc.</p></li>
 </ul>
 </section>
-<section id="key-methods-bno055">
-<h3>Key Methods (<code class="docutils literal notranslate"><span class="pre">BNO055</span></code>)<a class="headerlink" href="#key-methods-bno055" title="Link to this heading">¶</a></h3>
+<section id="struct-bno055">
+<h3>Struct: <code class="docutils literal notranslate"><span class="pre">BNO055</span></code><a class="headerlink" href="#struct-bno055" title="Link to this heading">¶</a></h3>
+<section id="id2">
+<h4>Constructors<a class="headerlink" href="#id2" title="Link to this heading">¶</a></h4>
 <ul class="simple">
-<li><p><code class="docutils literal notranslate"><span class="pre">BNO055::new_i2c(address:</span> <span class="pre">u8,</span> <span class="pre">device:</span> <span class="pre">&amp;str)</span> <span class="pre">-&gt;</span> <span class="pre">Result&lt;BNO055,</span> <span class="pre">&amp;'static</span> <span class="pre">str&gt;</span></code></p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">BNO055::new_uart(port:</span> <span class="pre">&amp;str,</span> <span class="pre">baudrate:</span> <span class="pre">u32)</span> <span class="pre">-&gt;</span> <span class="pre">Result&lt;BNO055,</span> <span class="pre">&amp;'static</span> <span class="pre">str&gt;</span></code></p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">imu.begin(mode:</span> <span class="pre">OpMode)</span> <span class="pre">-&gt;</span> <span class="pre">bool</span></code></p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">imu.reset()</span> <span class="pre">-&gt;</span> <span class="pre">bool</span></code></p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">imu.get_quaternion()</span> <span class="pre">-&gt;</span> <span class="pre">Option&lt;Quaternion&gt;</span></code></p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">imu.get_accelerometer()</span> <span class="pre">-&gt;</span> <span class="pre">Option&lt;Vector3&gt;</span></code></p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">imu.get_gyroscope()</span> <span class="pre">-&gt;</span> <span class="pre">Option&lt;Vector3&gt;</span></code></p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">imu.get_magnetometer()</span> <span class="pre">-&gt;</span> <span class="pre">Option&lt;Vector3&gt;</span></code></p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">imu.get_euler_angles()</span> <span class="pre">-&gt;</span> <span class="pre">Option&lt;Vector3&gt;</span></code></p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">imu.get_calibration_status()</span> <span class="pre">-&gt;</span> <span class="pre">Option&lt;CalibrationStatus&gt;</span></code></p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">imu.get_diagnostics()</span> <span class="pre">-&gt;</span> <span class="pre">Diagnostics</span></code></p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">BNO055::to_euler_degrees(q:</span> <span class="pre">&amp;Quaternion)</span> <span class="pre">-&gt;</span> <span class="pre">Vector3</span></code></p></li>
+<li><p><strong><code class="docutils literal notranslate"><span class="pre">pub</span> <span class="pre">fn</span> <span class="pre">new_i2c(address:</span> <span class="pre">u8,</span> <span class="pre">device:</span> <span class="pre">&amp;str)</span> <span class="pre">-&gt;</span> <span class="pre">Result&lt;BNO055,</span> <span class="pre">&amp;'static</span> <span class="pre">str&gt;</span></code></strong>
+Attempts to create a BNO055 handler targeting an I2C device node. Fails if the C++ handler cannot be allocated.</p></li>
+<li><p><strong><code class="docutils literal notranslate"><span class="pre">pub</span> <span class="pre">fn</span> <span class="pre">new_uart(port:</span> <span class="pre">&amp;str,</span> <span class="pre">baudrate:</span> <span class="pre">u32)</span> <span class="pre">-&gt;</span> <span class="pre">Result&lt;BNO055,</span> <span class="pre">&amp;'static</span> <span class="pre">str&gt;</span></code></strong>
+Attempts to create a BNO055 handler targeting a Serial UART port.</p></li>
+</ul>
+</section>
+<section id="lifecycle-configuration">
+<h4>Lifecycle &amp; Configuration<a class="headerlink" href="#lifecycle-configuration" title="Link to this heading">¶</a></h4>
+<ul class="simple">
+<li><p><strong><code class="docutils literal notranslate"><span class="pre">pub</span> <span class="pre">fn</span> <span class="pre">begin(&amp;mut</span> <span class="pre">self,</span> <span class="pre">mode:</span> <span class="pre">OpMode)</span> <span class="pre">-&gt;</span> <span class="pre">bool</span></code></strong>
+Initializes hardware communication and puts the sensor into the requested fusion mode.</p></li>
+<li><p><strong><code class="docutils literal notranslate"><span class="pre">pub</span> <span class="pre">fn</span> <span class="pre">reset(&amp;mut</span> <span class="pre">self)</span> <span class="pre">-&gt;</span> <span class="pre">bool</span></code></strong>
+Issues a software reset to the IMU and restores the current configuration.</p></li>
+</ul>
+</section>
+<section id="data-fetching">
+<h4>Data Fetching<a class="headerlink" href="#data-fetching" title="Link to this heading">¶</a></h4>
+<p><em>Methods return <code class="docutils literal notranslate"><span class="pre">Some(T)</span></code> on successful hardware reads, and <code class="docutils literal notranslate"><span class="pre">None</span></code> if an I2C bus error or lockup occurs.</em></p>
+<ul class="simple">
+<li><p><strong><code class="docutils literal notranslate"><span class="pre">pub</span> <span class="pre">fn</span> <span class="pre">get_accelerometer(&amp;mut</span> <span class="pre">self)</span> <span class="pre">-&gt;</span> <span class="pre">Option&lt;Vector3&gt;</span></code></strong></p></li>
+<li><p><strong><code class="docutils literal notranslate"><span class="pre">pub</span> <span class="pre">fn</span> <span class="pre">get_magnetometer(&amp;mut</span> <span class="pre">self)</span> <span class="pre">-&gt;</span> <span class="pre">Option&lt;Vector3&gt;</span></code></strong></p></li>
+<li><p><strong><code class="docutils literal notranslate"><span class="pre">pub</span> <span class="pre">fn</span> <span class="pre">get_gyroscope(&amp;mut</span> <span class="pre">self)</span> <span class="pre">-&gt;</span> <span class="pre">Option&lt;Vector3&gt;</span></code></strong></p></li>
+<li><p><strong><code class="docutils literal notranslate"><span class="pre">pub</span> <span class="pre">fn</span> <span class="pre">get_euler_angles(&amp;mut</span> <span class="pre">self)</span> <span class="pre">-&gt;</span> <span class="pre">Option&lt;Vector3&gt;</span></code></strong></p></li>
+<li><p><strong><code class="docutils literal notranslate"><span class="pre">pub</span> <span class="pre">fn</span> <span class="pre">get_linear_acceleration(&amp;mut</span> <span class="pre">self)</span> <span class="pre">-&gt;</span> <span class="pre">Option&lt;Vector3&gt;</span></code></strong></p></li>
+<li><p><strong><code class="docutils literal notranslate"><span class="pre">pub</span> <span class="pre">fn</span> <span class="pre">get_gravity(&amp;mut</span> <span class="pre">self)</span> <span class="pre">-&gt;</span> <span class="pre">Option&lt;Vector3&gt;</span></code></strong></p></li>
+<li><p><strong><code class="docutils literal notranslate"><span class="pre">pub</span> <span class="pre">fn</span> <span class="pre">get_quaternion(&amp;mut</span> <span class="pre">self)</span> <span class="pre">-&gt;</span> <span class="pre">Option&lt;Quaternion&gt;</span></code></strong></p></li>
+<li><p><strong><code class="docutils literal notranslate"><span class="pre">pub</span> <span class="pre">fn</span> <span class="pre">get_temperature(&amp;mut</span> <span class="pre">self)</span> <span class="pre">-&gt;</span> <span class="pre">Option&lt;i8&gt;</span></code></strong></p></li>
+</ul>
+</section>
+<section id="id3">
+<h4>Diagnostics &amp; Utilities<a class="headerlink" href="#id3" title="Link to this heading">¶</a></h4>
+<ul class="simple">
+<li><p><strong><code class="docutils literal notranslate"><span class="pre">pub</span> <span class="pre">fn</span> <span class="pre">get_calibration_status(&amp;mut</span> <span class="pre">self)</span> <span class="pre">-&gt;</span> <span class="pre">Option&lt;CalibrationStatus&gt;</span></code></strong></p></li>
+<li><p><strong><code class="docutils literal notranslate"><span class="pre">pub</span> <span class="pre">fn</span> <span class="pre">get_diagnostics(&amp;self)</span> <span class="pre">-&gt;</span> <span class="pre">Diagnostics</span></code></strong></p></li>
+<li><p><strong><code class="docutils literal notranslate"><span class="pre">pub</span> <span class="pre">fn</span> <span class="pre">to_euler_degrees(q:</span> <span class="pre">&amp;Quaternion)</span> <span class="pre">-&gt;</span> <span class="pre">Vector3</span></code></strong> (Static method on <code class="docutils literal notranslate"><span class="pre">BNO055</span></code>).</p></li>
 </ul>
 <div class="highlight-rust notranslate"><div class="highlight"><pre><span></span><span class="k">use</span><span class="w"> </span><span class="n">libbno055</span><span class="p">::{</span><span class="n">BNO055</span><span class="p">,</span><span class="w"> </span><span class="n">OpMode</span><span class="p">,</span><span class="w"> </span><span class="n">Quaternion</span><span class="p">};</span>
 
 <span class="k">fn</span><span class="w"> </span><span class="nf">main</span><span class="p">()</span><span class="w"> </span><span class="p">-&gt;</span><span class="w"> </span><span class="nb">Result</span><span class="o">&lt;</span><span class="p">(),</span><span class="w"> </span><span class="o">&amp;&#39;</span><span class="nb">static</span><span class="w"> </span><span class="kt">str</span><span class="o">&gt;</span><span class="w"> </span><span class="p">{</span>
-<span class="w">    </span><span class="c1">// 1. Construct via I2C (or new_uart)</span>
 <span class="w">    </span><span class="kd">let</span><span class="w"> </span><span class="k">mut</span><span class="w"> </span><span class="n">imu</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">BNO055</span><span class="p">::</span><span class="n">new_i2c</span><span class="p">(</span><span class="mh">0x28</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;/dev/i2c-1&quot;</span><span class="p">)</span><span class="o">?</span><span class="p">;</span>
-
-<span class="w">    </span><span class="c1">// 2. Initialize in NDOF fusion mode</span>
 <span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="n">imu</span><span class="p">.</span><span class="n">begin</span><span class="p">(</span><span class="n">OpMode</span><span class="p">::</span><span class="n">NDOF</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
 <span class="w">        </span><span class="k">if</span><span class="w"> </span><span class="kd">let</span><span class="w"> </span><span class="nb">Some</span><span class="p">(</span><span class="n">q</span><span class="p">)</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">imu</span><span class="p">.</span><span class="n">get_quaternion</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
 <span class="w">            </span><span class="kd">let</span><span class="w"> </span><span class="n">euler</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">BNO055</span><span class="p">::</span><span class="n">to_euler_degrees</span><span class="p">(</span><span class="o">&amp;</span><span class="n">q</span><span class="p">);</span>
@@ -888,6 +955,7 @@
 <span class="p">}</span>
 </pre></div>
 </div>
+</section>
 </section>
 </section>
 </section>
@@ -966,11 +1034,27 @@
 </ul>
 </li>
 <li><a class="reference internal" href="#c-api-reference-libbno055-linux-bno055-c-h">C API Reference (<code class="docutils literal notranslate"><span class="pre">libbno055-linux/bno055_c.h</span></code>)</a></li>
-<li><a class="reference internal" href="#python-api-reference-import-libbno055">Python API Reference (<code class="docutils literal notranslate"><span class="pre">import</span> <span class="pre">libbno055</span></code>)</a></li>
-<li><a class="reference internal" href="#rust-api-reference-use-libbno055-bno055-opmode">Rust API Reference (<code class="docutils literal notranslate"><span class="pre">use</span> <span class="pre">libbno055::{BNO055,</span> <span class="pre">OpMode}</span></code>)</a><ul>
+<li><a class="reference internal" href="#python-api-reference-import-libbno055">Python API Reference (<code class="docutils literal notranslate"><span class="pre">import</span> <span class="pre">libbno055</span></code>)</a><ul>
+<li><a class="reference internal" href="#classes-types">Classes &amp; Types</a></li>
+<li><a class="reference internal" href="#id1">Class: <code class="docutils literal notranslate"><span class="pre">BNO055</span></code></a><ul>
+<li><a class="reference internal" href="#constructors">Constructors</a></li>
+<li><a class="reference internal" href="#configuration-lifecycle">Configuration &amp; Lifecycle</a></li>
+<li><a class="reference internal" href="#sensor-data-reading">Sensor Data Reading</a></li>
+<li><a class="reference internal" href="#diagnostics-utilities">Diagnostics &amp; Utilities</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a class="reference internal" href="#rust-api-reference-use-libbno055">Rust API Reference (<code class="docutils literal notranslate"><span class="pre">use</span> <span class="pre">libbno055::*</span></code>)</a><ul>
 <li><a class="reference internal" href="#installation">Installation</a></li>
 <li><a class="reference internal" href="#types-structs">Types &amp; Structs</a></li>
-<li><a class="reference internal" href="#key-methods-bno055">Key Methods (<code class="docutils literal notranslate"><span class="pre">BNO055</span></code>)</a></li>
+<li><a class="reference internal" href="#struct-bno055">Struct: <code class="docutils literal notranslate"><span class="pre">BNO055</span></code></a><ul>
+<li><a class="reference internal" href="#id2">Constructors</a></li>
+<li><a class="reference internal" href="#lifecycle-configuration">Lifecycle &amp; Configuration</a></li>
+<li><a class="reference internal" href="#data-fetching">Data Fetching</a></li>
+<li><a class="reference internal" href="#id3">Diagnostics &amp; Utilities</a></li>
+</ul>
+</li>
 </ul>
 </li>
 </ul>
