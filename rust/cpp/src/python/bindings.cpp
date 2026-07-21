@@ -121,8 +121,9 @@ PYBIND11_MODULE(libbno055, m) {
                  }
                  throw std::runtime_error("Failed to get sensor offsets");
              })
-        .def("set_sensor_offsets",
-             [](BNO055& self, const std::array<uint8_t, 22>& data) { self.setSensorOffsets(data); }, py::arg("data"))
+        .def(
+            "set_sensor_offsets",
+            [](BNO055& self, const std::array<uint8_t, 22>& data) { self.setSensorOffsets(data); }, py::arg("data"))
         .def("enter_suspend_mode",
              [](BNO055& self) {
                  try {

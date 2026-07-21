@@ -27,6 +27,7 @@ inline void declare_common_parameters(T* node) {
     node->template declare_parameter<std::string>("uart_port", "/dev/ttyUSB0");
     node->template declare_parameter<int>("uart_baudrate", 115200);
     node->template declare_parameter<double>("uart_timeout", 0.1);
+    node->template declare_parameter<bool>("uart_low_latency", false);
     node->template declare_parameter<std::string>("frame_id", "imu_link");
     node->template declare_parameter<double>("publish_rate", 50.0);
     node->template declare_parameter<std::string>("qos_reliability", "best_effort");
@@ -46,6 +47,7 @@ inline void declare_common_parameters(T* node) {
     // Advanced driver modes
     node->template declare_parameter<std::string>("read_mode", "standard");  // "standard", "raw_async", "interrupt"
     node->template declare_parameter<int>("interrupt_gpio_pin", 24);
+    node->template declare_parameter<int>("thread_priority", 0);
 }
 
 // Redirect logger callback
@@ -190,6 +192,19 @@ inline void apply_advanced_features(T* node, bno055lib::BNO055& imu) {
     imu.setAxisRemap(parse_axis_map_config(node->template get_parameter("axis_map_config").as_string()));
     imu.setAxisSign(parse_axis_map_sign(node->template get_parameter("axis_map_sign").as_string()));
     imu.setExtCrystalUse(node->template get_parameter("use_external_crystal").as_bool());
+
+    int thread_prio = node->template get_parameter("thread_priority").as_int();
+    if (thread_prio > 0) {
+        sched_param sch_params;
+        sch_params.sched_priority = thread_prio;
+        if (pthread_setschedparam(pthread_self(), SCHED_FIFO, &sch_params) != 0) {
+            RCLCPP_WARN(node->get_logger(),
+                        "Failed to set SCHED_FIFO thread priority to %d. (Requires root or limits.conf rtprio)",
+                        thread_prio);
+        } else {
+            RCLCPP_INFO(node->get_logger(), "Elevated thread priority to SCHED_FIFO %d.", thread_prio);
+        }
+    }
 }
 
 template <typename T>
