@@ -26,13 +26,13 @@ A high-performance, polyglot C++17, ROS 2, Python, C, and Rust driver for the Bo
 
 | Feature | `libbno055-linux` | Adafruit BNO055 | Bosch Reference |
 | :--- | :---: | :---: | :---: |
-| **Linux I2C & UART** | Yes | Partial | No |
-| **Automatic Recovery** | Yes | No | No |
-| **ROS 2 & Lifecycle** | Yes | No | No |
-| **Zero-Allocation Hot Path** | Yes | No | No |
-| **Rust & Python Bindings** | Yes | Python Only | No |
-| **Burst Read (18-Byte)** | Yes | No | No |
-| **GPIO IRQ Latency** | Sub-ms | Polling | Polling |
+| **Linux I2C & UART** | ✅ | ⚠️ | ❌ |
+| **Automatic Recovery** | ✅ | ❌ | ❌ |
+| **ROS 2 & Lifecycle** | ✅ | ❌ | ❌ |
+| **Zero-Allocation Hot Path** | ✅ | ❌ | ❌ |
+| **Rust & Python Bindings** | ✅ | ⚠️ | ❌ |
+| **Burst Read (18-Byte)** | ✅ | ❌ | ❌ |
+| **GPIO IRQ Latency** | ✅ | ❌ | ❌ |
 
 ---
 
@@ -74,7 +74,7 @@ fn main() -> Result<(), &'static str> {
 ### Python (`pip`)
 
 ```bash
-pip install .
+pip install libbno055-linux  # Or: pip install . (from source)
 ```
 
 ```python
