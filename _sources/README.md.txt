@@ -176,10 +176,14 @@ sudo apt install ros-${ROS_DISTRO}-libbno055-linux
 
 ### D. Rust (`use libbno055::{BNO055, OpMode}`)
 
-1. **Add Dependency (`Cargo.toml`)**:
+1. **Add Dependency**:
+   ```bash
+   cargo add libbno055
+   ```
+   *Or add to your `Cargo.toml`:*
    ```toml
    [dependencies]
-   libbno055 = { path = "path/to/libbno055-linux/rust" }
+   libbno055 = "1.5.0"
    ```
 
 2. **Use in Rust**:
@@ -187,11 +191,16 @@ sudo apt install ros-${ROS_DISTRO}-libbno055-linux
    use libbno055::{BNO055, OpMode, Quaternion};
 
    fn main() -> Result<(), &'static str> {
+       // Initialize IMU via I2C (Address 0x28, /dev/i2c-1)
        let mut imu = BNO055::new_i2c(0x28, "/dev/i2c-1")?;
+
+       // OR Initialize via UART
+       // let mut imu = BNO055::new_uart("/dev/ttyUSB0", 115200)?;
+
        if imu.begin(OpMode::NDOF) {
            if let Some(q) = imu.get_quaternion() {
                let euler = BNO055::to_euler_degrees(&q);
-               println!("Roll: {}, Pitch: {}, Yaw: {}", euler.x, euler.y, euler.z);
+               println!("Roll: {:.2}, Pitch: {:.2}, Yaw: {:.2}", euler.x, euler.y, euler.z);
            }
        }
        Ok(())

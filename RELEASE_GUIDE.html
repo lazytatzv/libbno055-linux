@@ -264,6 +264,16 @@
 </pre></div>
 </div>
 </li>
+<li><p><strong>Update <code class="docutils literal notranslate"><span class="pre">setup.py</span></code></strong>:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">version</span><span class="o">=</span><span class="s2">&quot;X.Y.Z&quot;</span>
+</pre></div>
+</div>
+</li>
+<li><p><strong>Update <code class="docutils literal notranslate"><span class="pre">rust/Cargo.toml</span></code></strong>:</p>
+<div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="n">version</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;X.Y.Z&quot;</span>
+</pre></div>
+</div>
+</li>
 <li><p><strong>Update <code class="docutils literal notranslate"><span class="pre">CHANGELOG.md</span></code></strong>:
 Add a new section for <code class="docutils literal notranslate"><span class="pre">##</span> <span class="pre">[X.Y.Z]</span> <span class="pre">-</span> <span class="pre">YYYY-MM-DD</span></code> detailing the changes.</p></li>
 <li><p><strong>Update <code class="docutils literal notranslate"><span class="pre">debian/changelog</span></code></strong>:</p>
@@ -325,6 +335,27 @@ dput<span class="w"> </span>ppa:lazytatzv/bno055<span class="w"> </span>libbno05
 </ol>
 <p>Launchpad will then build the <code class="docutils literal notranslate"><span class="pre">.deb</span></code> files for various architectures in the cloud and publish them to your PPA.</p>
 </section>
+<hr class="docutils" />
+<section id="automated-crates-io-release-via-github-actions">
+<h2>4. Automated <code class="docutils literal notranslate"><span class="pre">crates.io</span></code> Release (via GitHub Actions)<a class="headerlink" href="#automated-crates-io-release-via-github-actions" title="Link to this heading">¶</a></h2>
+<p>Pushing a Git tag matching <code class="docutils literal notranslate"><span class="pre">v*</span></code> (e.g. <code class="docutils literal notranslate"><span class="pre">git</span> <span class="pre">push</span> <span class="pre">origin</span> <span class="pre">v1.5.0</span></code>) triggers the automated release workflow in <code class="docutils literal notranslate"><span class="pre">.github/workflows/release.yml</span></code>.</p>
+<p><strong>Prerequisites</strong>:</p>
+<ol class="arabic simple">
+<li><p>Obtain an API Token from <a class="reference external" href="https://crates.io/settings/tokens">crates.io</a>.</p></li>
+<li><p>Store the token as a GitHub Secret in your repository:</p>
+<ul class="simple">
+<li><p>Go to <strong>Settings ➔ Secrets and variables ➔ Actions</strong></p></li>
+<li><p>Add a New repository secret named <strong><code class="docutils literal notranslate"><span class="pre">CRATES_IO_TOKEN</span></code></strong></p></li>
+</ul>
+</li>
+</ol>
+<p>Once set up, whenever a tag is pushed:</p>
+<ul class="simple">
+<li><p>GitHub Release will be automatically generated with release notes.</p></li>
+<li><p>CPack <code class="docutils literal notranslate"><span class="pre">.deb</span></code> and <code class="docutils literal notranslate"><span class="pre">.tar.gz</span></code> packages will be built and attached.</p></li>
+<li><p>The <code class="docutils literal notranslate"><span class="pre">libbno055</span></code> Rust crate will be automatically published to <code class="docutils literal notranslate"><span class="pre">crates.io</span></code>.</p></li>
+</ul>
+</section>
 </section>
 
         </article>
@@ -382,6 +413,7 @@ dput<span class="w"> </span>ppa:lazytatzv/bno055<span class="w"> </span>libbno05
 </ul>
 </li>
 <li><a class="reference internal" href="#ubuntu-ppa-release-standalone-c">3. Ubuntu PPA Release (Standalone C++)</a></li>
+<li><a class="reference internal" href="#automated-crates-io-release-via-github-actions">4. Automated <code class="docutils literal notranslate"><span class="pre">crates.io</span></code> Release (via GitHub Actions)</a></li>
 </ul>
 </li>
 </ul>
