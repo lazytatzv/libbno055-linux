@@ -35,18 +35,21 @@ PYBIND11_MODULE(libbno055, m) {
         .def_readwrite("y", &Vector3::y)
         .def_readwrite("z", &Vector3::z)
         .def("__repr__", [](const Vector3& v) {
-            return "<Vector3 x=" + std::to_string(v.x) + " y=" + std::to_string(v.y) + " z=" + std::to_string(v.z) + ">";
+            return "<Vector3 x=" + std::to_string(v.x) + " y=" + std::to_string(v.y) + " z=" + std::to_string(v.z) +
+                   ">";
         });
 
     // Quaternion struct
     py::class_<Quaternion>(m, "Quaternion")
-        .def(py::init<float, float, float, float>(), py::arg("w") = 1.0f, py::arg("x") = 0.0f, py::arg("y") = 0.0f, py::arg("z") = 0.0f)
+        .def(py::init<float, float, float, float>(), py::arg("w") = 1.0f, py::arg("x") = 0.0f, py::arg("y") = 0.0f,
+             py::arg("z") = 0.0f)
         .def_readwrite("w", &Quaternion::w)
         .def_readwrite("x", &Quaternion::x)
         .def_readwrite("y", &Quaternion::y)
         .def_readwrite("z", &Quaternion::z)
         .def("__repr__", [](const Quaternion& q) {
-            return "<Quaternion w=" + std::to_string(q.w) + " x=" + std::to_string(q.x) + " y=" + std::to_string(q.y) + " z=" + std::to_string(q.z) + ">";
+            return "<Quaternion w=" + std::to_string(q.w) + " x=" + std::to_string(q.x) + " y=" + std::to_string(q.y) +
+                   " z=" + std::to_string(q.z) + ">";
         });
 
     // CalibrationStatus struct
@@ -97,20 +100,32 @@ PYBIND11_MODULE(libbno055, m) {
         .def("get_temperature", &BNO055::getTemperatureNoexcept)
         .def("get_raw_sensor_data", &BNO055::getRawSensorDataNoexcept)
         // Calibration & Diagnostics
-        .def("get_calibration_status", [](BNO055& self) {
-            try {
-                return std::optional<CalibrationStatus>(self.getCalibrationStatus());
-            } catch (...) {
-                return std::optional<CalibrationStatus>(std::nullopt);
-            }
-        })
+        .def("get_calibration_status",
+             [](BNO055& self) {
+                 try {
+                     return std::optional<CalibrationStatus>(self.getCalibrationStatus());
+                 } catch (...) {
+                     return std::optional<CalibrationStatus>(std::nullopt);
+                 }
+             })
         .def("get_diagnostics", &BNO055::getDiagnostics)
         .def("save_calibration_file", &BNO055::saveCalibrationFile, py::arg("filepath"))
         .def("load_calibration_file", &BNO055::loadCalibrationFile, py::arg("filepath"))
         .def("enable_auto_calibration", &BNO055::enableAutoCalibration, py::arg("filepath"))
         .def("disable_auto_calibration", &BNO055::disableAutoCalibration)
-        .def("enter_suspend_mode", [](BNO055& self) { try { self.enterSuspendMode(); } catch (...) {} })
-        .def("enter_normal_mode", [](BNO055& self) { try { self.enterNormalMode(); } catch (...) {} });
+        .def("enter_suspend_mode",
+             [](BNO055& self) {
+                 try {
+                     self.enterSuspendMode();
+                 } catch (...) {
+                 }
+             })
+        .def("enter_normal_mode", [](BNO055& self) {
+            try {
+                self.enterNormalMode();
+            } catch (...) {
+            }
+        });
 
     // Utility function
     m.def("to_euler_degrees", &toEulerDegrees, py::arg("q"), "Convert Quaternion to Euler angles in degrees");

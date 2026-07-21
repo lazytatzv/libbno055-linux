@@ -351,4 +351,3 @@ TEST(BNO055CAPITest, HandlesAndUtilities) {
 
     bno055_destroy(handle);
 }
-

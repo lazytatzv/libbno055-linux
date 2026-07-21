@@ -1,6 +1,7 @@
 #include "libbno055-linux/bno055_c.h"
 
 #include <utility>
+
 #include "libbno055-linux/bno055.hpp"
 
 struct bno055_handle {

@@ -39,6 +39,16 @@ jobs:
           cd build
           ctest --output-on-failure
 
+      - name: Test Python Bindings
+        run: |
+          python3 -m pip install .
+          python3 tests/test_python_bindings.py
+
+      - name: Test Rust Crate
+        run: |
+          cd rust
+          cargo test
+
   coverage:
     name: Code Coverage
     runs-on: ubuntu-latest
