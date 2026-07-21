@@ -8,7 +8,7 @@
   ros__parameters:
 
     # =========================================================================
-    # 1. HARDWARE CONNECTION
+    # 1. HARDWARE CONNECTION & TRANSPORT
     # =========================================================================
     # Choose your interface: "i2c" (default) or "uart"
     connection_type: "i2c"           
@@ -23,14 +23,14 @@
     # uart_port: "/dev/ttyUSB0"
     # uart_baudrate: 115200          # Default. Overclock to 921600 if FTDI supports it!
     # uart_timeout: 0.1
-    # uart_low_latency: true         # Set to true to bypass Linux FTDI 16ms buffering!
+    # uart_low_latency: true         # PRO TIP: Set true to bypass Linux FTDI 16ms USB packet buffer. Crucial for EKF!
 
     # =========================================================================
-    # 2. EXECUTION & POLLING MODE
+    # 2. EXECUTION & POLLING ARCHITECTURE
     # =========================================================================
-    # "standard"  : Safe CPU polling. Gathers Quaternions, Gyro, Accel, Mag.
-    # "raw_async" : Background polling thread. Ultra-fast, but raw data only.
-    # "interrupt" : THE ULTIMATE MODE. Zero-CPU polling. Requires INT pin wired!
+    # "standard"  : CPU-driven polling. Gathers Quaternions, Gyro, Accel, Mag.
+    # "raw_async" : Spawns an isolated C++ background thread. Ultra-fast, but raw data only.
+    # "interrupt" : THE ULTIMATE MODE. OS-level blocking wait on GPIO. Requires INT pin wired!
     #
     # [PRO TIP: 1kHz / 2kHz Hardware Overclocking Profile]
     # To actually stream data at 1000Hz+, you MUST combine the following settings:
@@ -57,7 +57,7 @@
     thread_priority: 0
 
     # =========================================================================
-    # 3. SENSOR OPERATION MODE
+    # 3. SENSOR OPERATION & FUSION ALGORITHM
     # =========================================================================
     # "imu_plus" : 6-axis fusion (Gyro+Accel). Best for indoors/motors (Immune to magnetic interference)
     # "ndof"     : 9-axis fusion (Gyro+Accel+Mag). Absolute compass heading. Best for outdoors.
@@ -67,22 +67,23 @@
     # Use external 32.768kHz crystal on the breakout board (highly recommended for precision)
     use_external_crystal: true
 
-    # Axis Remapping (Rotate the sensor virtually if mounted upside down/sideways)
-    # p1: Default (Dot on top-left)
-    # p2: X/Y swapped
-    # p3: Z inverted (Upside down)
+    # Axis Remapping (Hardware virtual rotation of the sensor coordinate frame)
+    # p0: Windows Standard
+    # p1: Android Standard (Default, Dot on top-left)
+    # p2: Android Standard (X/Y swapped)
+    # p3: Upside down (Z inverted)
     axis_map_config: "p1"
     axis_map_sign: "p1"
 
     # =========================================================================
-    # 4. CALIBRATION
+    # 4. CALIBRATION PERSISTENCE
     # =========================================================================
     # Path to a pre-generated 22-byte calibration file (e.g., "/etc/bno055_calib.bin")
-    # If provided, calibration is restored instantly on boot.
+    # If provided, calibration is restored instantly on boot, bypassing the "figure 8" dance.
     calibration_file: ""
     
-    # Auto-save calibration file periodically.
-    # WARNING: Set to FALSE in production! Saving blocks the I2C bus and causes EKF jitter.
+    # Auto-save calibration file periodically when fully calibrated.
+    # WARNING: Set to FALSE in production! Writing to EEPROM/Filesystem causes jitter.
     enable_auto_calibration: false
 
     # =========================================================================
@@ -90,16 +91,26 @@
     # =========================================================================
     frame_id: "imu_link"
 
-    # "best_effort" (SensorDataQoS) is strictly recommended. 
+    # "best_effort" (SensorDataQoS) is strictly recommended for IMUs. 
     # If a network packet is dropped, ROS will skip it instead of resending stale data to your EKF.
     qos_reliability: "best_effort"
     qos_history_depth: 10
 
     # =========================================================================
-    # 6. COVARIANCE MATRICES (For robot_localization EKF)
+    # 6. EKF COVARIANCE TUNING (sensor_msgs/msg/Imu)
     # =========================================================================
-    # 3x3 row-major arrays. Diagonals represent variance.
-    # If 0.0, the EKF might diverge. Here are sensible defaults for BNO055:
+    # 3x3 row-major arrays. Diagonals represent the variance of X, Y, Z.
+    # If you leave these at 0.0, the robot_localization EKF will crash or diverge.
+    # 
+    # TUNING GUIDE:
+    # 1. Theoretical base: Gyro noise density is ~0.014 °/s/√Hz.
+    # 2. Static test: Record a bag while robot is perfectly still and calculate variance.
+    # 3. Dynamic tuning: Inflate the static variance by 10x-100x to account for 
+    #    physical motor vibrations and terrain bumps while driving.
+    # 
+    # The default values below (0.01, 0.04) are artificially inflated to be 
+    # safely "plug-and-play" on real, vibrating robots.
+    # -------------------------------------------------------------------------
     
     orientation_covariance: [
       0.01, 0.0, 0.0,
