@@ -107,7 +107,7 @@ public:
                     response->message = "calibration_file parameter is empty.";
                     return;
                 }
-                
+
                 bno055lib::CalibrationStatus calib;
                 try {
                     calib = imu_->getCalibrationStatus();
@@ -311,8 +311,8 @@ private:
         try {
             status = imu_->getCalibrationStatus();
             char buf[128];
-            snprintf(buf, sizeof(buf), "{\"sys\": %d, \"gyro\": %d, \"accel\": %d, \"mag\": %d}", status.sys, status.gyro,
-                     status.accel, status.mag);
+            snprintf(buf, sizeof(buf), "{\"sys\": %d, \"gyro\": %d, \"accel\": %d, \"mag\": %d}", status.sys,
+                     status.gyro, status.accel, status.mag);
             auto calib_status_msg = std::make_unique<std_msgs::msg::String>();
             calib_status_msg->data = buf;
             calib_pub_->publish(std::move(calib_status_msg));
