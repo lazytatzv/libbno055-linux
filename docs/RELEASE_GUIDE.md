@@ -65,6 +65,11 @@ bloom-release --rosdistro humble --track humble libbno055_linux
 bloom-release --rosdistro jazzy --track jazzy libbno055_linux
 ```
 
+### Releasing for Kilted
+```bash
+bloom-release --rosdistro kilted --track kilted libbno055_linux
+```
+
 *Note: If `bloom` warns that a pull request already exists, ensure you delete the previous `bloom-libbno055_linux-X` branch from your GitHub fork of `rosdistro` before running.*
 
 ---

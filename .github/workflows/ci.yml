@@ -91,7 +91,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        ros_distro: [humble, jazzy]
+        ros_distro: [humble, jazzy, kilted]
     container:
       image: ros:${{ matrix.ros_distro }}-ros-base
 
