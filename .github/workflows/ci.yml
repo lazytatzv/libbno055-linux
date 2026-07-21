@@ -9,6 +9,8 @@ on:
 jobs:
   build-and-test:
     name: Build and Test (${{ matrix.os }})
+    permissions:
+      contents: write
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
@@ -23,10 +25,17 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y clang-tidy clang-format
 
-      - name: Check code formatting (clang-format)
+      - name: Auto-fix code formatting (clang-format)
         if: startsWith(matrix.os, 'ubuntu')
         run: |
-          find include src tests -name "*.cpp" -o -name "*.hpp" | xargs clang-format --dry-run --Werror
+          find include src tests -name "*.cpp" -o -name "*.hpp" | xargs clang-format -i
+
+      - name: Auto-commit formatted code
+        if: startsWith(matrix.os, 'ubuntu')
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: "style: auto-format code using clang-format [skip ci]"
+          file_pattern: "*.cpp *.hpp"
 
       - name: Configure CMake
         run: cmake -S . -B build -DBUILD_TESTING=ON -DENABLE_CLANG_TIDY=ON
