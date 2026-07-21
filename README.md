@@ -30,48 +30,17 @@ A polyglot C++17, ROS 2, Python, C, and Rust driver for the Bosch BNO055 9-DOF I
 
 ---
 
-## Why libbno055-linux?
+## Documentation
 
-| Feature | `libbno055-linux` | Adafruit BNO055 | Bosch Reference |
-| :--- | :---: | :---: | :---: |
-| **Linux I2C & UART** | ✅ | ⚠️ | ❌ |
-| **Automatic Recovery** | ✅ | ❌ | ❌ |
-| **ROS 2 & Lifecycle** | ✅ | ❌ | ❌ |
-| **Zero-Allocation Hot Path** | ✅ | ❌ | ❌ |
-| **Rust & Python Bindings** | ✅ | ⚠️ | ❌ |
-| **Burst Read (18-Byte)** | ✅ | ❌ | ❌ |
-| **GPIO IRQ Latency** | ✅ | ❌ | ❌ |
+This README is a quick overview. Please see the `docs/` directory for detailed information:
 
-### Userspace vs. Kernel IIO Driver
-
-While the mainline Linux kernel includes an IIO driver (`drivers/iio/imu/bno055`) starting from Linux 6.1, `libbno055-linux` is implemented as a **Userspace Driver** to address specific integration requirements in robotics (e.g., ROS 2) and rapid prototyping:
-
-1. **Zero-Configuration Setup**: No need to compile kernel modules or write Device Tree Overlays (DTO). Installable via `pip install`, `cargo add`, or `apt install`, and operates on any standard I2C/UART port.
-2. **`I2C_RDWR` Utilization**: Uses `ioctl(I2C_RDWR)` for Repeated Start burst-reading. It achieves low latency (~450µs for 18-bytes) in userspace by reducing system calls.
-3. **Interrupt Driven**: Uses Linux `poll()` on sysfs GPIOs to wait for hardware INT pin edges in a background thread, achieving CPU-free idling similar to kernel-triggered buffers.
-4. **Native ROS 2 Integration**: Directly publishes Zero-Copy `sensor_msgs/Imu`, avoiding the overhead of parsing multiple kernel sysfs text files (`in_accel_x_raw`, etc.) in a polling loop.
-
----
-
-## Features
-
-- **Polyglot Bindings**: First-class support for C++17, ROS 2, Python (`pip`), Rust (`crates.io`), and native C.
-- **Zero-Allocation Hot Path**: Memory-optimized, no-heap allocations during high-rate sensor readouts.
-- **Robust Hardware Recovery**: Auto-reconnects on I2C `EIO` bus lockups, clock-stretching glitches, and UART overrun errors.
-- **High-Throughput Burst Reads**: 18-Byte sequential I2C/UART burst reads (~450µs at 400kHz I2C).
-- **Linux GPIO Interrupt (IRQ)**: Sub-millisecond latency via hardware INT pin edge detection using POSIX `poll()`.
-
----
-
-## Best Practices for Calibration in Production (Robotics)
-
-In real-world robotics (e.g., drones, autonomous rovers), blocking a high-speed control loop to read calibration status or save files to a disk can cause severe jitter and crashes. To avoid this "deadlock" and ensure real-time performance, `libbno055-linux` recommends the following **Pro Workflow**:
-
-1. **Disable Auto-Save in Flight**: Do not use `enableAutoCalibration()` during actual autonomous operation. Saving to the Linux filesystem can block the I2C bus and the reading thread for milliseconds.
-2. **Use a Master Calibration File**: 
-   - **Offline (Maintenance)**: During maintenance, physically calibrate the robot (figure-8 motion). Once fully calibrated (`isFullyCalibrated() == true`), manually trigger `saveCalibrationFile("master_calib.bin")`. In ROS 2, you can do this by calling the `~/save_calibration` service.
-   - **Online (Production)**: On startup, simply load the master file using `loadCalibrationFile("master_calib.bin")`. The sensor will use this as a highly accurate baseline.
-3. **Never Block on Calibration**: After loading the file, wait a few seconds for the gyroscope to stabilize (which happens automatically while stationary), and immediately start your control loop using `startInterruptDrivenReading`. Do not wait for the magnetometer to reach a status of `3`, as local magnetic interference might prevent it.
+- **[Sphinx API Documentation (Web)](https://lazytatzv.github.io/libbno055-linux/)**: Auto-generated web documentation for C++ and Python APIs.
+- **[Features & Comparison](docs/FEATURES_AND_COMPARISON.md)**: Detailed feature list and why you should choose this over Kernel IIO drivers.
+- **[Calibration Best Practices](docs/CALIBRATION.md)**: The "Pro Workflow" for managing calibration in real-time robotic control loops.
+- **[API Reference (Markdown)](docs/API_REFERENCE.md)**: Full class and function reference for C++, C, Python, and Rust.
+- **[Integration & Tuning Guide](docs/INTEGRATION.md)**: ROS 2 YAML parameters, EKF setup, 400kHz I2C, UART 921600 bps tuning.
+- **[Architecture & Design](docs/ARCHITECTURE.md)**: PIMPL design, zero-copy transport, FFI layers, and state machines.
+- **[Troubleshooting & FAQ](docs/TROUBLESHOOTING.md)**: Hardware wiring, permissions, and clock-stretching fixes.
 
 ---
 
@@ -149,15 +118,7 @@ sudo apt update && sudo apt install ros-${ROS_DISTRO}-libbno055-linux
 ros2 launch libbno055_linux bno055_launch.py
 ```
 
----
 
-## Documentation
-
-- **[Sphinx API Documentation (Web)](https://lazytatzv.github.io/libbno055-linux/)**: Comprehensive, auto-generated web documentation for C++ and Python APIs.
-- **[API Reference (Markdown)](docs/API_REFERENCE.md)**: Full class and function reference for C++, C, Python, and Rust.
-- **[Integration & Tuning Guide](docs/INTEGRATION.md)**: ROS 2 YAML parameters, EKF setup, 400kHz I2C, UART 921600 bps tuning, and Rust integration.
-- **[Architecture & Design](docs/ARCHITECTURE.md)**: PIMPL design, zero-copy transport, FFI layers, and state machines.
-- **[Troubleshooting & FAQ](docs/TROUBLESHOOTING.md)**: Hardware wiring, permissions, and clock-stretching fixes.
 
 ---
 
