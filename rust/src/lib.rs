@@ -87,7 +87,7 @@ pub mod sys {
         pub fn bno055_start_interrupt_driven_reading(handle: bno055_handle_t, gpio_pin: i32, callback: bno055_raw_async_callback_t, user_data: *mut c_void) -> bool;
         pub fn bno055_stop_interrupt_driven_reading(handle: bno055_handle_t);
     }
-    
+    #[allow(non_camel_case_types)]
     pub type bno055_raw_async_callback_t = Option<unsafe extern "C" fn(*const bno055_raw_sensor_data_t, *mut c_void)>;
 }
 

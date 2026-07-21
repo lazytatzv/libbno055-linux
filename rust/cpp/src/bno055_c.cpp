@@ -204,6 +204,24 @@ void bno055_disable_auto_calibration(bno055_handle_t handle) {
     handle->cpp_imu.disableAutoCalibration();
 }
 
+bool bno055_start_interrupt_driven_reading(bno055_handle_t handle, int gpio_pin, bno055_raw_async_callback_t callback,
+                                           void* user_data) {
+    if (!handle || !callback) return false;
+    return handle->cpp_imu.startInterruptDrivenReading(
+        gpio_pin, [callback, user_data](const bno055lib::BNO055::RawSensorData& raw) {
+            bno055_raw_sensor_data_t c_raw;
+            c_raw.accel = to_c_vec3(raw.accel);
+            c_raw.mag = to_c_vec3(raw.mag);
+            c_raw.gyro = to_c_vec3(raw.gyro);
+            callback(&c_raw, user_data);
+        });
+}
+
+void bno055_stop_interrupt_driven_reading(bno055_handle_t handle) {
+    if (!handle) return;
+    handle->cpp_imu.stopInterruptDrivenReading();
+}
+
 void bno055_enter_suspend_mode(bno055_handle_t handle) {
     if (!handle) return;
     try {

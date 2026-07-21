@@ -9,6 +9,7 @@
 
 #ifdef __linux__
 #include <linux/i2c-dev.h>
+#include <linux/i2c.h>
 #endif
 #include <unistd.h>
 
@@ -474,9 +475,20 @@ public:
             }
             return false;
         }
+        struct i2c_msg msgs[2];
         uint8_t reg_buf[1] = {reg};
-        if (::write(i2c_fd, reg_buf, 1) != 1) return false;
-        return ::read(i2c_fd, &value, 1) == 1;
+        msgs[0].addr = address_;
+        msgs[0].flags = 0;
+        msgs[0].len = 1;
+        msgs[0].buf = reg_buf;
+        msgs[1].addr = address_;
+        msgs[1].flags = I2C_M_RD;
+        msgs[1].len = 1;
+        msgs[1].buf = &value;
+        struct i2c_rdwr_ioctl_data msgset;
+        msgset.msgs = msgs;
+        msgset.nmsgs = 2;
+        return ioctl(i2c_fd, I2C_RDWR, &msgset) >= 0;
 #else
         if (reg == CHIP_ID) {
             value = BNO055_ID;
@@ -503,9 +515,20 @@ public:
             }
             return false;
         }
+        struct i2c_msg msgs[2];
         uint8_t reg_buf[1] = {reg};
-        if (::write(i2c_fd, reg_buf, 1) != 1) return false;
-        return ::read(i2c_fd, buffer, len) == len;
+        msgs[0].addr = address_;
+        msgs[0].flags = 0;
+        msgs[0].len = 1;
+        msgs[0].buf = reg_buf;
+        msgs[1].addr = address_;
+        msgs[1].flags = I2C_M_RD;
+        msgs[1].len = len;
+        msgs[1].buf = buffer;
+        struct i2c_rdwr_ioctl_data msgset;
+        msgset.msgs = msgs;
+        msgset.nmsgs = 2;
+        return ioctl(i2c_fd, I2C_RDWR, &msgset) >= 0;
 #else
         std::memset(buffer, 0, len);
         if (reg == 0x20 && len >= 8) {  // QUATERNION_DATA_W_LSB
