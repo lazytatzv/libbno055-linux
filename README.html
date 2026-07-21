@@ -245,12 +245,12 @@
 <a class="reference external" href="https://lazytatzv.github.io/libbno055-linux/"><img alt="Docs" src="https://img.shields.io/badge/docs-GitHub%20Pages-blue.svg" /></a>
 <a class="reference external" href="https://github.com/lazytatzv/libbno055-linux/actions/workflows/ci.yml"><img alt="CI" src="https://github.com/lazytatzv/libbno055-linux/actions/workflows/ci.yml/badge.svg" /></a>
 <a class="reference internal" href="#LICENSE"><span class="xref myst"><img alt="License" src="https://img.shields.io/badge/License-MIT-green.svg" /></span></a></p>
-<p>A high-performance, polyglot <strong>C++17, ROS 2, Python, C, and Rust</strong> driver for the Bosch BNO055 9-DOF IMU sensor on Linux systems.</p>
+<p>A high-performance, polyglot C++17, ROS 2, Python, C, and Rust driver for the Bosch BNO055 9-DOF IMU sensor on Linux systems.</p>
 <hr class="docutils" />
 <section id="features">
-<h2>⚡ Features<a class="headerlink" href="#features" title="Link to this heading">¶</a></h2>
+<h2>Features<a class="headerlink" href="#features" title="Link to this heading">¶</a></h2>
 <ul class="simple">
-<li><p><strong>Polyglot Bindings</strong>: First-class support for <strong>C++17</strong>, <strong>ROS 2</strong>, <strong>Python</strong> (<code class="docutils literal notranslate"><span class="pre">pip</span></code>), <strong>Rust</strong> (<code class="docutils literal notranslate"><span class="pre">crates.io</span></code>), and native <strong>C</strong>.</p></li>
+<li><p><strong>Polyglot Bindings</strong>: First-class support for C++17, ROS 2, Python (<code class="docutils literal notranslate"><span class="pre">pip</span></code>), Rust (<code class="docutils literal notranslate"><span class="pre">crates.io</span></code>), and native C.</p></li>
 <li><p><strong>Zero-Allocation Hot Path</strong>: Memory-optimized, no-heap allocations during high-rate sensor readouts.</p></li>
 <li><p><strong>Robust Hardware Recovery</strong>: Auto-reconnects on I2C <code class="docutils literal notranslate"><span class="pre">EIO</span></code> bus lockups, clock-stretching glitches, and UART overrun errors.</p></li>
 <li><p><strong>High-Throughput Burst Reads</strong>: 18-Byte sequential I2C/UART burst reads (~450µs at 400kHz I2C).</p></li>
@@ -259,9 +259,9 @@
 </section>
 <hr class="docutils" />
 <section id="quick-start-by-language">
-<h2>🚀 Quick Start by Language<a class="headerlink" href="#quick-start-by-language" title="Link to this heading">¶</a></h2>
+<h2>Quick Start by Language<a class="headerlink" href="#quick-start-by-language" title="Link to this heading">¶</a></h2>
 <section id="rust-crates-io">
-<h3>🦀 Rust (<code class="docutils literal notranslate"><span class="pre">crates.io</span></code>)<a class="headerlink" href="#rust-crates-io" title="Link to this heading">¶</a></h3>
+<h3>Rust (<code class="docutils literal notranslate"><span class="pre">crates.io</span></code>)<a class="headerlink" href="#rust-crates-io" title="Link to this heading">¶</a></h3>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>cargo<span class="w"> </span>add<span class="w"> </span>libbno055
 </pre></div>
 </div>
@@ -282,7 +282,7 @@
 </section>
 <hr class="docutils" />
 <section id="python-pip">
-<h3>🐍 Python (<code class="docutils literal notranslate"><span class="pre">pip</span></code>)<a class="headerlink" href="#python-pip" title="Link to this heading">¶</a></h3>
+<h3>Python (<code class="docutils literal notranslate"><span class="pre">pip</span></code>)<a class="headerlink" href="#python-pip" title="Link to this heading">¶</a></h3>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pip<span class="w"> </span>install<span class="w"> </span>.
 </pre></div>
 </div>
@@ -299,7 +299,7 @@
 </section>
 <hr class="docutils" />
 <section id="c-17-native-cmake">
-<h3>⚡ C++17 (Native CMake)<a class="headerlink" href="#c-17-native-cmake" title="Link to this heading">¶</a></h3>
+<h3>C++17 (Native CMake)<a class="headerlink" href="#c-17-native-cmake" title="Link to this heading">¶</a></h3>
 <div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="cp">#include</span><span class="w"> </span><span class="cpf">&lt;libbno055-linux/bno055.hpp&gt;</span>
 <span class="cp">#include</span><span class="w"> </span><span class="cpf">&lt;iostream&gt;</span>
 
@@ -317,7 +317,7 @@
 </section>
 <hr class="docutils" />
 <section id="ros-2-node-binary-installation">
-<h3>🤖 ROS 2 Node (Binary Installation)<a class="headerlink" href="#ros-2-node-binary-installation" title="Link to this heading">¶</a></h3>
+<h3>ROS 2 Node (Binary Installation)<a class="headerlink" href="#ros-2-node-binary-installation" title="Link to this heading">¶</a></h3>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>sudo<span class="w"> </span>apt<span class="w"> </span>update<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>sudo<span class="w"> </span>apt<span class="w"> </span>install<span class="w"> </span>ros-<span class="si">${</span><span class="nv">ROS_DISTRO</span><span class="si">}</span>-libbno055-linux
 ros2<span class="w"> </span>launch<span class="w"> </span>libbno055_linux<span class="w"> </span>bno055_launch.py
 </pre></div>
@@ -325,18 +325,18 @@ ros2<span class="w"> </span>launch<span class="w"> </span>libbno055_linux<span c
 </section>
 </section>
 <hr class="docutils" />
-<section id="complete-documentation">
-<h2>📚 Complete Documentation<a class="headerlink" href="#complete-documentation" title="Link to this heading">¶</a></h2>
+<section id="documentation">
+<h2>Documentation<a class="headerlink" href="#documentation" title="Link to this heading">¶</a></h2>
 <ul class="simple">
-<li><p>📖 <strong><a class="reference internal" href="#docs/API_REFERENCE.md"><span class="xref myst">API Reference</span></a></strong> - Full class and function reference for C++, C, Python, and Rust.</p></li>
-<li><p>🛠️ <strong><a class="reference internal" href="#docs/INTEGRATION.md"><span class="xref myst">Integration &amp; Tuning Guide</span></a></strong> - ROS 2 YAML parameters, EKF setup, 400kHz I2C, UART 921600 bps tuning, and Rust integration.</p></li>
-<li><p>🏗️ <strong><a class="reference internal" href="#docs/ARCHITECTURE.md"><span class="xref myst">Architecture &amp; Design</span></a></strong> - PIMPL design, zero-copy transport, FFI layers, and state machines.</p></li>
-<li><p>🔧 <strong><a class="reference internal" href="#docs/TROUBLESHOOTING.md"><span class="xref myst">Troubleshooting &amp; FAQ</span></a></strong> - Hardware wiring, permissions, and clock-stretching fixes.</p></li>
+<li><p><strong><a class="reference internal" href="#docs/API_REFERENCE.md"><span class="xref myst">API Reference</span></a></strong>: Full class and function reference for C++, C, Python, and Rust.</p></li>
+<li><p><strong><a class="reference internal" href="#docs/INTEGRATION.md"><span class="xref myst">Integration &amp; Tuning Guide</span></a></strong>: ROS 2 YAML parameters, EKF setup, 400kHz I2C, UART 921600 bps tuning, and Rust integration.</p></li>
+<li><p><strong><a class="reference internal" href="#docs/ARCHITECTURE.md"><span class="xref myst">Architecture &amp; Design</span></a></strong>: PIMPL design, zero-copy transport, FFI layers, and state machines.</p></li>
+<li><p><strong><a class="reference internal" href="#docs/TROUBLESHOOTING.md"><span class="xref myst">Troubleshooting &amp; FAQ</span></a></strong>: Hardware wiring, permissions, and clock-stretching fixes.</p></li>
 </ul>
 </section>
 <hr class="docutils" />
 <section id="license">
-<h2>📄 License<a class="headerlink" href="#license" title="Link to this heading">¶</a></h2>
+<h2>License<a class="headerlink" href="#license" title="Link to this heading">¶</a></h2>
 <p>This project is released under the <a class="reference internal" href="#LICENSE"><span class="xref myst">MIT License</span></a>.</p>
 </section>
 </section>
@@ -397,16 +397,16 @@ ros2<span class="w"> </span>launch<span class="w"> </span>libbno055_linux<span c
           <div class="toc-tree">
             <ul>
 <li><a class="reference internal" href="#">libbno055-linux</a><ul>
-<li><a class="reference internal" href="#features">⚡ Features</a></li>
-<li><a class="reference internal" href="#quick-start-by-language">🚀 Quick Start by Language</a><ul>
-<li><a class="reference internal" href="#rust-crates-io">🦀 Rust (<code class="docutils literal notranslate"><span class="pre">crates.io</span></code>)</a></li>
-<li><a class="reference internal" href="#python-pip">🐍 Python (<code class="docutils literal notranslate"><span class="pre">pip</span></code>)</a></li>
-<li><a class="reference internal" href="#c-17-native-cmake">⚡ C++17 (Native CMake)</a></li>
-<li><a class="reference internal" href="#ros-2-node-binary-installation">🤖 ROS 2 Node (Binary Installation)</a></li>
+<li><a class="reference internal" href="#features">Features</a></li>
+<li><a class="reference internal" href="#quick-start-by-language">Quick Start by Language</a><ul>
+<li><a class="reference internal" href="#rust-crates-io">Rust (<code class="docutils literal notranslate"><span class="pre">crates.io</span></code>)</a></li>
+<li><a class="reference internal" href="#python-pip">Python (<code class="docutils literal notranslate"><span class="pre">pip</span></code>)</a></li>
+<li><a class="reference internal" href="#c-17-native-cmake">C++17 (Native CMake)</a></li>
+<li><a class="reference internal" href="#ros-2-node-binary-installation">ROS 2 Node (Binary Installation)</a></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#complete-documentation">📚 Complete Documentation</a></li>
-<li><a class="reference internal" href="#license">📄 License</a></li>
+<li><a class="reference internal" href="#documentation">Documentation</a></li>
+<li><a class="reference internal" href="#license">License</a></li>
 </ul>
 </li>
 </ul>

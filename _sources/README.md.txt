@@ -7,23 +7,23 @@
 [![CI](https://github.com/lazytatzv/libbno055-linux/actions/workflows/ci.yml/badge.svg)](https://github.com/lazytatzv/libbno055-linux/actions/workflows/ci.yml)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
-A high-performance, polyglot **C++17, ROS 2, Python, C, and Rust** driver for the Bosch BNO055 9-DOF IMU sensor on Linux systems.
+A high-performance, polyglot C++17, ROS 2, Python, C, and Rust driver for the Bosch BNO055 9-DOF IMU sensor on Linux systems.
 
 ---
 
-## ⚡ Features
+## Features
 
-* **Polyglot Bindings**: First-class support for **C++17**, **ROS 2**, **Python** (`pip`), **Rust** (`crates.io`), and native **C**.
-* **Zero-Allocation Hot Path**: Memory-optimized, no-heap allocations during high-rate sensor readouts.
-* **Robust Hardware Recovery**: Auto-reconnects on I2C `EIO` bus lockups, clock-stretching glitches, and UART overrun errors.
-* **High-Throughput Burst Reads**: 18-Byte sequential I2C/UART burst reads (~450µs at 400kHz I2C).
-* **Linux GPIO Interrupt (IRQ)**: Sub-millisecond latency via hardware INT pin edge detection using POSIX `poll()`.
+- **Polyglot Bindings**: First-class support for C++17, ROS 2, Python (`pip`), Rust (`crates.io`), and native C.
+- **Zero-Allocation Hot Path**: Memory-optimized, no-heap allocations during high-rate sensor readouts.
+- **Robust Hardware Recovery**: Auto-reconnects on I2C `EIO` bus lockups, clock-stretching glitches, and UART overrun errors.
+- **High-Throughput Burst Reads**: 18-Byte sequential I2C/UART burst reads (~450µs at 400kHz I2C).
+- **Linux GPIO Interrupt (IRQ)**: Sub-millisecond latency via hardware INT pin edge detection using POSIX `poll()`.
 
 ---
 
-## 🚀 Quick Start by Language
+## Quick Start by Language
 
-### 🦀 Rust (`crates.io`)
+### Rust (`crates.io`)
 
 ```bash
 cargo add libbno055
@@ -46,7 +46,7 @@ fn main() -> Result<(), &'static str> {
 
 ---
 
-### 🐍 Python (`pip`)
+### Python (`pip`)
 
 ```bash
 pip install .
@@ -65,7 +65,7 @@ if imu.begin(libbno055.OpMode.NDOF):
 
 ---
 
-### ⚡ C++17 (Native CMake)
+### C++17 (Native CMake)
 
 ```cpp
 #include <libbno055-linux/bno055.hpp>
@@ -84,7 +84,7 @@ int main() {
 
 ---
 
-### 🤖 ROS 2 Node (Binary Installation)
+### ROS 2 Node (Binary Installation)
 
 ```bash
 sudo apt update && sudo apt install ros-${ROS_DISTRO}-libbno055-linux
@@ -93,15 +93,15 @@ ros2 launch libbno055_linux bno055_launch.py
 
 ---
 
-## 📚 Complete Documentation
+## Documentation
 
-* 📖 **[API Reference](docs/API_REFERENCE.md)** - Full class and function reference for C++, C, Python, and Rust.
-* 🛠️ **[Integration & Tuning Guide](docs/INTEGRATION.md)** - ROS 2 YAML parameters, EKF setup, 400kHz I2C, UART 921600 bps tuning, and Rust integration.
-* 🏗️ **[Architecture & Design](docs/ARCHITECTURE.md)** - PIMPL design, zero-copy transport, FFI layers, and state machines.
-* 🔧 **[Troubleshooting & FAQ](docs/TROUBLESHOOTING.md)** - Hardware wiring, permissions, and clock-stretching fixes.
+- **[API Reference](docs/API_REFERENCE.md)**: Full class and function reference for C++, C, Python, and Rust.
+- **[Integration & Tuning Guide](docs/INTEGRATION.md)**: ROS 2 YAML parameters, EKF setup, 400kHz I2C, UART 921600 bps tuning, and Rust integration.
+- **[Architecture & Design](docs/ARCHITECTURE.md)**: PIMPL design, zero-copy transport, FFI layers, and state machines.
+- **[Troubleshooting & FAQ](docs/TROUBLESHOOTING.md)**: Hardware wiring, permissions, and clock-stretching fixes.
 
 ---
 
-## 📄 License
+## License
 
 This project is released under the [MIT License](LICENSE).
