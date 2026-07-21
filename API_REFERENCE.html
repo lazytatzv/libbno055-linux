@@ -934,7 +934,7 @@ Issues a software reset to the IMU and restores the current configuration.</p></
 <li><p><strong><code class="docutils literal notranslate"><span class="pre">pub</span> <span class="pre">fn</span> <span class="pre">get_quaternion(&amp;mut</span> <span class="pre">self)</span> <span class="pre">-&gt;</span> <span class="pre">Option&lt;Quaternion&gt;</span></code></strong></p></li>
 <li><p><strong><code class="docutils literal notranslate"><span class="pre">pub</span> <span class="pre">fn</span> <span class="pre">get_temperature(&amp;mut</span> <span class="pre">self)</span> <span class="pre">-&gt;</span> <span class="pre">Option&lt;i8&gt;</span></code></strong></p></li>
 <li><p><strong><code class="docutils literal notranslate"><span class="pre">pub</span> <span class="pre">fn</span> <span class="pre">get_raw_sensor_data(&amp;mut</span> <span class="pre">self)</span> <span class="pre">-&gt;</span> <span class="pre">Option&lt;RawSensorData&gt;</span></code></strong>
-<em>(Highly Optimized)</em> Reads all 9-axis raw values in a single 18-byte I2C burst transaction (utilizes <code class="docutils literal notranslate"><span class="pre">I2C_RDWR</span></code> if available).</p></li>
+Reads all 9-axis raw values in a single 18-byte I2C burst transaction (utilizes <code class="docutils literal notranslate"><span class="pre">I2C_RDWR</span></code> if available).</p></li>
 </ul>
 </section>
 <section id="id3">

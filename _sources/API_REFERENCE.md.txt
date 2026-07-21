@@ -477,7 +477,7 @@ All structures implement `Clone`, `Copy`, and `Debug`.
 *   **`pub fn get_quaternion(&mut self) -> Option<Quaternion>`**
 *   **`pub fn get_temperature(&mut self) -> Option<i8>`**
 *   **`pub fn get_raw_sensor_data(&mut self) -> Option<RawSensorData>`**
-    *(Highly Optimized)* Reads all 9-axis raw values in a single 18-byte I2C burst transaction (utilizes `I2C_RDWR` if available).
+    Reads all 9-axis raw values in a single 18-byte I2C burst transaction (utilizes `I2C_RDWR` if available).
 
 #### Diagnostics & Utilities
 *   **`pub fn get_calibration_status(&mut self) -> Option<CalibrationStatus>`**

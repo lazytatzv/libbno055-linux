@@ -249,9 +249,9 @@
 <a class="reference external" href="https://lazytatzv.github.io/libbno055-linux/"><img alt="Docs" src="https://img.shields.io/badge/docs-GitHub%20Pages-blue.svg" /></a>
 <a class="reference internal" href="#LICENSE"><span class="xref myst"><img alt="License" src="https://img.shields.io/badge/License-MIT-green.svg" /></span></a></p>
 <blockquote>
-<div><p><strong>The ultimate, high-performance BNO055 IMU driver for modern robotics and IoT.</strong></p>
+<div><p><strong>A robust, low-latency BNO055 IMU driver for Linux, supporting I2C/UART with auto-recovery.</strong></p>
 </div></blockquote>
-<p>A high-performance, polyglot C++17, ROS 2, Python, C, and Rust driver for the Bosch BNO055 9-DOF IMU sensor on Linux systems.</p>
+<p>A polyglot C++17, ROS 2, Python, C, and Rust driver for the Bosch BNO055 9-DOF IMU sensor.</p>
 <section id="demonstration">
 <h2>Demonstration<a class="headerlink" href="#demonstration" title="Link to this heading">¶</a></h2>
 <!-- TODO: Replace this placeholder with a GIF of Rviz2 or terminal output! -->
@@ -321,12 +321,12 @@
 </div>
 <section id="userspace-vs-kernel-iio-driver">
 <h3>Userspace vs. Kernel IIO Driver<a class="headerlink" href="#userspace-vs-kernel-iio-driver" title="Link to this heading">¶</a></h3>
-<p>While the mainline Linux kernel includes an excellent IIO driver (<code class="docutils literal notranslate"><span class="pre">drivers/iio/imu/bno055</span></code>) starting from Linux 6.1, <code class="docutils literal notranslate"><span class="pre">libbno055-linux</span></code> is designed as a highly optimized <strong>Userspace Driver</strong> to solve specific practical pain points in modern robotics (e.g. ROS 2) and rapid prototyping:</p>
+<p>While the mainline Linux kernel includes an IIO driver (<code class="docutils literal notranslate"><span class="pre">drivers/iio/imu/bno055</span></code>) starting from Linux 6.1, <code class="docutils literal notranslate"><span class="pre">libbno055-linux</span></code> is implemented as a <strong>Userspace Driver</strong> to address specific integration requirements in robotics (e.g., ROS 2) and rapid prototyping:</p>
 <ol class="arabic simple">
-<li><p><strong>Zero-Configuration Setup</strong>: No need to compile kernel modules or write Device Tree Overlays (DTO). Just <code class="docutils literal notranslate"><span class="pre">pip</span> <span class="pre">install</span></code>, <code class="docutils literal notranslate"><span class="pre">cargo</span> <span class="pre">add</span></code>, or <code class="docutils literal notranslate"><span class="pre">apt</span> <span class="pre">install</span></code>, and it works immediately on any standard I2C/UART port.</p></li>
-<li><p><strong><code class="docutils literal notranslate"><span class="pre">I2C_RDWR</span></code> Optimization</strong>: Uses <code class="docutils literal notranslate"><span class="pre">ioctl(I2C_RDWR)</span></code> for Repeated Start burst-reading. It achieves near-kernel latency (~450µs for 18-bytes) in userspace by cutting system calls down to exactly one per read.</p></li>
-<li><p><strong>Interrupt Driven</strong>: Uses Linux <code class="docutils literal notranslate"><span class="pre">poll()</span></code> on sysfs GPIOs to wait for hardware INT pin edges in a background thread, achieving the same CPU-free idling as kernel-triggered buffers, but entirely in userspace.</p></li>
-<li><p><strong>Native ROS 2 Integration</strong>: Directly publishes Zero-Copy <code class="docutils literal notranslate"><span class="pre">sensor_msgs/Imu</span></code> without the massive CPU overhead of parsing multiple kernel sysfs text files (<code class="docutils literal notranslate"><span class="pre">in_accel_x_raw</span></code>, etc) in a high-speed polling loop.</p></li>
+<li><p><strong>Zero-Configuration Setup</strong>: No need to compile kernel modules or write Device Tree Overlays (DTO). Installable via <code class="docutils literal notranslate"><span class="pre">pip</span> <span class="pre">install</span></code>, <code class="docutils literal notranslate"><span class="pre">cargo</span> <span class="pre">add</span></code>, or <code class="docutils literal notranslate"><span class="pre">apt</span> <span class="pre">install</span></code>, and operates on any standard I2C/UART port.</p></li>
+<li><p><strong><code class="docutils literal notranslate"><span class="pre">I2C_RDWR</span></code> Utilization</strong>: Uses <code class="docutils literal notranslate"><span class="pre">ioctl(I2C_RDWR)</span></code> for Repeated Start burst-reading. It achieves low latency (~450µs for 18-bytes) in userspace by reducing system calls.</p></li>
+<li><p><strong>Interrupt Driven</strong>: Uses Linux <code class="docutils literal notranslate"><span class="pre">poll()</span></code> on sysfs GPIOs to wait for hardware INT pin edges in a background thread, achieving CPU-free idling similar to kernel-triggered buffers.</p></li>
+<li><p><strong>Native ROS 2 Integration</strong>: Directly publishes Zero-Copy <code class="docutils literal notranslate"><span class="pre">sensor_msgs/Imu</span></code>, avoiding the overhead of parsing multiple kernel sysfs text files (<code class="docutils literal notranslate"><span class="pre">in_accel_x_raw</span></code>, etc.) in a polling loop.</p></li>
 </ol>
 </section>
 </section>
