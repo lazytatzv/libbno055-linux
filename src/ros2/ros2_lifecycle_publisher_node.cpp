@@ -503,8 +503,10 @@ private:
 
 }  // namespace bno055_ros2
 
+#ifdef BNO055_ROS2_BUILDING_COMPONENT
 #include "rclcpp_components/register_node_macro.hpp"
 RCLCPP_COMPONENTS_REGISTER_NODE(bno055_ros2::BNO055LifecyclePublisherNode)
+#endif
 
 #ifndef BNO055_ROS2_BUILDING_COMPONENT
 #ifndef ROS2_NODE_TESTING

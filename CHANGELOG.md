@@ -5,6 +5,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.6.1] - 2026-07-22
+
+### Fixed
+- **ROS 2 Standalone Build**: Fixed a compilation error where standalone executables attempted to include `rclcpp_components` headers without having the dependency declared. The component registration macro is now properly guarded by `#ifdef BNO055_ROS2_BUILDING_COMPONENT`.
+
 ## [1.6.0] - 2026-07-22
 
 ### Added
