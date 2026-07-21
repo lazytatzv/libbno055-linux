@@ -41,7 +41,7 @@ jobs:
 
       - name: Test Python Bindings
         run: |
-          python3 -m pip install .
+          python3 -m pip install . --break-system-packages
           python3 tests/test_python_bindings.py
 
       - name: Test Rust Crate
