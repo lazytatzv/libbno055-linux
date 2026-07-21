@@ -379,3 +379,50 @@ if (bno055_begin(imu, BNO055_OPMODE_NDOF)) {
 bno055_destroy(imu);
 ```
 
+---
+
+## Python API Reference (`import libbno055`)
+
+The Python module is built using `pybind11` and mirrors the C++17 API.
+
+```python
+import libbno055
+
+# Instantiate I2C or UART
+imu = libbno055.BNO055(address=0x28, device="/dev/i2c-1")
+
+# Initialize in fusion mode
+if imu.begin(libbno055.OpMode.NDOF):
+    # Fetch Quaternion
+    q = imu.get_quaternion()
+    if q:
+        euler = libbno055.to_euler_degrees(q)
+        print(f"Roll: {euler.x:.2f}, Pitch: {euler.y:.2f}, Yaw: {euler.z:.2f}")
+
+    # Fetch Accelerometer & Calibration Status
+    accel = imu.get_accelerometer()
+    calib = imu.get_calibration_status()
+```
+
+---
+
+## Rust API Reference (`use libbno055::{BNO055, OpMode}`)
+
+The Rust crate provides safe, idiomatic wrappers around the C++ engine.
+
+```rust
+use libbno055::{BNO055, OpMode, Quaternion};
+
+fn main() -> Result<(), &'static str> {
+    let mut imu = BNO055::new_i2c(0x28, "/dev/i2c-1")?;
+    if imu.begin(OpMode::NDOF) {
+        if let Some(q) = imu.get_quaternion() {
+            let euler = BNO055::to_euler_degrees(&q);
+            println!("Euler: Roll={}, Pitch={}, Yaw={}", euler.x, euler.y, euler.z);
+        }
+    }
+    Ok(())
+}
+```
+
+
