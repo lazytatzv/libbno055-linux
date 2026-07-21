@@ -6,7 +6,7 @@
 <link rel="index" title="Index" href="genindex.html"><link rel="search" title="Search" href="search.html"><link rel="next" title="Architecture and Design Decisions" href="ARCHITECTURE.html"><link rel="prev" title="libbno055-linux Official Documentation" href="index.html">
 
     <!-- Generated with Sphinx 8.1.3 and Furo 2025.12.19 -->
-        <title>libbno055-linux - libbno055-linux 1.5.3 documentation</title>
+        <title>libbno055-linux - libbno055-linux 1.5.4 documentation</title>
       <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=d111a655" />
     <link rel="stylesheet" type="text/css" href="_static/styles/furo.css?v=7bdb33bb" />
     <link rel="stylesheet" type="text/css" href="_static/styles/furo-extensions.css?v=8dab3a3b" />
@@ -161,7 +161,7 @@
       </label>
     </div>
     <div class="header-center">
-      <a href="index.html"><div class="brand">libbno055-linux 1.5.3 documentation</div></a>
+      <a href="index.html"><div class="brand">libbno055-linux 1.5.4 documentation</div></a>
     </div>
     <div class="header-right">
       <div class="theme-toggle-container theme-toggle-header">
@@ -182,7 +182,7 @@
       
       <div class="sidebar-sticky"><a class="sidebar-brand" href="index.html">
   
-  <span class="sidebar-brand-text">libbno055-linux 1.5.3 documentation</span>
+  <span class="sidebar-brand-text">libbno055-linux 1.5.4 documentation</span>
   
 </a><form class="sidebar-search-container" method="get" action="search.html" role="search">
   <input class="sidebar-search" placeholder="Search" name="q" aria-label="Search">
@@ -249,6 +249,67 @@
 <a class="reference external" href="https://lazytatzv.github.io/libbno055-linux/"><img alt="Docs" src="https://img.shields.io/badge/docs-GitHub%20Pages-blue.svg" /></a>
 <a class="reference internal" href="#LICENSE"><span class="xref myst"><img alt="License" src="https://img.shields.io/badge/License-MIT-green.svg" /></span></a></p>
 <p>A high-performance, polyglot C++17, ROS 2, Python, C, and Rust driver for the Bosch BNO055 9-DOF IMU sensor on Linux systems.</p>
+<hr class="docutils" />
+<section id="highlights">
+<h2>Highlights<a class="headerlink" href="#highlights" title="Link to this heading">¶</a></h2>
+<ul class="simple">
+<li><p><strong>Native I2C &amp; UART Support</strong>: Fast POSIX drivers with hardware auto-recovery for I2C bus lockups and UART overrun errors.</p></li>
+<li><p><strong>ROS 2 Lifecycle &amp; Diagnostics</strong>: Production ROS 2 lifecycle nodes with zero-copy publishing and diagnostic streams.</p></li>
+<li><p><strong>Multi-Language FFI Bindings</strong>: C++17 core engine with native C, Python (<code class="docutils literal notranslate"><span class="pre">pip</span></code>), and safe Rust (<code class="docutils literal notranslate"><span class="pre">crates.io</span></code>) interfaces.</p></li>
+</ul>
+</section>
+<hr class="docutils" />
+<section id="why-libbno055-linux">
+<h2>Why libbno055-linux?<a class="headerlink" href="#why-libbno055-linux" title="Link to this heading">¶</a></h2>
+<div class="table-wrapper colwidths-auto docutils container">
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head text-left"><p>Feature</p></th>
+<th class="head text-center"><p><code class="docutils literal notranslate"><span class="pre">libbno055-linux</span></code></p></th>
+<th class="head text-center"><p>Adafruit BNO055</p></th>
+<th class="head text-center"><p>Bosch Reference</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td class="text-left"><p><strong>Linux I2C &amp; UART</strong></p></td>
+<td class="text-center"><p>Yes</p></td>
+<td class="text-center"><p>Partial</p></td>
+<td class="text-center"><p>No</p></td>
+</tr>
+<tr class="row-odd"><td class="text-left"><p><strong>Automatic Recovery</strong></p></td>
+<td class="text-center"><p>Yes</p></td>
+<td class="text-center"><p>No</p></td>
+<td class="text-center"><p>No</p></td>
+</tr>
+<tr class="row-even"><td class="text-left"><p><strong>ROS 2 &amp; Lifecycle</strong></p></td>
+<td class="text-center"><p>Yes</p></td>
+<td class="text-center"><p>No</p></td>
+<td class="text-center"><p>No</p></td>
+</tr>
+<tr class="row-odd"><td class="text-left"><p><strong>Zero-Allocation Hot Path</strong></p></td>
+<td class="text-center"><p>Yes</p></td>
+<td class="text-center"><p>No</p></td>
+<td class="text-center"><p>No</p></td>
+</tr>
+<tr class="row-even"><td class="text-left"><p><strong>Rust &amp; Python Bindings</strong></p></td>
+<td class="text-center"><p>Yes</p></td>
+<td class="text-center"><p>Python Only</p></td>
+<td class="text-center"><p>No</p></td>
+</tr>
+<tr class="row-odd"><td class="text-left"><p><strong>Burst Read (18-Byte)</strong></p></td>
+<td class="text-center"><p>Yes</p></td>
+<td class="text-center"><p>No</p></td>
+<td class="text-center"><p>No</p></td>
+</tr>
+<tr class="row-even"><td class="text-left"><p><strong>GPIO IRQ Latency</strong></p></td>
+<td class="text-center"><p>Sub-ms</p></td>
+<td class="text-center"><p>Polling</p></td>
+<td class="text-center"><p>Polling</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</section>
 <hr class="docutils" />
 <section id="features">
 <h2>Features<a class="headerlink" href="#features" title="Link to this heading">¶</a></h2>
@@ -400,6 +461,8 @@ ros2<span class="w"> </span>launch<span class="w"> </span>libbno055_linux<span c
           <div class="toc-tree">
             <ul>
 <li><a class="reference internal" href="#">libbno055-linux</a><ul>
+<li><a class="reference internal" href="#highlights">Highlights</a></li>
+<li><a class="reference internal" href="#why-libbno055-linux">Why libbno055-linux?</a></li>
 <li><a class="reference internal" href="#features">Features</a></li>
 <li><a class="reference internal" href="#quick-start-by-language">Quick Start by Language</a><ul>
 <li><a class="reference internal" href="#rust-crates-io">Rust (<code class="docutils literal notranslate"><span class="pre">crates.io</span></code>)</a></li>
@@ -421,7 +484,7 @@ ros2<span class="w"> </span>launch<span class="w"> </span>libbno055_linux<span c
       
     </aside>
   </div>
-</div><script src="_static/documentation_options.js?v=d75fd82e"></script>
+</div><script src="_static/documentation_options.js?v=1cd648e3"></script>
     <script src="_static/doctools.js?v=9bcbadda"></script>
     <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="_static/scripts/furo.js?v=46bd48cc"></script>
