@@ -2,7 +2,7 @@
 <?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
 <package format="3">
   <name>libbno055_linux</name>
-  <version>1.6.1</version>
+  <version>1.6.2</version>
   <description>High-performance, polyglot C++17, ROS 2, Python, C, and Rust driver for Bosch BNO055 IMU on Linux.</description>
   <maintainer email="lazytatzv@users.noreply.github.com">lazytatzv</maintainer>
   <license file="LICENSE">MIT</license>
