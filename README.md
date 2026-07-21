@@ -1,6 +1,7 @@
 # libbno055-linux
 
 [![C++17](https://img.shields.io/badge/C%2B%2B-17-blue.svg)](include/libbno055-linux/bno055.hpp)
+[![PyPI](https://img.shields.io/pypi/v/libbno055-linux.svg)](https://pypi.org/project/libbno055-linux/)
 [![crates.io](https://img.shields.io/crates/v/libbno055.svg)](https://crates.io/crates/libbno055)
 [![Python](https://img.shields.io/badge/Python-3.8%2B-3776AB.svg)](src/python/bindings.cpp)
 [![ROS 2](https://img.shields.io/badge/ROS%202-Humble%20%7C%20Jazzy%20%7C%20Kilted-22314E.svg)](docs/INTEGRATION.md)
@@ -9,24 +10,55 @@
 [![Coverage](https://codecov.io/gh/lazytatzv/libbno055-linux/graph/badge.svg)](https://codecov.io/gh/lazytatzv/libbno055-linux)
 [![Docs](https://img.shields.io/badge/docs-GitHub%20Pages-blue.svg)](https://lazytatzv.github.io/libbno055-linux/)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
-> **A robust, low-latency BNO055 IMU driver for Linux, supporting I2C/UART with auto-recovery.**
 
-A polyglot C++17, ROS 2, Python, C, and Rust driver for the Bosch BNO055 9-DOF IMU sensor.
+> **A robust, low-latency (270µs) BNO055 IMU driver for Linux, supporting I2C/UART with auto-recovery.**
+
+A C++17 driver with C, Python, Rust, and ROS 2 bindings for the Bosch BNO055 9-DOF IMU sensor.
 
 ## Demonstration
 
-<!-- TODO: Replace this placeholder with a GIF of Rviz2 or terminal output! -->
-<p align="center">
-  <img src="https://via.placeholder.com/800x400?text=Drop+a+GIF+of+Rviz2+or+Terminal+Output+Here" alt="Demo GIF Placeholder">
-</p>
+```console
+$ ros2 topic echo /imu/data
+header:
+  stamp:
+    sec: 1718920102
+    nanosec: 432100000
+  frame_id: 'imu_link'
+orientation:
+  x: 0.001
+  y: 0.002
+  z: 0.707
+  w: 0.707
+angular_velocity:
+  x: 0.012
+  y: -0.004
+  z: 0.001
+linear_acceleration:
+  x: 0.02
+  y: -0.01
+  z: 9.81
+```
+
+---
+
+## Features
+
+| Feature | `libbno055-linux` | Adafruit | Kernel IIO |
+| :--- | :---: | :---: | :---: |
+| **ROS 2** | ✅ | ❌ | △ |
+| **Python** | ✅ | ✅ | ❌ |
+| **Rust** | ✅ | ❌ | ❌ |
+| **UART (921600 bps)** | ✅ | ❌ | △ |
+| **Auto Recovery** | ✅ | ❌ | ❌ |
+| **Zero-CPU Interrupts**| ✅ | ❌ | ❌ |
 
 ---
 
 ## Highlights
 
-- **Native I2C & UART Support**: Fast POSIX drivers with hardware auto-recovery for I2C bus lockups and UART overrun errors.
-- **ROS 2 Lifecycle & Diagnostics**: Production ROS 2 lifecycle nodes with zero-copy publishing and diagnostic streams.
-- **Multi-Language FFI Bindings**: C++17 core engine with native C, Python (`pip`), and safe Rust (`crates.io`) interfaces.
+- **Native I2C & UART Support**: Fast POSIX drivers with hardware auto-recovery for I2C bus lockups.
+- **ROS 2 Lifecycle Integration**: High-performance intra-process publishing and diagnostic streams.
+- **Multi-Language APIs**: C++17 core engine with native C, Python (`pip`), and safe Rust (`crates.io`).
 
 ---
 
@@ -44,7 +76,35 @@ This README is a quick overview. Please see the `docs/` directory for detailed i
 
 ---
 
-## Quick Start by Language
+## Installation
+
+### Ubuntu (APT / ROS 2)
+```bash
+sudo apt update && sudo apt install ros-${ROS_DISTRO}-libbno055-linux
+```
+
+### Python (pip)
+```bash
+pip install libbno055-linux
+```
+
+### Rust (Cargo)
+```bash
+cargo add libbno055
+```
+
+### Build from Source
+```bash
+git clone https://github.com/lazytatzv/libbno055-linux.git
+cd libbno055-linux
+mkdir build && cd build
+cmake .. && make
+sudo make install
+```
+
+---
+
+## Quick Start
 
 ### Rust (`crates.io`)
 
