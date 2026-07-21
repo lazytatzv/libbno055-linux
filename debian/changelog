@@ -1,4 +1,4 @@
-libbno055-linux (1.5.5-1) jammy; urgency=medium
+libbno055-linux (1.5.6-1) jammy; urgency=medium
 
   * Setup automated PyPI publishing via CI and include headers in sdist
 

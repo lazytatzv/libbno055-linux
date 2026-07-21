@@ -1,7 +1,7 @@
 project = 'libbno055-linux'
 copyright = '2026, lazytatzv'
 author = 'lazytatzv'
-release = '1.5.5'
+release = '1.5.6'
 
 extensions = [
     'myst_parser',
