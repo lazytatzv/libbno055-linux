@@ -105,6 +105,16 @@ public:
                     response->message = "calibration_file parameter is empty.";
                     return;
                 }
+                
+                auto calib = imu_->getCalibrationStatus();
+                if (!calib.isFullyCalibrated()) {
+                    response->success = false;
+                    response->message = "Refused: Sensor not fully calibrated (S:" + std::to_string(calib.sys) +
+                                        " G:" + std::to_string(calib.gyro) + " A:" + std::to_string(calib.accel) +
+                                        " M:" + std::to_string(calib.mag) + ").";
+                    return;
+                }
+
                 if (imu_->saveCalibrationFile(cf)) {
                     response->success = true;
                     response->message = "Successfully saved calibration to " + cf;
