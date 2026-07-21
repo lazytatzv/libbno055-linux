@@ -198,7 +198,9 @@ inline void apply_advanced_features(T* node, bno055lib::BNO055& imu) {
         sched_param sch_params;
         sch_params.sched_priority = thread_prio;
         if (pthread_setschedparam(pthread_self(), SCHED_FIFO, &sch_params) != 0) {
-            RCLCPP_WARN(node->get_logger(), "Failed to set SCHED_FIFO thread priority to %d. (Requires root or limits.conf rtprio)", thread_prio);
+            RCLCPP_WARN(node->get_logger(),
+                        "Failed to set SCHED_FIFO thread priority to %d. (Requires root or limits.conf rtprio)",
+                        thread_prio);
         } else {
             RCLCPP_INFO(node->get_logger(), "Elevated thread priority to SCHED_FIFO %d.", thread_prio);
         }
