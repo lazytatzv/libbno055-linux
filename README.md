@@ -13,7 +13,7 @@
 
 A high-performance, polyglot C++17, ROS 2, Python, C, and Rust driver for the Bosch BNO055 9-DOF IMU sensor on Linux systems.
 
-## 🎥 Demonstration
+## Demonstration
 
 <!-- TODO: Replace this placeholder with a GIF of Rviz2 or terminal output! -->
 <p align="center">
