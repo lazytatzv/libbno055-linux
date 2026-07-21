@@ -499,6 +499,10 @@ private:
 
 }  // namespace bno055_ros2
 
+#include "rclcpp_components/register_node_macro.hpp"
+RCLCPP_COMPONENTS_REGISTER_NODE(bno055_ros2::BNO055LifecyclePublisherNode)
+
+#ifndef BNO055_ROS2_BUILDING_COMPONENT
 #ifndef ROS2_NODE_TESTING
 int main(int argc, char* argv[]) {
     rclcpp::init(argc, argv);
@@ -516,4 +520,5 @@ int main(int argc, char* argv[]) {
     rclcpp::shutdown();
     return 0;
 }
+#endif
 #endif

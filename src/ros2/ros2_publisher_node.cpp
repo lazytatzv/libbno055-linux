@@ -23,6 +23,8 @@
 
 using namespace std::chrono_literals;
 
+namespace bno055_ros2 {
+
 class BNO055PublisherNode : public rclcpp::Node {
 public:
     explicit BNO055PublisherNode(const rclcpp::NodeOptions& options = rclcpp::NodeOptions())
@@ -358,6 +360,12 @@ private:
     rclcpp::TimerBase::SharedPtr diag_timer_;
 };
 
+}  // namespace bno055_ros2
+
+#include "rclcpp_components/register_node_macro.hpp"
+RCLCPP_COMPONENTS_REGISTER_NODE(bno055_ros2::BNO055PublisherNode)
+
+#ifndef BNO055_ROS2_BUILDING_COMPONENT
 #ifndef ROS2_NODE_TESTING
 int main(int argc, char* argv[]) {
     rclcpp::init(argc, argv);
@@ -366,11 +374,12 @@ int main(int argc, char* argv[]) {
     options.use_intra_process_comms(true);
 
     try {
-        rclcpp::spin(std::make_shared<BNO055PublisherNode>(options));
+        rclcpp::spin(std::make_shared<bno055_ros2::BNO055PublisherNode>(options));
     } catch (const std::exception& e) {
         RCLCPP_ERROR(rclcpp::get_logger("rclcpp"), "Node terminated due to exception: %s", e.what());
     }
     rclcpp::shutdown();
     return 0;
 }
+#endif
 #endif
