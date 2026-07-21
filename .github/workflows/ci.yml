@@ -78,12 +78,12 @@ jobs:
           lcov --list coverage.info
 
       - name: Upload to Codecov
-        uses: codecov/codecov-action@v4
+        uses: codecov/codecov-action@v7
+        continue-on-error: true
         with:
           file: coverage.info
           fail_ci_if_error: false
-        env:
-          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+          token: ${{ secrets.CODECOV_TOKEN }}
 
   ros2-build:
     name: ROS 2 Build (${{ matrix.ros_distro }})
