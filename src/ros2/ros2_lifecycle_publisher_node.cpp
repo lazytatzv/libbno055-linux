@@ -452,8 +452,9 @@ private:
         auto diag_arr = bno055_ros2::build_diagnostics(this, imu_, "IMU Lifecycle Sensor Monitor");
         diag_publisher_->publish(std::move(diag_arr));
 
+        bno055lib::CalibrationStatus status;
         try {
-            auto status = imu_.getCalibrationStatus();
+            status = imu_.getCalibrationStatus();
             char buf[128];
             snprintf(buf, sizeof(buf), "{\"sys\": %d, \"gyro\": %d, \"accel\": %d, \"mag\": %d}", status.sys, status.gyro,
                      status.accel, status.mag);
@@ -461,7 +462,11 @@ private:
             calib_msg->data = buf;
             calib_pub_->publish(std::move(calib_msg));
         } catch (...) {
-            // Ignore error for periodic string publisher; diagnostics array handles the error state.
+            // If it fails, default to 0 to gracefully degrade the status message
+            status.sys = 0;
+            status.gyro = 0;
+            status.accel = 0;
+            status.mag = 0;
         }
 
         // Publish DiagnosticStatus

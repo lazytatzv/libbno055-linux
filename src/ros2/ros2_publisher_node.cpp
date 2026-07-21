@@ -305,13 +305,21 @@ private:
         auto diag_arr = bno055_ros2::build_diagnostics(this, *imu_, "IMU Sensor Monitor");
         diag_publisher_->publish(*diag_arr);
 
-        auto status = imu_->getCalibrationStatus();
-        char buf[128];
-        snprintf(buf, sizeof(buf), "{\"sys\": %d, \"gyro\": %d, \"accel\": %d, \"mag\": %d}", status.sys, status.gyro,
-                 status.accel, status.mag);
-        auto calib_status_msg = std::make_unique<std_msgs::msg::String>();
-        calib_status_msg->data = buf;
-        calib_pub_->publish(std::move(calib_status_msg));
+        bno055lib::CalibrationStatus status;
+        try {
+            status = imu_->getCalibrationStatus();
+            char buf[128];
+            snprintf(buf, sizeof(buf), "{\"sys\": %d, \"gyro\": %d, \"accel\": %d, \"mag\": %d}", status.sys, status.gyro,
+                     status.accel, status.mag);
+            auto calib_status_msg = std::make_unique<std_msgs::msg::String>();
+            calib_status_msg->data = buf;
+            calib_pub_->publish(std::move(calib_status_msg));
+        } catch (...) {
+            status.sys = 0;
+            status.gyro = 0;
+            status.accel = 0;
+            status.mag = 0;
+        }
 
         // Publish DiagnosticStatus for compatibility
         auto status_msg = diagnostic_msgs::msg::DiagnosticStatus();
