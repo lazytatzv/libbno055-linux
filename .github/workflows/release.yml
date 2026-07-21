@@ -126,6 +126,7 @@ jobs:
         env:
           CIBW_ARCHS_LINUX: x86_64 aarch64 armv7l
           CIBW_BUILD_FRONTEND: build
+          CIBW_SKIP: "pp*"
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
