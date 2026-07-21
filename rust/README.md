@@ -10,10 +10,10 @@ Safe, idiomatic Rust bindings for the [`libbno055-linux`](https://github.com/laz
 
 ## ⚡ Highlights
 
-- **100% Safe API**: Zero `unsafe` needed in your application. Memory and file descriptors are cleaned up automatically via `Drop` RAII.
-- **Idiomatic Rust Types**: Uses `Option<Vector3>`, `Option<Quaternion>`, `Result<T, E>`, and implements `Send` for multi-threaded control loops.
-- **Automated Build Integration**: The `build.rs` script compiles the underlying C++ engine seamlessly during `cargo build`. No external C++ setup required!
-- **High-Throughput Burst Reads**: Supports 18-Byte sequential I2C/UART burst reads (~450µs at 400kHz I2C).
+- **Safe Public API**: Zero `unsafe` required by application code. Memory and file descriptors are cleaned up automatically via `Drop` RAII.
+- **`Send + Sync` Thread Safety**: Implements `Send` and `Sync` for multi-threaded robotics control loops and async runtimes.
+- **Idiomatic Rust Types**: Uses `Option<Vector3>`, `Option<Quaternion>`, and `Result<T, E>` for zero-cost error handling.
+- **Automated Build Integration**: Built-in `build.rs` compiles the underlying C++ engine seamlessly during `cargo build`.
 
 ---
 
@@ -42,15 +42,9 @@ fn main() -> Result<(), &'static str> {
 
     // Boot sensor in NDOF 9-DOF Fusion mode
     if imu.begin(OpMode::NDOF) {
-        // Read Orientation Quaternion & Convert to Euler Degrees
         if let Some(q) = imu.get_quaternion() {
             let euler = BNO055::to_euler_degrees(&q);
             println!("Roll: {:.2}, Pitch: {:.2}, Yaw: {:.2}", euler.x, euler.y, euler.z);
-        }
-
-        // Read Raw Linear Acceleration (m/s^2)
-        if let Some(acc) = imu.get_accelerometer() {
-            println!("Accel: X={:.2}, Y={:.2}, Z={:.2}", acc.x, acc.y, acc.z);
         }
     }
 

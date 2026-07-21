@@ -145,6 +145,7 @@ pub struct BNO055 {
 }
 
 unsafe impl Send for BNO055 {}
+unsafe impl Sync for BNO055 {}
 
 impl BNO055 {
     pub fn new_i2c(address: u8, device: &str) -> Result<Self, &'static str> {
@@ -281,6 +282,8 @@ impl Drop for BNO055 {
         }
     }
 }
+
+
 
 #[cfg(test)]
 mod tests {
