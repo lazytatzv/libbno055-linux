@@ -1,11 +1,11 @@
 #include "libbno055-linux/bno055.hpp"
 
 #include <fcntl.h>
+#include <linux/serial.h>
 #include <poll.h>
 #include <sys/ioctl.h>
 #include <termios.h>
 #include <unistd.h>
-#include <linux/serial.h>
 
 #include "libbno055-linux/transport.hpp"
 
