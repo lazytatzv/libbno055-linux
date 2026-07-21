@@ -543,3 +543,81 @@ When BNO055 runs in standard fusion modes (like `NDOF`), the sensor output rate 
 * **Gyroscope Overclocking**: Overrides the default ODR. Configures Gyroscope Output Data Rate (ODR) to **2000 Hz** and sets its internal filter bandwidth to **523 Hz**.
 * **Accelerometer Overclocking**: Configures Accelerometer Output Data Rate (ODR) to **1000 Hz** (1kHz).
 * **Usage**: Best when combined with high-frequency EKF algorithms running in custom nodes, reducing physical sensor integration delay to less than 1 millisecond.
+
+---
+
+## 10. Rust Integration Guide (`use libbno055`)
+
+To integrate the BNO055 driver into a Rust application or robotic control loop:
+
+### 10.1. Add `libbno055` Dependency
+Add `libbno055` to your `Cargo.toml` via `cargo add`:
+
+```bash
+cargo add libbno055
+```
+
+Or declare it directly in `Cargo.toml`:
+```toml
+[dependencies]
+libbno055 = "1.5.1"
+```
+
+### 10.2. Production Control Loop Example (Rust)
+
+```rust
+use libbno055::{BNO055, OpMode, Quaternion};
+use std::thread;
+use std::time::Duration;
+
+fn main() -> Result<(), &'static str> {
+    // 1. Initialize IMU via I2C (Address 0x28, /dev/i2c-1)
+    let mut imu = BNO055::new_i2c(0x28, "/dev/i2c-1")?;
+
+    // OR Initialize via USB-to-UART bridge
+    // let mut imu = BNO055::new_uart("/dev/ttyUSB0", 115200)?;
+
+    // 2. Boot sensor into NDOF 9-DOF Fusion mode
+    if !imu.begin(OpMode::NDOF) {
+        eprintln!("Failed to initialize BNO055 sensor over I2C!");
+        return Err("IMU Init Failed");
+    }
+
+    println!("BNO055 Initialized Successfully in NDOF mode.");
+
+    // 3. High-rate Control Loop (100Hz)
+    for _ in 0..100 {
+        // Read Orientation Quaternion & Convert to Euler Angles (Degrees)
+        if let Some(q) = imu.get_quaternion() {
+            let euler = BNO055::to_euler_degrees(&q);
+            println!("Euler (deg): Roll={:.2}, Pitch={:.2}, Yaw={:.2}", euler.x, euler.y, euler.z);
+        }
+
+        // Read Raw Linear Acceleration (m/s^2)
+        if let Some(acc) = imu.get_accelerometer() {
+            println!("Accel (m/s^2): X={:.2}, Y={:.2}, Z={:.2}", acc.x, acc.y, acc.z);
+        }
+
+        // Check Hardware Calibration Status (0 = Uncalibrated, 3 = Fully Calibrated)
+        if let Some(calib) = imu.get_calibration_status() {
+            println!("Calibration: SYS={}, GYRO={}, ACCEL={}, MAG={}", 
+                     calib.sys, calib.gyro, calib.accel, calib.mag);
+            if calib.is_fully_calibrated() {
+                println!("System reaches full calibration!");
+            }
+        }
+
+        // Monitor Bus Telemetry Health
+        let diag = imu.get_diagnostics();
+        if diag.reconnect_attempts > 0 || diag.read_failures > 0 {
+            println!("Telemetry: Reconnects={}, WriteFailures={}, ReadFailures={}",
+                     diag.reconnect_attempts, diag.write_failures, diag.read_failures);
+        }
+
+        thread::sleep(Duration::from_millis(10)); // 100Hz period
+    }
+
+    Ok(())
+}
+```
+
