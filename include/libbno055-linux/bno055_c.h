@@ -100,6 +100,11 @@ bool bno055_load_calibration_file(bno055_handle_t handle, const char* filepath);
 void bno055_enable_auto_calibration(bno055_handle_t handle, const char* filepath);
 void bno055_disable_auto_calibration(bno055_handle_t handle);
 
+// Asynchronous & Interrupt Driven Reading
+typedef void (*bno055_raw_async_callback_t)(const bno055_raw_sensor_data_t* raw_data, void* user_data);
+bool bno055_start_interrupt_driven_reading(bno055_handle_t handle, int gpio_pin, bno055_raw_async_callback_t callback, void* user_data);
+void bno055_stop_interrupt_driven_reading(bno055_handle_t handle);
+
 // Power Management
 void bno055_enter_suspend_mode(bno055_handle_t handle);
 void bno055_enter_normal_mode(bno055_handle_t handle);

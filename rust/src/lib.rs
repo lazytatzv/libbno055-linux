@@ -83,7 +83,12 @@ pub mod sys {
         pub fn bno055_enter_normal_mode(handle: bno055_handle_t);
 
         pub fn bno055_to_euler_degrees(q: *const bno055_quaternion_t) -> bno055_vector3_t;
+        
+        pub fn bno055_start_interrupt_driven_reading(handle: bno055_handle_t, gpio_pin: i32, callback: bno055_raw_async_callback_t, user_data: *mut c_void) -> bool;
+        pub fn bno055_stop_interrupt_driven_reading(handle: bno055_handle_t);
     }
+    
+    pub type bno055_raw_async_callback_t = Option<unsafe extern "C" fn(*const bno055_raw_sensor_data_t, *mut c_void)>;
 }
 
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -149,6 +154,7 @@ pub enum OpMode {
 
 pub struct BNO055 {
     handle: sys::bno055_handle_t,
+    irq_callback: Option<Box<Box<dyn FnMut(RawSensorData) + Send>>>,
 }
 
 unsafe impl Send for BNO055 {}
@@ -161,7 +167,7 @@ impl BNO055 {
         if handle.is_null() {
             Err("Failed to create BNO055 handle")
         } else {
-            Ok(Self { handle })
+            Ok(Self { handle, irq_callback: None })
         }
     }
 
@@ -171,7 +177,7 @@ impl BNO055 {
         if handle.is_null() {
             Err("Failed to create BNO055 handle")
         } else {
-            Ok(Self { handle })
+            Ok(Self { handle, irq_callback: None })
         }
     }
 
@@ -297,10 +303,49 @@ impl BNO055 {
         let res = unsafe { sys::bno055_to_euler_degrees(&sys_q) };
         Vector3 { x: res.x, y: res.y, z: res.z }
     }
+
+    pub fn start_interrupt_driven_reading<F>(&mut self, gpio_pin: i32, callback: F) -> bool
+    where
+        F: FnMut(RawSensorData) + Send + 'static,
+    {
+        extern "C" fn trampoline(raw_data: *const sys::bno055_raw_sensor_data_t, user_data: *mut std::os::raw::c_void) {
+            unsafe {
+                if raw_data.is_null() || user_data.is_null() { return; }
+                let closure = &mut *(user_data as *mut Box<dyn FnMut(RawSensorData) + Send>);
+                let raw = *raw_data;
+                let data = RawSensorData {
+                    accel: Vector3 { x: raw.accel.x, y: raw.accel.y, z: raw.accel.z },
+                    mag: Vector3 { x: raw.mag.x, y: raw.mag.y, z: raw.mag.z },
+                    gyro: Vector3 { x: raw.gyro.x, y: raw.gyro.y, z: raw.gyro.z },
+                };
+                (*closure)(data);
+            }
+        }
+
+        self.stop_interrupt_driven_reading();
+        
+        let cb: Box<dyn FnMut(RawSensorData) + Send> = Box::new(callback);
+        let boxed_cb = Box::new(cb);
+        let user_data = &*boxed_cb as *const _ as *mut std::os::raw::c_void;
+        
+        self.irq_callback = Some(boxed_cb);
+
+        unsafe {
+            sys::bno055_start_interrupt_driven_reading(self.handle, gpio_pin, Some(trampoline), user_data)
+        }
+    }
+
+    pub fn stop_interrupt_driven_reading(&mut self) {
+        unsafe {
+            sys::bno055_stop_interrupt_driven_reading(self.handle);
+        }
+        self.irq_callback = None;
+    }
 }
 
 impl Drop for BNO055 {
     fn drop(&mut self) {
+        self.stop_interrupt_driven_reading();
         if !self.handle.is_null() {
             unsafe { sys::bno055_destroy(self.handle) };
         }
