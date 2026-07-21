@@ -18,7 +18,7 @@ ext_modules = [
 
 setup(
     name="libbno055-linux",
-    version="1.5.4",
+    version="1.5.5",
     author="lazytatzv",
     author_email="lazytatzv@users.noreply.github.com",
     url="https://github.com/lazytatzv/libbno055-linux",
