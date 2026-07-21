@@ -5,6 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.5.0] - 2026-07-21
+
+### Added
+- Added native C API interface (`bno055_c.h` / `src/bno055_c.cpp`) and `c_demo` sample program.
+- Added Pybind11 Python bindings (`import libbno055`), `setup.py`, and `pyproject.toml` for `pip install` support.
+- Added safe and idiomatic Rust crate bindings (`use libbno055`) in `rust/` with `build.rs` and `demo` example.
+- Updated documentation and architecture diagrams for multi-language FFI integration.
+
 ## [1.4.3] - 2026-07-18
 
 ### Fixed

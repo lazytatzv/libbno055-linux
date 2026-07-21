@@ -1,3 +1,9 @@
+libbno055-linux (1.5.0-1) jammy; urgency=medium
+
+  * Add native C API, Pybind11 Python bindings, and safe Rust crate bindings.
+
+ -- lazytatzv <lazytatzv@users.noreply.github.com>  Tue, 21 Jul 2026 15:15:00 +0900
+
 libbno055-linux (1.4.3-1) jammy; urgency=medium
 
   * Remove unused use_interrupt variable.
