@@ -150,7 +150,31 @@ sudo apt install ros-${ROS_DISTRO}-libbno055-linux
    ros2 launch libbno055_linux bno055_launch.py
    ```
 
-### C. ROS 2 API Reference
+---
+
+### C. Python (`import libbno055`)
+
+1. **Install via pip**:
+   ```bash
+   pip install .
+   ```
+
+2. **Use in Python**:
+   ```python
+   import libbno055
+
+   # Initialize IMU
+   imu = libbno055.BNO055(address=0x28, device="/dev/i2c-1")
+   if imu.begin(libbno055.OpMode.NDOF):
+       q = imu.get_quaternion()
+       if q:
+           euler = libbno055.to_euler_degrees(q)
+           print(f"Roll: {euler.x:.2f}, Pitch: {euler.y:.2f}, Yaw: {euler.z:.2f}")
+   ```
+
+---
+
+### D. ROS 2 API Reference
 
 #### Published Topics
 | Topic Name | Message Type | Description |
