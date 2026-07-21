@@ -119,7 +119,7 @@ if(rclcpp_FOUND AND sensor_msgs_FOUND AND diagnostic_msgs_FOUND AND std_srvs_FOU
     # --- 1. Standalone Executable (Publisher) ---
     add_executable(bno055_publisher_node src/ros2/ros2_publisher_node.cpp)
     target_link_libraries(bno055_publisher_node libbno055-linux)
-    ament_target_dependencies(bno055_publisher_node rclcpp rclcpp_components sensor_msgs diagnostic_msgs std_srvs)
+    ament_target_dependencies(bno055_publisher_node rclcpp sensor_msgs diagnostic_msgs std_srvs)
 
     install(TARGETS bno055_publisher_node
         DESTINATION lib/${PROJECT_NAME}
@@ -146,7 +146,7 @@ if(rclcpp_FOUND AND sensor_msgs_FOUND AND diagnostic_msgs_FOUND AND std_srvs_FOU
         # --- 3. Standalone Executable (Lifecycle) ---
         add_executable(bno055_lifecycle_publisher_node src/ros2/ros2_lifecycle_publisher_node.cpp)
         target_link_libraries(bno055_lifecycle_publisher_node libbno055-linux)
-        ament_target_dependencies(bno055_lifecycle_publisher_node rclcpp rclcpp_lifecycle rclcpp_components sensor_msgs diagnostic_msgs std_srvs)
+        ament_target_dependencies(bno055_lifecycle_publisher_node rclcpp rclcpp_lifecycle sensor_msgs diagnostic_msgs std_srvs)
 
         install(TARGETS bno055_lifecycle_publisher_node
             DESTINATION lib/${PROJECT_NAME}
