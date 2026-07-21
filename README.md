@@ -174,7 +174,33 @@ sudo apt install ros-${ROS_DISTRO}-libbno055-linux
 
 ---
 
-### D. ROS 2 API Reference
+### D. Rust (`use libbno055::{BNO055, OpMode}`)
+
+1. **Add Dependency (`Cargo.toml`)**:
+   ```toml
+   [dependencies]
+   libbno055 = { path = "path/to/libbno055-linux/rust" }
+   ```
+
+2. **Use in Rust**:
+   ```rust
+   use libbno055::{BNO055, OpMode, Quaternion};
+
+   fn main() -> Result<(), &'static str> {
+       let mut imu = BNO055::new_i2c(0x28, "/dev/i2c-1")?;
+       if imu.begin(OpMode::NDOF) {
+           if let Some(q) = imu.get_quaternion() {
+               let euler = BNO055::to_euler_degrees(&q);
+               println!("Roll: {}, Pitch: {}, Yaw: {}", euler.x, euler.y, euler.z);
+           }
+       }
+       Ok(())
+   }
+   ```
+
+---
+
+### E. ROS 2 API Reference
 
 #### Published Topics
 | Topic Name | Message Type | Description |

@@ -4,4 +4,9 @@
 *.swp
 *.bin
 /.rosdep/
-
+/.venv/
+target/
+__pycache__/
+*.egg-info/
+*.so
+*.dylib
