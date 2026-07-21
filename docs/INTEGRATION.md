@@ -155,10 +155,18 @@ The library comes with two pre-built ROS 2 node implementations in the `src/ros2
 
 Ensure you have ROS 2 (e.g., Humble, Jazzy) installed and sourced in your terminal:
 ```bash
-source /opt/ros/humble/setup.bash
+### 4.2. Binary Installation (via `apt`)
+
+If you are using binary ROS 2 releases, you can install pre-compiled packages directly using `apt`:
+
+```bash
+sudo apt update
+sudo apt install ros-${ROS_DISTRO}-libbno055-linux
+# For example, on ROS 2 Humble:
+# sudo apt install ros-humble-libbno055-linux
 ```
 
-### 4.2. Building inside a ROS 2 Workspace
+### 4.3. Building inside a ROS 2 Workspace
 
 Since this repository contains a `package.xml`, it is compatible with `colcon` and can be built directly inside a ROS 2 workspace.
 
@@ -182,7 +190,7 @@ Since this repository contains a `package.xml`, it is compatible with `colcon` a
    source install/setup.bash
    ```
 
-### 4.3. Running the Nodes
+### 4.4. Running the Nodes
 
 You can launch and configure the nodes using the provided launch file and parameters YAML file.
 
@@ -223,7 +231,7 @@ ros2 launch libbno055_linux bno055_launch.py params_file:=/path/to/your/custom_p
     ros2 lifecycle set /bno055_lifecycle_publisher_node deactivate
     ```
 
-### 4.4. Verification
+### 4.5. Verification
 
 Verify that the IMU data is streaming correctly:
 ```bash

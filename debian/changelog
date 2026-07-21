@@ -1,3 +1,15 @@
+libbno055-linux (1.4.3-1) jammy; urgency=medium
+
+  * Remove unused use_interrupt variable.
+
+ -- lazytatzv <lazytatzv@users.noreply.github.com>  Sat, 18 Jul 2026 10:13:00 +0900
+
+libbno055-linux (1.4.2-1) jammy; urgency=medium
+
+  * Resolve unused return value warnings and add missing headers.
+
+ -- lazytatzv <lazytatzv@users.noreply.github.com>  Sat, 18 Jul 2026 10:05:00 +0900
+
 libbno055-linux (1.4.1-1) jammy; urgency=medium
 
   * Fix lifecycle node build errors, add benchmark utility.

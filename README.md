@@ -116,7 +116,20 @@ If you are developing a custom state estimator (Extended Kalman Filter / Complem
 
 ---
 
-### B. ROS 2 (colcon workspace)
+### B. ROS 2
+
+#### Option 1: Binary Installation (via `apt`)
+
+If you are using ROS 2 (e.g. Humble), you can install the pre-built binary package directly using `apt`:
+
+```bash
+sudo apt update
+sudo apt install ros-${ROS_DISTRO}-libbno055-linux
+# For example, on ROS 2 Humble:
+# sudo apt install ros-humble-libbno055-linux
+```
+
+#### Option 2: Build from Source (colcon workspace)
 
 1. **Clone and Build**:
    ```bash
