@@ -740,12 +740,9 @@ bool BNO055::begin(OpMode mode) {
     impl_->write8(SYS_TRIGGER, 0x0);
     std::this_thread::sleep_for(std::chrono::milliseconds(10));
 
-    // Set Operating Mode
-    setMode(mode);
-    std::this_thread::sleep_for(std::chrono::milliseconds(20));
-
     // Hardware Overclocking for EKF/AMG Mode:
     // If the sensor is set to raw sensor mode (AMG), configure sub-sensors to maximum physical limits.
+    // MUST be done in CONFIG mode before calling setMode!
     if (mode == OpMode::AMG) {
         impl_->log(LogLevel::Info, "Overclocking physical sub-sensors: Accel -> 1kHz ODR, Gyro -> 2kHz ODR");
         // Open Page 1 config space
@@ -768,6 +765,10 @@ bool BNO055::begin(OpMode mode) {
         impl_->write8(PAGE_ID, 0);
         std::this_thread::sleep_for(std::chrono::milliseconds(10));
     }
+
+    // Set Operating Mode
+    setMode(mode);
+    std::this_thread::sleep_for(std::chrono::milliseconds(20));
 
     // Automatically load calibration file if configured
     if (impl_->auto_calib_enabled_) {
