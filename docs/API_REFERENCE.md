@@ -408,21 +408,51 @@ if imu.begin(libbno055.OpMode.NDOF):
 
 ## Rust API Reference (`use libbno055::{BNO055, OpMode}`)
 
-The Rust crate provides safe, idiomatic wrappers around the C++ engine.
+The Rust crate (`libbno055`) is published on [crates.io](https://crates.io/crates/libbno055) and provides safe, idiomatic Rust wrappers around the C++ engine.
+
+### Installation
+```bash
+cargo add libbno055
+```
+
+### Types & Structs
+* `struct Vector3 { pub x: f32, pub y: f32, pub z: f32 }`
+* `struct Quaternion { pub w: f32, pub x: f32, pub y: f32, pub z: f32 }`
+* `struct CalibrationStatus { pub sys: u8, pub gyro: u8, pub accel: u8, pub mag: u8 }`
+* `struct Diagnostics { pub write_failures: u32, pub read_failures: u32, pub reconnect_attempts: u32 }`
+* `enum OpMode`: `Config`, `AccOnly`, `MagOnly`, `GyroOnly`, `AccMag`, `AccGyro`, `MagGyro`, `AMG`, `IMUPlus`, `Compass`, `M4G`, `NDOFFmcOff`, `NDOF`
+
+### Key Methods (`BNO055`)
+* `BNO055::new_i2c(address: u8, device: &str) -> Result<BNO055, &'static str>`
+* `BNO055::new_uart(port: &str, baudrate: u32) -> Result<BNO055, &'static str>`
+* `imu.begin(mode: OpMode) -> bool`
+* `imu.reset() -> bool`
+* `imu.get_quaternion() -> Option<Quaternion>`
+* `imu.get_accelerometer() -> Option<Vector3>`
+* `imu.get_gyroscope() -> Option<Vector3>`
+* `imu.get_magnetometer() -> Option<Vector3>`
+* `imu.get_euler_angles() -> Option<Vector3>`
+* `imu.get_calibration_status() -> Option<CalibrationStatus>`
+* `imu.get_diagnostics() -> Diagnostics`
+* `BNO055::to_euler_degrees(q: &Quaternion) -> Vector3`
 
 ```rust
 use libbno055::{BNO055, OpMode, Quaternion};
 
 fn main() -> Result<(), &'static str> {
+    // 1. Construct via I2C (or new_uart)
     let mut imu = BNO055::new_i2c(0x28, "/dev/i2c-1")?;
+
+    // 2. Initialize in NDOF fusion mode
     if imu.begin(OpMode::NDOF) {
         if let Some(q) = imu.get_quaternion() {
             let euler = BNO055::to_euler_degrees(&q);
-            println!("Euler: Roll={}, Pitch={}, Yaw={}", euler.x, euler.y, euler.z);
+            println!("Roll: {:.2}, Pitch: {:.2}, Yaw: {:.2}", euler.x, euler.y, euler.z);
         }
     }
     Ok(())
 }
 ```
+
 
 
