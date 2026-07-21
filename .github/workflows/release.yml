@@ -122,7 +122,7 @@ jobs:
         run: pipx run build --sdist
 
       - name: Build wheels
-        uses: pypa/cibuildwheel@v2
+        uses: pypa/cibuildwheel@v2.22.0
         env:
           CIBW_ARCHS_LINUX: x86_64 aarch64 armv7l
           CIBW_BUILD_FRONTEND: build
