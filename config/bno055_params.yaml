@@ -43,7 +43,10 @@
     # -------------------------------------------------------------------------
     read_mode: "standard"
     
-    # Target publishing rate (Hz). Ignored in "interrupt" mode. (Max 100Hz for fusion)
+    # Target publishing rate (Hz).
+    # - In fusion modes (imu_plus, ndof), the hardware is strictly limited to 100Hz.
+    # - In raw mode (amg), you can set this to 1000.0 to fetch data at 1kHz.
+    # - In "interrupt" mode, this parameter is completely ignored (hardware driven).
     publish_rate: 100.0
 
     # If read_mode is "interrupt", specify the Linux GPIO pin connected to BNO055 INT.
