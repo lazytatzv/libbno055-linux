@@ -129,7 +129,8 @@ ros2 launch libbno055_linux bno055_launch.py
 
 ## Documentation
 
-- **[API Reference](docs/API_REFERENCE.md)**: Full class and function reference for C++, C, Python, and Rust.
+- **[Sphinx API Documentation (Web)](https://lazytatzv.github.io/libbno055-linux/)**: Comprehensive, auto-generated web documentation for C++ and Python APIs.
+- **[API Reference (Markdown)](docs/API_REFERENCE.md)**: Full class and function reference for C++, C, Python, and Rust.
 - **[Integration & Tuning Guide](docs/INTEGRATION.md)**: ROS 2 YAML parameters, EKF setup, 400kHz I2C, UART 921600 bps tuning, and Rust integration.
 - **[Architecture & Design](docs/ARCHITECTURE.md)**: PIMPL design, zero-copy transport, FFI layers, and state machines.
 - **[Troubleshooting & FAQ](docs/TROUBLESHOOTING.md)**: Hardware wiring, permissions, and clock-stretching fixes.
