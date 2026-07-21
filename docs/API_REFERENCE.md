@@ -448,6 +448,7 @@ All structures implement `Clone`, `Copy`, and `Debug`.
 *   **`pub struct CalibrationStatus { pub sys: u8, pub gyro: u8, pub accel: u8, pub mag: u8 }`**
     *   `impl CalibrationStatus { pub fn is_fully_calibrated(&self) -> bool }`
 *   **`pub struct Diagnostics { pub write_failures: u32, pub read_failures: u32, pub reconnect_attempts: u32 }`**
+*   **`pub struct RawSensorData { pub accel: Vector3, pub mag: Vector3, pub gyro: Vector3 }`**
 *   **`pub enum OpMode`**: Includes variants like `Config`, `AccOnly`, `IMUPlus`, `NDOF`, etc.
 
 ### Struct: `BNO055`
@@ -475,6 +476,8 @@ All structures implement `Clone`, `Copy`, and `Debug`.
 *   **`pub fn get_gravity(&mut self) -> Option<Vector3>`**
 *   **`pub fn get_quaternion(&mut self) -> Option<Quaternion>`**
 *   **`pub fn get_temperature(&mut self) -> Option<i8>`**
+*   **`pub fn get_raw_sensor_data(&mut self) -> Option<RawSensorData>`**
+    *(Highly Optimized)* Reads all 9-axis raw values in a single 18-byte I2C burst transaction (utilizes `I2C_RDWR` if available).
 
 #### Diagnostics & Utilities
 *   **`pub fn get_calibration_status(&mut self) -> Option<CalibrationStatus>`**
