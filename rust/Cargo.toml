@@ -6,6 +6,9 @@ authors = ["lazytatzv <lazytatzv@users.noreply.github.com>"]
 description = "Safe and idiomatic Rust bindings for libbno055-linux C++17 IMU driver"
 license = "MIT"
 repository = "https://github.com/lazytatzv/libbno055-linux"
+readme = "README.md"
+keywords = ["bno055", "imu", "i2c", "sensor", "robotics"]
+categories = ["embedded", "hardware-support", "science::robotics"]
 
 [dependencies]
 
