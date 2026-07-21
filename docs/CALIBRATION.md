@@ -23,12 +23,14 @@ During maintenance or robot setup, physically calibrate the robot:
 3. **Magnetometer**: Move the robot in a figure-8 motion to sample the local magnetic field.
 
 Once the sensor reports it is fully calibrated (`isFullyCalibrated() == true`), manually trigger the save function to write `master_calib.bin`. 
-* **C++/Python/Rust**: Call `imu.saveCalibrationFile("master_calib.bin")`.
+* **C++**: Call `imu.saveCalibrationFile("master_calib.bin")`.
+* **Python**: Call `imu.save_calibration_file("master_calib.bin")`.
 * **ROS 2**: Call the `~/save_calibration` service (`ros2 service call /bno055/save_calibration std_srvs/srv/Trigger`).
 
 #### Online (Production Phase)
 On production startup, simply load the master file into the sensor. The BNO055 will use this as a highly accurate baseline.
-* **C++/Python/Rust**: Call `imu.loadCalibrationFile("master_calib.bin")`.
+* **C++**: Call `imu.loadCalibrationFile("master_calib.bin")`.
+* **Python**: Call `imu.load_calibration_file("master_calib.bin")`.
 * **ROS 2**: Set the `calibration_file` parameter in your launch file or `params.yaml`. The node will automatically load it on startup.
 
 ### 3. Never Block on Calibration During Startup
@@ -44,5 +46,11 @@ If you need to read or write the 22-byte offset arrays manually, `libbno055-linu
 auto offsets = imu.getSensorOffsets();
 // ...
 imu.setSensorOffsets(offsets);
+```
+```python
+# Python
+offsets = imu.get_sensor_offsets() # Returns a list of 22 bytes
+# ...
+imu.set_sensor_offsets(offsets)
 ```
 The driver automatically handles the strict requirement of temporarily switching to `CONFIG` mode to access the offset registers, meaning you don't have to write error-prone sleep or mode-switching logic yourself.

@@ -113,6 +113,16 @@ PYBIND11_MODULE(libbno055, m) {
         .def("load_calibration_file", &BNO055::loadCalibrationFile, py::arg("filepath"))
         .def("enable_auto_calibration", &BNO055::enableAutoCalibration, py::arg("filepath"))
         .def("disable_auto_calibration", &BNO055::disableAutoCalibration)
+        .def("get_sensor_offsets",
+             [](BNO055& self) {
+                 std::array<uint8_t, 22> calib_data;
+                 if (self.getSensorOffsets(calib_data)) {
+                     return calib_data;
+                 }
+                 throw std::runtime_error("Failed to get sensor offsets");
+             })
+        .def("set_sensor_offsets",
+             [](BNO055& self, const std::array<uint8_t, 22>& data) { self.setSensorOffsets(data); }, py::arg("data"))
         .def("enter_suspend_mode",
              [](BNO055& self) {
                  try {
