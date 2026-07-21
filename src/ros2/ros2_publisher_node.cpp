@@ -264,7 +264,7 @@ private:
         raw_msg->angular_velocity.z = gyro->z;
         raw_msg->orientation.w = 1.0;  // Raw typically omits fusion orientation
         bno055_ros2::fill_imu_covariances(this, *raw_msg);
-        raw_msg->orientation_covariance[0] = -1.0; // Standard: -1 means no orientation
+        raw_msg->orientation_covariance[0] = -1.0;  // Standard: -1 means no orientation
         raw_publisher_->publish(std::move(raw_msg));
 
         // Gravity Vector
@@ -293,7 +293,7 @@ private:
 
         raw_msg->orientation.w = 1.0;  // Fill identity orientation for raw topic
         bno055_ros2::fill_imu_covariances(this, *raw_msg);
-        raw_msg->orientation_covariance[0] = -1.0; // Standard: -1 means no orientation
+        raw_msg->orientation_covariance[0] = -1.0;  // Standard: -1 means no orientation
         raw_publisher_->publish(std::move(raw_msg));
 
         // 2. Publish to imu/mag
