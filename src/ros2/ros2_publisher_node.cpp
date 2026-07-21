@@ -106,7 +106,14 @@ public:
                     return;
                 }
                 
-                auto calib = imu_->getCalibrationStatus();
+                bno055lib::CalibrationStatus calib;
+                try {
+                    calib = imu_->getCalibrationStatus();
+                } catch (const std::exception& e) {
+                    response->success = false;
+                    response->message = std::string("Hardware error checking status: ") + e.what();
+                    return;
+                }
                 if (!calib.isFullyCalibrated()) {
                     response->success = false;
                     response->message = "Refused: Sensor not fully calibrated (S:" + std::to_string(calib.sys) +
@@ -128,12 +135,17 @@ public:
             "~/calibration_request", [this](const std::shared_ptr<std_srvs::srv::Trigger::Request> request,
                                             std::shared_ptr<std_srvs::srv::Trigger::Response> response) {
                 (void)request;
-                auto status = imu_->getCalibrationStatus();
-                char buf[128];
-                snprintf(buf, sizeof(buf), "{\"sys\": %d, \"gyro\": %d, \"accel\": %d, \"mag\": %d}", status.sys,
-                         status.gyro, status.accel, status.mag);
-                response->success = true;
-                response->message = buf;
+                try {
+                    auto status = imu_->getCalibrationStatus();
+                    char buf[128];
+                    snprintf(buf, sizeof(buf), "{\"sys\": %d, \"gyro\": %d, \"accel\": %d, \"mag\": %d}", status.sys,
+                             status.gyro, status.accel, status.mag);
+                    response->success = true;
+                    response->message = buf;
+                } catch (const std::exception& e) {
+                    response->success = false;
+                    response->message = std::string("Hardware error: ") + e.what();
+                }
             });
 
         reset_srv_ = this->create_service<std_srvs::srv::Trigger>(

@@ -128,7 +128,14 @@ public:
                     return;
                 }
                 
-                auto calib = imu_.getCalibrationStatus();
+                bno055lib::CalibrationStatus calib;
+                try {
+                    calib = imu_.getCalibrationStatus();
+                } catch (const std::exception& e) {
+                    response->success = false;
+                    response->message = std::string("Hardware error checking status: ") + e.what();
+                    return;
+                }
                 if (!calib.isFullyCalibrated()) {
                     response->success = false;
                     response->message = "Refused: Sensor not fully calibrated (S:" + std::to_string(calib.sys) +
@@ -150,12 +157,17 @@ public:
             "~/calibration_request", [this](const std::shared_ptr<std_srvs::srv::Trigger::Request> request,
                                             std::shared_ptr<std_srvs::srv::Trigger::Response> response) {
                 (void)request;
-                auto status = imu_.getCalibrationStatus();
-                char buf[128];
-                snprintf(buf, sizeof(buf), "{\"sys\": %d, \"gyro\": %d, \"accel\": %d, \"mag\": %d}", status.sys,
-                         status.gyro, status.accel, status.mag);
-                response->success = true;
-                response->message = buf;
+                try {
+                    auto status = imu_.getCalibrationStatus();
+                    char buf[128];
+                    snprintf(buf, sizeof(buf), "{\"sys\": %d, \"gyro\": %d, \"accel\": %d, \"mag\": %d}", status.sys,
+                             status.gyro, status.accel, status.mag);
+                    response->success = true;
+                    response->message = buf;
+                } catch (const std::exception& e) {
+                    response->success = false;
+                    response->message = std::string("Hardware error: ") + e.what();
+                }
             });
 
         reset_srv_ = this->create_service<std_srvs::srv::Trigger>(
@@ -440,13 +452,17 @@ private:
         auto diag_arr = bno055_ros2::build_diagnostics(this, imu_, "IMU Lifecycle Sensor Monitor");
         diag_publisher_->publish(std::move(diag_arr));
 
-        auto status = imu_.getCalibrationStatus();
-        char buf[128];
-        snprintf(buf, sizeof(buf), "{\"sys\": %d, \"gyro\": %d, \"accel\": %d, \"mag\": %d}", status.sys, status.gyro,
-                 status.accel, status.mag);
-        auto calib_msg = std::make_unique<std_msgs::msg::String>();
-        calib_msg->data = buf;
-        calib_pub_->publish(std::move(calib_msg));
+        try {
+            auto status = imu_.getCalibrationStatus();
+            char buf[128];
+            snprintf(buf, sizeof(buf), "{\"sys\": %d, \"gyro\": %d, \"accel\": %d, \"mag\": %d}", status.sys, status.gyro,
+                     status.accel, status.mag);
+            auto calib_msg = std::make_unique<std_msgs::msg::String>();
+            calib_msg->data = buf;
+            calib_pub_->publish(std::move(calib_msg));
+        } catch (...) {
+            // Ignore error for periodic string publisher; diagnostics array handles the error state.
+        }
 
         // Publish DiagnosticStatus
         auto status_msg = diagnostic_msgs::msg::DiagnosticStatus();
