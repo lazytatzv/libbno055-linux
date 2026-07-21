@@ -353,3 +353,29 @@ These companion APIs perform the exact same register queries and conversions but
         *   `q`: `const Quaternion&`. The normalized unit quaternion representation of orientation.
     *   *Returns*: `Vector3`. Roll, Pitch, and Yaw in degrees (Mapping: `x` = Roll `[-180, 180]`, `y` = Pitch `[-90, 90]`, `z` = Yaw `[0, 360)`).
     *   *Description*: Utility function to convert Quaternion orientation into human-readable Euler angles in degrees (now executing on single-precision `float` elements).
+
+---
+
+## C API Reference (`libbno055-linux/bno055_c.h`)
+
+The library includes a native C API (`extern "C"`) allowing seamless integration with C projects, Python (`ctypes`/`cffi`), Rust (`bindgen`), Go, and Zig.
+
+```c
+#include <libbno055-linux/bno055_c.h>
+
+// 1. Create Handle
+bno055_handle_t imu = bno055_create_i2c(0x28, "/dev/i2c-1");
+
+// 2. Initialize
+if (bno055_begin(imu, BNO055_OPMODE_NDOF)) {
+    bno055_quaternion_t q;
+    if (bno055_get_quaternion(imu, &q)) {
+        bno055_vector3_t euler = bno055_to_euler_degrees(&q);
+        printf("Roll=%.2f, Pitch=%.2f, Yaw=%.2f\n", euler.x, euler.y, euler.z);
+    }
+}
+
+// 3. Destroy
+bno055_destroy(imu);
+```
+

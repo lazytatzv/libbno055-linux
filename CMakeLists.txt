@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.10)
-project(libbno055_linux VERSION 1.4.3 LANGUAGES CXX)
+project(libbno055_linux VERSION 1.4.3 LANGUAGES CXX C)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -7,11 +7,13 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 # Source files
 set(SOURCES
     src/bno055.cpp
+    src/bno055_c.cpp
 )
 
 # Header files
 set(HEADERS
     include/libbno055-linux/bno055.hpp
+    include/libbno055-linux/bno055_c.h
 )
 
 # Add library
@@ -71,6 +73,9 @@ if(BUILD_EXAMPLES)
 
     add_executable(benchmark_imu examples/benchmark_imu.cpp)
     target_link_libraries(benchmark_imu PRIVATE libbno055-linux)
+
+    add_executable(c_demo examples/c_demo.c)
+    target_link_libraries(c_demo PRIVATE libbno055-linux)
 endif()
 
 # Optional ROS 2 integration (conditional build of ROS 2 publisher samples)
@@ -132,7 +137,7 @@ install(TARGETS libbno055-linux
 )
 
 if(BUILD_EXAMPLES)
-    install(TARGETS calibrate_imu read_data_noexcept read_all_data benchmark_imu
+    install(TARGETS calibrate_imu read_data_noexcept read_all_data benchmark_imu c_demo
         RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
     )
 endif()
