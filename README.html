@@ -342,6 +342,21 @@
 </ul>
 </section>
 <hr class="docutils" />
+<section id="best-practices-for-calibration-in-production-robotics">
+<h2>Best Practices for Calibration in Production (Robotics)<a class="headerlink" href="#best-practices-for-calibration-in-production-robotics" title="Link to this heading">¶</a></h2>
+<p>In real-world robotics (e.g., drones, autonomous rovers), blocking a high-speed control loop to read calibration status or save files to a disk can cause severe jitter and crashes. To avoid this “deadlock” and ensure real-time performance, <code class="docutils literal notranslate"><span class="pre">libbno055-linux</span></code> recommends the following <strong>Pro Workflow</strong>:</p>
+<ol class="arabic simple">
+<li><p><strong>Disable Auto-Save in Flight</strong>: Do not use <code class="docutils literal notranslate"><span class="pre">enableAutoCalibration()</span></code> during actual autonomous operation. Saving to the Linux filesystem can block the I2C bus and the reading thread for milliseconds.</p></li>
+<li><p><strong>Use a Master Calibration File</strong>:</p>
+<ul class="simple">
+<li><p><strong>Offline (Maintenance)</strong>: During maintenance, physically calibrate the robot (figure-8 motion). Once fully calibrated (<code class="docutils literal notranslate"><span class="pre">isFullyCalibrated()</span> <span class="pre">==</span> <span class="pre">true</span></code>), manually trigger <code class="docutils literal notranslate"><span class="pre">saveCalibrationFile(&quot;master_calib.bin&quot;)</span></code>. In ROS 2, you can do this by calling the <code class="docutils literal notranslate"><span class="pre">~/save_calibration</span></code> service.</p></li>
+<li><p><strong>Online (Production)</strong>: On startup, simply load the master file using <code class="docutils literal notranslate"><span class="pre">loadCalibrationFile(&quot;master_calib.bin&quot;)</span></code>. The sensor will use this as a highly accurate baseline.</p></li>
+</ul>
+</li>
+<li><p><strong>Never Block on Calibration</strong>: After loading the file, wait a few seconds for the gyroscope to stabilize (which happens automatically while stationary), and immediately start your control loop using <code class="docutils literal notranslate"><span class="pre">startInterruptDrivenReading</span></code>. Do not wait for the magnetometer to reach a status of <code class="docutils literal notranslate"><span class="pre">3</span></code>, as local magnetic interference might prevent it.</p></li>
+</ol>
+</section>
+<hr class="docutils" />
 <section id="quick-start-by-language">
 <h2>Quick Start by Language<a class="headerlink" href="#quick-start-by-language" title="Link to this heading">¶</a></h2>
 <section id="rust-crates-io">
@@ -495,6 +510,7 @@ ros2<span class="w"> </span>launch<span class="w"> </span>libbno055_linux<span c
 </ul>
 </li>
 <li><a class="reference internal" href="#features">Features</a></li>
+<li><a class="reference internal" href="#best-practices-for-calibration-in-production-robotics">Best Practices for Calibration in Production (Robotics)</a></li>
 <li><a class="reference internal" href="#quick-start-by-language">Quick Start by Language</a><ul>
 <li><a class="reference internal" href="#rust-crates-io">Rust (<code class="docutils literal notranslate"><span class="pre">crates.io</span></code>)</a></li>
 <li><a class="reference internal" href="#python-pip">Python (<code class="docutils literal notranslate"><span class="pre">pip</span></code>)</a></li>

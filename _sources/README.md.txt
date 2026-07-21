@@ -63,6 +63,18 @@ While the mainline Linux kernel includes an IIO driver (`drivers/iio/imu/bno055`
 
 ---
 
+## Best Practices for Calibration in Production (Robotics)
+
+In real-world robotics (e.g., drones, autonomous rovers), blocking a high-speed control loop to read calibration status or save files to a disk can cause severe jitter and crashes. To avoid this "deadlock" and ensure real-time performance, `libbno055-linux` recommends the following **Pro Workflow**:
+
+1. **Disable Auto-Save in Flight**: Do not use `enableAutoCalibration()` during actual autonomous operation. Saving to the Linux filesystem can block the I2C bus and the reading thread for milliseconds.
+2. **Use a Master Calibration File**: 
+   - **Offline (Maintenance)**: During maintenance, physically calibrate the robot (figure-8 motion). Once fully calibrated (`isFullyCalibrated() == true`), manually trigger `saveCalibrationFile("master_calib.bin")`. In ROS 2, you can do this by calling the `~/save_calibration` service.
+   - **Online (Production)**: On startup, simply load the master file using `loadCalibrationFile("master_calib.bin")`. The sensor will use this as a highly accurate baseline.
+3. **Never Block on Calibration**: After loading the file, wait a few seconds for the gyroscope to stabilize (which happens automatically while stationary), and immediately start your control loop using `startInterruptDrivenReading`. Do not wait for the magnetometer to reach a status of `3`, as local magnetic interference might prevent it.
+
+---
+
 ## Quick Start by Language
 
 ### Rust (`crates.io`)
