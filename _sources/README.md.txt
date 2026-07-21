@@ -9,8 +9,16 @@
 [![Coverage](https://codecov.io/gh/lazytatzv/libbno055-linux/graph/badge.svg)](https://codecov.io/gh/lazytatzv/libbno055-linux)
 [![Docs](https://img.shields.io/badge/docs-GitHub%20Pages-blue.svg)](https://lazytatzv.github.io/libbno055-linux/)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+> **The ultimate, high-performance BNO055 IMU driver for modern robotics and IoT.**
 
 A high-performance, polyglot C++17, ROS 2, Python, C, and Rust driver for the Bosch BNO055 9-DOF IMU sensor on Linux systems.
+
+## 🎥 Demonstration
+
+<!-- TODO: Replace this placeholder with a GIF of Rviz2 or terminal output! -->
+<p align="center">
+  <img src="https://via.placeholder.com/800x400?text=Drop+a+GIF+of+Rviz2+or+Terminal+Output+Here" alt="Demo GIF Placeholder">
+</p>
 
 ---
 
@@ -59,6 +67,8 @@ While the mainline Linux kernel includes an excellent IIO driver (`drivers/iio/i
 
 ### Rust (`crates.io`)
 
+> **Tip:** See [`rust/examples/demo.rs`](rust/examples/demo.rs) for a complete, runnable example. You can run it instantly with `cargo run --example demo`.
+
 ```bash
 cargo add libbno055
 ```
@@ -81,6 +91,8 @@ fn main() -> Result<(), &'static str> {
 ---
 
 ### Python (`pip`)
+
+> **Tip:** See [`examples/python_demo.py`](examples/python_demo.py) for a complete, runnable script featuring diagnostics, error handling, and formatting.
 
 ```bash
 pip install libbno055-linux  # Or: pip install . (from source)
