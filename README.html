@@ -239,173 +239,55 @@
         <article role="main" id="furo-main-content">
           <section id="libbno055-linux">
 <h1>libbno055-linux<a class="headerlink" href="#libbno055-linux" title="Link to this heading">¶</a></h1>
-<p><img alt="C++17" src="https://img.shields.io/badge/C%2B%2B-17-blue.svg" />
-<img alt="ROS 2" src="https://img.shields.io/badge/ROS%202-Compatible-22314E.svg" />
-<img alt="Linux" src="https://img.shields.io/badge/OS-Linux-FCC624.svg" />
-<img alt="CMake" src="https://img.shields.io/badge/CMake-3.10%2B-064F8C.svg" />
+<p><a class="reference internal" href="#include/libbno055-linux/bno055.hpp"><span class="xref myst"><img alt="C++17" src="https://img.shields.io/badge/C%2B%2B-17-blue.svg" /></span></a>
+<a class="reference external" href="https://crates.io/crates/libbno055"><img alt="crates.io" src="https://img.shields.io/crates/v/libbno055.svg" /></a>
+<a class="reference internal" href="#docs/INTEGRATION.md"><span class="xref myst"><img alt="ROS 2" src="https://img.shields.io/badge/ROS%202-Humble%20%7C%20Jazzy-22314E.svg" /></span></a>
 <a class="reference external" href="https://lazytatzv.github.io/libbno055-linux/"><img alt="Docs" src="https://img.shields.io/badge/docs-GitHub%20Pages-blue.svg" /></a>
-<img alt="CI" src="https://github.com/lazytatzv/libbno055-linux/actions/workflows/ci.yml/badge.svg" />
-<img alt="License" src="https://img.shields.io/badge/License-MIT-green.svg" /></p>
-<p><strong><a class="reference external" href="https://lazytatzv.github.io/libbno055-linux/">View the Official Web Documentation (API, Architecture, Integration Guides)</a></strong></p>
-<p>C++17 BNO055 library and ROS 2 nodes for Linux.</p>
+<a class="reference external" href="https://github.com/lazytatzv/libbno055-linux/actions/workflows/ci.yml"><img alt="CI" src="https://github.com/lazytatzv/libbno055-linux/actions/workflows/ci.yml/badge.svg" /></a>
+<a class="reference internal" href="#LICENSE"><span class="xref myst"><img alt="License" src="https://img.shields.io/badge/License-MIT-green.svg" /></span></a></p>
+<p>A high-performance, polyglot <strong>C++17, ROS 2, Python, C, and Rust</strong> driver for the Bosch BNO055 9-DOF IMU sensor on Linux systems.</p>
+<hr class="docutils" />
 <section id="features">
-<h2>Features<a class="headerlink" href="#features" title="Link to this heading">¶</a></h2>
+<h2>⚡ Features<a class="headerlink" href="#features" title="Link to this heading">¶</a></h2>
 <ul class="simple">
-<li><p><strong>Standalone C++17 library</strong>: Link natively via CMake without ROS dependencies.</p></li>
-<li><p><strong>Native I2C &amp; UART Support</strong>: Fully implements the BNO055 binary protocol for both I2C (<code class="docutils literal notranslate"><span class="pre">/dev/i2c-*</span></code>) and USB-to-UART (<code class="docutils literal notranslate"><span class="pre">/dev/ttyUSB*</span></code>) using fast, low-level POSIX APIs.</p></li>
-<li><p><strong>Full Telemetry Parity</strong>: Publishes standard IMU data, raw unfiltered data (<code class="docutils literal notranslate"><span class="pre">imu/raw</span></code>), gravity vectors (<code class="docutils literal notranslate"><span class="pre">imu/gravity</span></code>), and calibration status via JSON (<code class="docutils literal notranslate"><span class="pre">~/calib_status</span></code>) and <code class="docutils literal notranslate"><span class="pre">diagnostic_msgs::msg::DiagnosticStatus</span></code> (<code class="docutils literal notranslate"><span class="pre">~/status</span></code>).</p></li>
-<li><p><strong>Hardware Reset &amp; Calibration Services</strong>: Provides <code class="docutils literal notranslate"><span class="pre">~/reset</span></code> for software-triggered hardware resets and <code class="docutils literal notranslate"><span class="pre">~/calibration_request</span></code> for dynamic calibration state queries.</p></li>
-<li><p><strong>ROS 2 nodes</strong>: Provides standard and lifecycle node interfaces.</p></li>
-<li><p><strong>Automatic Recovery</strong>: Implements automatic recovery for <code class="docutils literal notranslate"><span class="pre">EIO</span></code> faults, clock stretching issues, and UART <code class="docutils literal notranslate"><span class="pre">BUS_OVER_RUN</span></code> errors.</p></li>
-<li><p><strong>No heap allocations</strong>: Avoids dynamic memory allocation in hot sensor readout paths.</p></li>
-<li><p><strong>Zero-copy publishers</strong>: Implements zero-copy memory transport (<code class="docutils literal notranslate"><span class="pre">std::unique_ptr</span></code>) for ROS 2 publishers.</p></li>
-<li><p><strong>Built-in I2C mocking</strong>: Provides built-in I2C mocking for compilation and testing on macOS/Windows.</p></li>
-<li><p><strong>18-Byte Burst Read (New)</strong>: Sequentially reads 18 bytes of raw sensor outputs (Accel, Mag, Gyro) in a single transaction, reducing bus latency by 3x.</p></li>
-<li><p><strong>Linux GPIO Interrupt (IRQ) Driven Mode (New)</strong>: Bypasses polling loops. Detects rising edge events on the physical INT pin using Linux <code class="docutils literal notranslate"><span class="pre">poll()</span></code>, triggering callbacks at sub-millisecond latency.</p></li>
-<li><p><strong>Single-Precision float Optimizations (New)</strong>: Swapped double-precision floats to 32-bit floats across all vectors and quaternion math to unlock hardware FPU speeds on ARM processors (e.g., Raspberry Pi).</p></li>
+<li><p><strong>Polyglot Bindings</strong>: First-class support for <strong>C++17</strong>, <strong>ROS 2</strong>, <strong>Python</strong> (<code class="docutils literal notranslate"><span class="pre">pip</span></code>), <strong>Rust</strong> (<code class="docutils literal notranslate"><span class="pre">crates.io</span></code>), and native <strong>C</strong>.</p></li>
+<li><p><strong>Zero-Allocation Hot Path</strong>: Memory-optimized, no-heap allocations during high-rate sensor readouts.</p></li>
+<li><p><strong>Robust Hardware Recovery</strong>: Auto-reconnects on I2C <code class="docutils literal notranslate"><span class="pre">EIO</span></code> bus lockups, clock-stretching glitches, and UART overrun errors.</p></li>
+<li><p><strong>High-Throughput Burst Reads</strong>: 18-Byte sequential I2C/UART burst reads (~450µs at 400kHz I2C).</p></li>
+<li><p><strong>Linux GPIO Interrupt (IRQ)</strong>: Sub-millisecond latency via hardware INT pin edge detection using POSIX <code class="docutils literal notranslate"><span class="pre">poll()</span></code>.</p></li>
 </ul>
 </section>
 <hr class="docutils" />
-<section id="burst-read-state-estimation-ekf-features">
-<h2>Burst Read &amp; State Estimation (EKF) Features<a class="headerlink" href="#burst-read-state-estimation-ekf-features" title="Link to this heading">¶</a></h2>
-<p>If you are developing a custom state estimator (Extended Kalman Filter / Complementary Filter) or using <strong><code class="docutils literal notranslate"><span class="pre">robot_localization</span></code></strong>, raw sensor throughput and latency determinism are critical.</p>
-<p><code class="docutils literal notranslate"><span class="pre">libbno055-linux</span></code> provides:</p>
-<ol class="arabic simple">
-<li><p><strong>18-Byte Burst Read</strong>: Reads Accelerometer, Magnetometer, and Gyroscope raw variables in a single sequential bus transaction (~450µs at 400kHz I2C).</p></li>
-<li><p><strong>High-Frequency Polling</strong>: Low-jitter background polling threads up to 200Hz.</p></li>
-<li><p><strong>GPIO Interrupt (IRQ) Driven Mode</strong>: POSIX <code class="docutils literal notranslate"><span class="pre">poll()</span></code> edge event detection on the physical INT pin for sub-millisecond response.</p></li>
-</ol>
-<blockquote>
-<div><p>[!TIP]
-Complete C++ code examples for these APIs, EKF configuration files (<code class="docutils literal notranslate"><span class="pre">ekf.yaml</span></code>) for ROS 2 <code class="docutils literal notranslate"><span class="pre">robot_localization</span></code>, and kernel real-time scheduling setup are located in the <strong><a class="reference internal" href="#docs/INTEGRATION.md"><span class="xref myst">Advanced Integration &amp; Kernel Tuning Guide</span></a></strong>.
-For function signatures and types, see the <strong><a class="reference internal" href="#docs/API_REFERENCE.md"><span class="xref myst">API Reference</span></a></strong>.</p>
-</div></blockquote>
-</section>
-<hr class="docutils" />
-<section id="quick-start">
-<h2>Quick Start<a class="headerlink" href="#quick-start" title="Link to this heading">¶</a></h2>
-<section id="a-standalone-c-no-ros">
-<h3>A. Standalone C++ (No-ROS)<a class="headerlink" href="#a-standalone-c-no-ros" title="Link to this heading">¶</a></h3>
-<ol class="arabic">
-<li><p><strong>Build and Install</strong>:</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>sudo<span class="w"> </span>apt<span class="w"> </span>update<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>sudo<span class="w"> </span>apt<span class="w"> </span>install<span class="w"> </span>-y<span class="w"> </span>build-essential<span class="w"> </span>cmake
-git<span class="w"> </span>clone<span class="w"> </span>https://github.com/lazytatzv/libbno055-linux.git
-<span class="nb">cd</span><span class="w"> </span>libbno055-linux<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>mkdir<span class="w"> </span>build<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="nb">cd</span><span class="w"> </span>build
-cmake<span class="w"> </span>..<span class="w"> </span>-DBUILD_TESTING<span class="o">=</span>OFF<span class="w"> </span>-DBUILD_EXAMPLES<span class="o">=</span>ON
-make<span class="w"> </span>-j<span class="k">$(</span>nproc<span class="k">)</span><span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>sudo<span class="w"> </span>make<span class="w"> </span>install
+<section id="quick-start-by-language">
+<h2>🚀 Quick Start by Language<a class="headerlink" href="#quick-start-by-language" title="Link to this heading">¶</a></h2>
+<section id="rust-crates-io">
+<h3>🦀 Rust (<code class="docutils literal notranslate"><span class="pre">crates.io</span></code>)<a class="headerlink" href="#rust-crates-io" title="Link to this heading">¶</a></h3>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>cargo<span class="w"> </span>add<span class="w"> </span>libbno055
 </pre></div>
 </div>
-</li>
-<li><p><strong>Write your code (<code class="docutils literal notranslate"><span class="pre">main.cpp</span></code>)</strong>:</p>
-<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="cp">#include</span><span class="w"> </span><span class="cpf">&lt;libbno055-linux/bno055.hpp&gt;</span>
-<span class="cp">#include</span><span class="w"> </span><span class="cpf">&lt;iostream&gt;</span>
-<span class="cp">#include</span><span class="w"> </span><span class="cpf">&lt;thread&gt;</span>
+<div class="highlight-rust notranslate"><div class="highlight"><pre><span></span><span class="k">use</span><span class="w"> </span><span class="n">libbno055</span><span class="p">::{</span><span class="n">BNO055</span><span class="p">,</span><span class="w"> </span><span class="n">OpMode</span><span class="p">};</span>
 
-<span class="kt">int</span><span class="w"> </span><span class="nf">main</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
-<span class="w">    </span><span class="c1">// Initialize via I2C (Default)</span>
-<span class="w">    </span><span class="c1">// bno055lib::BNO055 imu(0x28, &quot;/dev/i2c-1&quot;);</span>
-
-<span class="w">    </span><span class="c1">// OR Initialize via UART</span>
-<span class="w">    </span><span class="n">bno055lib</span><span class="o">::</span><span class="n">BNO055</span><span class="o">::</span><span class="n">UARTConfig</span><span class="w"> </span><span class="n">uart_cfg</span><span class="p">;</span>
-<span class="w">    </span><span class="n">uart_cfg</span><span class="p">.</span><span class="n">port</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;/dev/ttyUSB0&quot;</span><span class="p">;</span>
-<span class="w">    </span><span class="n">uart_cfg</span><span class="p">.</span><span class="n">baudrate</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">115200</span><span class="p">;</span>
-<span class="w">    </span><span class="n">bno055lib</span><span class="o">::</span><span class="n">BNO055</span><span class="w"> </span><span class="n">imu</span><span class="p">(</span><span class="n">uart_cfg</span><span class="p">);</span>
-
-<span class="w">    </span><span class="c1">// Initialize in NDOF fusion mode</span>
-<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="o">!</span><span class="n">imu</span><span class="p">.</span><span class="n">begin</span><span class="p">(</span><span class="n">bno055lib</span><span class="o">::</span><span class="n">OpMode</span><span class="o">::</span><span class="n">NDOF</span><span class="p">))</span><span class="w"> </span><span class="p">{</span>
-<span class="w">        </span><span class="n">std</span><span class="o">::</span><span class="n">cerr</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="s">&quot;Sensor initialization failed!</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">;</span>
-<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="mi">1</span><span class="p">;</span>
-<span class="w">    </span><span class="p">}</span>
-
-<span class="w">    </span><span class="c1">// Configure automatic calibration loading &amp; saving</span>
-<span class="w">    </span><span class="n">imu</span><span class="p">.</span><span class="n">enableAutoCalibration</span><span class="p">(</span><span class="s">&quot;/etc/robot_config/bno055_offsets.bin&quot;</span><span class="p">);</span>
-
-<span class="w">    </span><span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="kt">int</span><span class="w"> </span><span class="n">i</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"> </span><span class="n">i</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="mi">10</span><span class="p">;</span><span class="w"> </span><span class="o">++</span><span class="n">i</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
-<span class="w">        </span><span class="c1">// Orientation (Euler Angles converted from Quaternion)</span>
-<span class="w">        </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="k">auto</span><span class="w"> </span><span class="n">q</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">imu</span><span class="p">.</span><span class="n">getQuaternionNoexcept</span><span class="p">())</span><span class="w"> </span><span class="p">{</span>
-<span class="w">            </span><span class="k">auto</span><span class="w"> </span><span class="n">euler</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">bno055lib</span><span class="o">::</span><span class="n">toEulerDegrees</span><span class="p">(</span><span class="o">*</span><span class="n">q</span><span class="p">);</span>
-<span class="w">            </span><span class="n">std</span><span class="o">::</span><span class="n">cout</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="s">&quot;Euler (deg): Roll=&quot;</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="n">euler</span><span class="p">.</span><span class="n">x</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="s">&quot; Pitch=&quot;</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="n">euler</span><span class="p">.</span><span class="n">y</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="s">&quot; Yaw=&quot;</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="n">euler</span><span class="p">.</span><span class="n">z</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="s">&quot;</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">;</span>
+<span class="k">fn</span><span class="w"> </span><span class="nf">main</span><span class="p">()</span><span class="w"> </span><span class="p">-&gt;</span><span class="w"> </span><span class="nb">Result</span><span class="o">&lt;</span><span class="p">(),</span><span class="w"> </span><span class="o">&amp;&#39;</span><span class="nb">static</span><span class="w"> </span><span class="kt">str</span><span class="o">&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="kd">let</span><span class="w"> </span><span class="k">mut</span><span class="w"> </span><span class="n">imu</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">BNO055</span><span class="p">::</span><span class="n">new_i2c</span><span class="p">(</span><span class="mh">0x28</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;/dev/i2c-1&quot;</span><span class="p">)</span><span class="o">?</span><span class="p">;</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="n">imu</span><span class="p">.</span><span class="n">begin</span><span class="p">(</span><span class="n">OpMode</span><span class="p">::</span><span class="n">NDOF</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="k">if</span><span class="w"> </span><span class="kd">let</span><span class="w"> </span><span class="nb">Some</span><span class="p">(</span><span class="n">q</span><span class="p">)</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">imu</span><span class="p">.</span><span class="n">get_quaternion</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">            </span><span class="kd">let</span><span class="w"> </span><span class="n">euler</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">BNO055</span><span class="p">::</span><span class="n">to_euler_degrees</span><span class="p">(</span><span class="o">&amp;</span><span class="n">q</span><span class="p">);</span>
+<span class="w">            </span><span class="fm">println!</span><span class="p">(</span><span class="s">&quot;Roll: {:.2}, Pitch: {:.2}, Yaw: {:.2}&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">euler</span><span class="p">.</span><span class="n">x</span><span class="p">,</span><span class="w"> </span><span class="n">euler</span><span class="p">.</span><span class="n">y</span><span class="p">,</span><span class="w"> </span><span class="n">euler</span><span class="p">.</span><span class="n">z</span><span class="p">);</span>
 <span class="w">        </span><span class="p">}</span>
-
-<span class="w">        </span><span class="c1">// Acceleration</span>
-<span class="w">        </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="k">auto</span><span class="w"> </span><span class="n">acc</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">imu</span><span class="p">.</span><span class="n">getAccelerometerNoexcept</span><span class="p">())</span><span class="w"> </span><span class="p">{</span>
-<span class="w">            </span><span class="n">std</span><span class="o">::</span><span class="n">cout</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="s">&quot;Accel (m/s^2): X=&quot;</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="n">acc</span><span class="o">-&gt;</span><span class="n">x</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="s">&quot; Y=&quot;</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="n">acc</span><span class="o">-&gt;</span><span class="n">y</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="s">&quot; Z=&quot;</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="n">acc</span><span class="o">-&gt;</span><span class="n">z</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="s">&quot;</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">;</span>
-<span class="w">        </span><span class="p">}</span>
-
-<span class="w">        </span><span class="c1">// Calibration Status</span>
-<span class="w">        </span><span class="k">auto</span><span class="w"> </span><span class="n">calib</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">imu</span><span class="p">.</span><span class="n">getCalibrationStatus</span><span class="p">();</span>
-<span class="w">        </span><span class="n">std</span><span class="o">::</span><span class="n">cout</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="s">&quot;Calibration: SYS=&quot;</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="k">static_cast</span><span class="o">&lt;</span><span class="kt">int</span><span class="o">&gt;</span><span class="p">(</span><span class="n">calib</span><span class="p">.</span><span class="n">sys</span><span class="p">)</span><span class="w"> </span>
-<span class="w">                  </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="s">&quot; GYRO=&quot;</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="k">static_cast</span><span class="o">&lt;</span><span class="kt">int</span><span class="o">&gt;</span><span class="p">(</span><span class="n">calib</span><span class="p">.</span><span class="n">gyro</span><span class="p">)</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="s">&quot;</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">;</span>
-
-<span class="w">        </span><span class="c1">// Temperature</span>
-<span class="w">        </span><span class="n">std</span><span class="o">::</span><span class="n">cout</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="s">&quot;Temperature: &quot;</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="k">static_cast</span><span class="o">&lt;</span><span class="kt">int</span><span class="o">&gt;</span><span class="p">(</span><span class="n">imu</span><span class="p">.</span><span class="n">getTemperature</span><span class="p">())</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="s">&quot; C</span><span class="se">\n\n</span><span class="s">&quot;</span><span class="p">;</span>
-
-<span class="w">        </span><span class="n">std</span><span class="o">::</span><span class="n">this_thread</span><span class="o">::</span><span class="n">sleep_for</span><span class="p">(</span><span class="n">std</span><span class="o">::</span><span class="n">chrono</span><span class="o">::</span><span class="n">milliseconds</span><span class="p">(</span><span class="mi">100</span><span class="p">));</span>
 <span class="w">    </span><span class="p">}</span>
-<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span>
+<span class="w">    </span><span class="nb">Ok</span><span class="p">(())</span>
 <span class="p">}</span>
 </pre></div>
 </div>
-</li>
-<li><p><strong>Compile and Run</strong>:</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>g++<span class="w"> </span>-std<span class="o">=</span>c++17<span class="w"> </span>main.cpp<span class="w"> </span>-lbno055-linux<span class="w"> </span>-lpthread<span class="w"> </span>-o<span class="w"> </span>imu_demo
-./imu_demo
-</pre></div>
-</div>
-</li>
-</ol>
 </section>
 <hr class="docutils" />
-<section id="b-ros-2">
-<h3>B. ROS 2<a class="headerlink" href="#b-ros-2" title="Link to this heading">¶</a></h3>
-<section id="option-1-binary-installation-via-apt">
-<h4>Option 1: Binary Installation (via <code class="docutils literal notranslate"><span class="pre">apt</span></code>)<a class="headerlink" href="#option-1-binary-installation-via-apt" title="Link to this heading">¶</a></h4>
-<p>If you are using ROS 2 (e.g. Humble), you can install the pre-built binary package directly using <code class="docutils literal notranslate"><span class="pre">apt</span></code>:</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>sudo<span class="w"> </span>apt<span class="w"> </span>update
-sudo<span class="w"> </span>apt<span class="w"> </span>install<span class="w"> </span>ros-<span class="si">${</span><span class="nv">ROS_DISTRO</span><span class="si">}</span>-libbno055-linux
-<span class="c1"># For example, on ROS 2 Humble:</span>
-<span class="c1"># sudo apt install ros-humble-libbno055-linux</span>
-</pre></div>
-</div>
-</section>
-<section id="option-2-build-from-source-colcon-workspace">
-<h4>Option 2: Build from Source (colcon workspace)<a class="headerlink" href="#option-2-build-from-source-colcon-workspace" title="Link to this heading">¶</a></h4>
-<ol class="arabic">
-<li><p><strong>Clone and Build</strong>:</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Clone inside your ROS 2 workspace src directory</span>
-<span class="nb">cd</span><span class="w"> </span>~/ros2_ws/src
-git<span class="w"> </span>clone<span class="w"> </span>https://github.com/lazytatzv/libbno055-linux.git
-
-<span class="c1"># Resolve dependencies and build</span>
-<span class="nb">cd</span><span class="w"> </span>~/ros2_ws
-rosdep<span class="w"> </span>install<span class="w"> </span>--from-paths<span class="w"> </span>src<span class="w"> </span>--ignore-src<span class="w"> </span>-y
-colcon<span class="w"> </span>build<span class="w"> </span>--packages-select<span class="w"> </span>libbno055_linux
-<span class="nb">source</span><span class="w"> </span>install/setup.bash
-</pre></div>
-</div>
-</li>
-<li><p><strong>Launch with Parameters</strong>:
-Launch the zero-copy node (default) or the lifecycle node:</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>ros2<span class="w"> </span>launch<span class="w"> </span>libbno055_linux<span class="w"> </span>bno055_launch.py
-</pre></div>
-</div>
-</li>
-</ol>
-</section>
-</section>
-<hr class="docutils" />
-<section id="c-python-import-libbno055">
-<h3>C. Python (<code class="docutils literal notranslate"><span class="pre">import</span> <span class="pre">libbno055</span></code>)<a class="headerlink" href="#c-python-import-libbno055" title="Link to this heading">¶</a></h3>
-<ol class="arabic">
-<li><p><strong>Install via pip</strong>:</p>
+<section id="python-pip">
+<h3>🐍 Python (<code class="docutils literal notranslate"><span class="pre">pip</span></code>)<a class="headerlink" href="#python-pip" title="Link to this heading">¶</a></h3>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pip<span class="w"> </span>install<span class="w"> </span>.
 </pre></div>
 </div>
-</li>
-<li><p><strong>Use in Python</strong>:</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">libbno055</span>
 
-<span class="c1"># Initialize IMU</span>
 <span class="n">imu</span> <span class="o">=</span> <span class="n">libbno055</span><span class="o">.</span><span class="n">BNO055</span><span class="p">(</span><span class="n">address</span><span class="o">=</span><span class="mh">0x28</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="s2">&quot;/dev/i2c-1&quot;</span><span class="p">)</span>
 <span class="k">if</span> <span class="n">imu</span><span class="o">.</span><span class="n">begin</span><span class="p">(</span><span class="n">libbno055</span><span class="o">.</span><span class="n">OpMode</span><span class="o">.</span><span class="n">NDOF</span><span class="p">):</span>
     <span class="n">q</span> <span class="o">=</span> <span class="n">imu</span><span class="o">.</span><span class="n">get_quaternion</span><span class="p">()</span>
@@ -414,261 +296,48 @@ Launch the zero-copy node (default) or the lifecycle node:</p>
         <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Roll: </span><span class="si">{</span><span class="n">euler</span><span class="o">.</span><span class="n">x</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2">, Pitch: </span><span class="si">{</span><span class="n">euler</span><span class="o">.</span><span class="n">y</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2">, Yaw: </span><span class="si">{</span><span class="n">euler</span><span class="o">.</span><span class="n">z</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
 </pre></div>
 </div>
-</li>
-</ol>
 </section>
 <hr class="docutils" />
-<section id="d-rust-use-libbno055-bno055-opmode">
-<h3>D. Rust (<code class="docutils literal notranslate"><span class="pre">use</span> <span class="pre">libbno055::{BNO055,</span> <span class="pre">OpMode}</span></code>)<a class="headerlink" href="#d-rust-use-libbno055-bno055-opmode" title="Link to this heading">¶</a></h3>
-<ol class="arabic">
-<li><p><strong>Add Dependency</strong>:</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>cargo<span class="w"> </span>add<span class="w"> </span>libbno055
-</pre></div>
-</div>
-<p><em>Or add to your <code class="docutils literal notranslate"><span class="pre">Cargo.toml</span></code>:</em></p>
-<div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[dependencies]</span>
-<span class="n">libbno055</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;1.5.1&quot;</span>
-</pre></div>
-</div>
-</li>
-<li><p><strong>Use in Rust</strong>:</p>
-<div class="highlight-rust notranslate"><div class="highlight"><pre><span></span><span class="k">use</span><span class="w"> </span><span class="n">libbno055</span><span class="p">::{</span><span class="n">BNO055</span><span class="p">,</span><span class="w"> </span><span class="n">OpMode</span><span class="p">};</span>
+<section id="c-17-native-cmake">
+<h3>⚡ C++17 (Native CMake)<a class="headerlink" href="#c-17-native-cmake" title="Link to this heading">¶</a></h3>
+<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="cp">#include</span><span class="w"> </span><span class="cpf">&lt;libbno055-linux/bno055.hpp&gt;</span>
+<span class="cp">#include</span><span class="w"> </span><span class="cpf">&lt;iostream&gt;</span>
 
-<span class="k">fn</span><span class="w"> </span><span class="nf">main</span><span class="p">()</span><span class="w"> </span><span class="p">-&gt;</span><span class="w"> </span><span class="nb">Result</span><span class="o">&lt;</span><span class="p">(),</span><span class="w"> </span><span class="o">&amp;&#39;</span><span class="nb">static</span><span class="w"> </span><span class="kt">str</span><span class="o">&gt;</span><span class="w"> </span><span class="p">{</span>
-<span class="w">    </span><span class="c1">// Initialize IMU via I2C (Address 0x28, /dev/i2c-1)</span>
-<span class="w">    </span><span class="kd">let</span><span class="w"> </span><span class="k">mut</span><span class="w"> </span><span class="n">imu</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">BNO055</span><span class="p">::</span><span class="n">new_i2c</span><span class="p">(</span><span class="mh">0x28</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;/dev/i2c-1&quot;</span><span class="p">)</span><span class="o">?</span><span class="p">;</span>
-
-<span class="w">    </span><span class="c1">// OR Initialize via USB-to-UART bridge</span>
-<span class="w">    </span><span class="c1">// let mut imu = BNO055::new_uart(&quot;/dev/ttyUSB0&quot;, 115200)?;</span>
-
-<span class="w">    </span><span class="c1">// Boot sensor in NDOF 9-DOF Fusion mode</span>
-<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="n">imu</span><span class="p">.</span><span class="n">begin</span><span class="p">(</span><span class="n">OpMode</span><span class="p">::</span><span class="n">NDOF</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
-<span class="w">        </span><span class="c1">// Read Orientation Quaternion &amp; Convert to Euler Degrees</span>
-<span class="w">        </span><span class="k">if</span><span class="w"> </span><span class="kd">let</span><span class="w"> </span><span class="nb">Some</span><span class="p">(</span><span class="n">q</span><span class="p">)</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">imu</span><span class="p">.</span><span class="n">get_quaternion</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
-<span class="w">            </span><span class="kd">let</span><span class="w"> </span><span class="n">euler</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">BNO055</span><span class="p">::</span><span class="n">to_euler_degrees</span><span class="p">(</span><span class="o">&amp;</span><span class="n">q</span><span class="p">);</span>
-<span class="w">            </span><span class="fm">println!</span><span class="p">(</span><span class="s">&quot;Euler (deg): Roll={:.2}, Pitch={:.2}, Yaw={:.2}&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">euler</span><span class="p">.</span><span class="n">x</span><span class="p">,</span><span class="w"> </span><span class="n">euler</span><span class="p">.</span><span class="n">y</span><span class="p">,</span><span class="w"> </span><span class="n">euler</span><span class="p">.</span><span class="n">z</span><span class="p">);</span>
+<span class="kt">int</span><span class="w"> </span><span class="nf">main</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="n">bno055lib</span><span class="o">::</span><span class="n">BNO055</span><span class="w"> </span><span class="n">imu</span><span class="p">(</span><span class="mh">0x28</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;/dev/i2c-1&quot;</span><span class="p">);</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">imu</span><span class="p">.</span><span class="n">begin</span><span class="p">(</span><span class="n">bno055lib</span><span class="o">::</span><span class="n">OpMode</span><span class="o">::</span><span class="n">NDOF</span><span class="p">))</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="k">auto</span><span class="w"> </span><span class="n">q</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">imu</span><span class="p">.</span><span class="n">getQuaternionNoexcept</span><span class="p">())</span><span class="w"> </span><span class="p">{</span>
+<span class="w">            </span><span class="k">auto</span><span class="w"> </span><span class="n">euler</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">bno055lib</span><span class="o">::</span><span class="n">toEulerDegrees</span><span class="p">(</span><span class="o">*</span><span class="n">q</span><span class="p">);</span>
+<span class="w">            </span><span class="n">std</span><span class="o">::</span><span class="n">cout</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="s">&quot;Roll: &quot;</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="n">euler</span><span class="p">.</span><span class="n">x</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="s">&quot; Pitch: &quot;</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="n">euler</span><span class="p">.</span><span class="n">y</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="s">&quot; Yaw: &quot;</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="n">euler</span><span class="p">.</span><span class="n">z</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="s">&quot;</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">;</span>
 <span class="w">        </span><span class="p">}</span>
-
-<span class="w">        </span><span class="c1">// Read Accelerometer &amp; Gyroscope</span>
-<span class="w">        </span><span class="k">if</span><span class="w"> </span><span class="kd">let</span><span class="w"> </span><span class="nb">Some</span><span class="p">(</span><span class="n">acc</span><span class="p">)</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">imu</span><span class="p">.</span><span class="n">get_accelerometer</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
-<span class="w">            </span><span class="fm">println!</span><span class="p">(</span><span class="s">&quot;Accel (m/s^2): X={:.2}, Y={:.2}, Z={:.2}&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">acc</span><span class="p">.</span><span class="n">x</span><span class="p">,</span><span class="w"> </span><span class="n">acc</span><span class="p">.</span><span class="n">y</span><span class="p">,</span><span class="w"> </span><span class="n">acc</span><span class="p">.</span><span class="n">z</span><span class="p">);</span>
-<span class="w">        </span><span class="p">}</span>
-
-<span class="w">        </span><span class="c1">// Check Calibration Status (0 = Uncalibrated, 3 = Fully Calibrated)</span>
-<span class="w">        </span><span class="k">if</span><span class="w"> </span><span class="kd">let</span><span class="w"> </span><span class="nb">Some</span><span class="p">(</span><span class="n">calib</span><span class="p">)</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">imu</span><span class="p">.</span><span class="n">get_calibration_status</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
-<span class="w">            </span><span class="fm">println!</span><span class="p">(</span><span class="s">&quot;Calibration: SYS={}, GYRO={}, ACCEL={}, MAG={}&quot;</span><span class="p">,</span><span class="w"> </span>
-<span class="w">                     </span><span class="n">calib</span><span class="p">.</span><span class="n">sys</span><span class="p">,</span><span class="w"> </span><span class="n">calib</span><span class="p">.</span><span class="n">gyro</span><span class="p">,</span><span class="w"> </span><span class="n">calib</span><span class="p">.</span><span class="n">accel</span><span class="p">,</span><span class="w"> </span><span class="n">calib</span><span class="p">.</span><span class="n">mag</span><span class="p">);</span>
-<span class="w">        </span><span class="p">}</span>
-
-<span class="w">        </span><span class="c1">// Check Telemetry Health Diagnostics</span>
-<span class="w">        </span><span class="kd">let</span><span class="w"> </span><span class="n">diag</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">imu</span><span class="p">.</span><span class="n">get_diagnostics</span><span class="p">();</span>
-<span class="w">        </span><span class="fm">println!</span><span class="p">(</span><span class="s">&quot;I2C Reconnects: {}, Failures: {}&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">diag</span><span class="p">.</span><span class="n">reconnect_attempts</span><span class="p">,</span><span class="w"> </span><span class="n">diag</span><span class="p">.</span><span class="n">read_failures</span><span class="p">);</span>
 <span class="w">    </span><span class="p">}</span>
-<span class="w">    </span><span class="nb">Ok</span><span class="p">(())</span>
 <span class="p">}</span>
 </pre></div>
 </div>
-</li>
-</ol>
 </section>
 <hr class="docutils" />
-<section id="e-ros-2-api-reference">
-<h3>E. ROS 2 API Reference<a class="headerlink" href="#e-ros-2-api-reference" title="Link to this heading">¶</a></h3>
-<section id="published-topics">
-<h4>Published Topics<a class="headerlink" href="#published-topics" title="Link to this heading">¶</a></h4>
-<div class="table-wrapper colwidths-auto docutils container">
-<table class="docutils align-default">
-<thead>
-<tr class="row-odd"><th class="head text-left"><p>Topic Name</p></th>
-<th class="head text-left"><p>Message Type</p></th>
-<th class="head text-left"><p>Description</p></th>
-</tr>
-</thead>
-<tbody>
-<tr class="row-even"><td class="text-left"><p><code class="docutils literal notranslate"><span class="pre">~/imu/data</span></code></p></td>
-<td class="text-left"><p><code class="docutils literal notranslate"><span class="pre">sensor_msgs/msg/Imu</span></code></p></td>
-<td class="text-left"><p>Fused IMU data (Orientation, Angular Velocity, Linear Acceleration).</p></td>
-</tr>
-<tr class="row-odd"><td class="text-left"><p><code class="docutils literal notranslate"><span class="pre">~/imu/raw</span></code></p></td>
-<td class="text-left"><p><code class="docutils literal notranslate"><span class="pre">sensor_msgs/msg/Imu</span></code></p></td>
-<td class="text-left"><p>Raw, unfiltered Accelerometer and Gyroscope data.</p></td>
-</tr>
-<tr class="row-even"><td class="text-left"><p><code class="docutils literal notranslate"><span class="pre">~/imu/mag</span></code></p></td>
-<td class="text-left"><p><code class="docutils literal notranslate"><span class="pre">sensor_msgs/msg/MagneticField</span></code></p></td>
-<td class="text-left"><p>Raw Magnetic Field data.</p></td>
-</tr>
-<tr class="row-odd"><td class="text-left"><p><code class="docutils literal notranslate"><span class="pre">~/imu/temp</span></code></p></td>
-<td class="text-left"><p><code class="docutils literal notranslate"><span class="pre">sensor_msgs/msg/Temperature</span></code></p></td>
-<td class="text-left"><p>Ambient Temperature data.</p></td>
-</tr>
-<tr class="row-even"><td class="text-left"><p><code class="docutils literal notranslate"><span class="pre">~/imu/gravity</span></code></p></td>
-<td class="text-left"><p><code class="docutils literal notranslate"><span class="pre">geometry_msgs/msg/Vector3</span></code></p></td>
-<td class="text-left"><p>Gravity vector (available in fusion modes).</p></td>
-</tr>
-<tr class="row-odd"><td class="text-left"><p><code class="docutils literal notranslate"><span class="pre">~/status</span></code></p></td>
-<td class="text-left"><p><code class="docutils literal notranslate"><span class="pre">diagnostic_msgs/msg/DiagnosticStatus</span></code></p></td>
-<td class="text-left"><p>Hardware and calibration status compatibility topic.</p></td>
-</tr>
-<tr class="row-even"><td class="text-left"><p><code class="docutils literal notranslate"><span class="pre">~/calib_status</span></code></p></td>
-<td class="text-left"><p><code class="docutils literal notranslate"><span class="pre">std_msgs/msg/String</span></code></p></td>
-<td class="text-left"><p>JSON formatted real-time calibration levels (Sys, Gyro, Accel, Mag).</p></td>
-</tr>
-<tr class="row-odd"><td class="text-left"><p><code class="docutils literal notranslate"><span class="pre">/diagnostics</span></code></p></td>
-<td class="text-left"><p><code class="docutils literal notranslate"><span class="pre">diagnostic_msgs/msg/DiagnosticArray</span></code></p></td>
-<td class="text-left"><p>Standard ROS 2 diagnostics stream (heartbeat, error rates, dropped reads).</p></td>
-</tr>
-</tbody>
-</table>
+<section id="ros-2-node-binary-installation">
+<h3>🤖 ROS 2 Node (Binary Installation)<a class="headerlink" href="#ros-2-node-binary-installation" title="Link to this heading">¶</a></h3>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>sudo<span class="w"> </span>apt<span class="w"> </span>update<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>sudo<span class="w"> </span>apt<span class="w"> </span>install<span class="w"> </span>ros-<span class="si">${</span><span class="nv">ROS_DISTRO</span><span class="si">}</span>-libbno055-linux
+ros2<span class="w"> </span>launch<span class="w"> </span>libbno055_linux<span class="w"> </span>bno055_launch.py
+</pre></div>
 </div>
-</section>
-<section id="services">
-<h4>Services<a class="headerlink" href="#services" title="Link to this heading">¶</a></h4>
-<div class="table-wrapper colwidths-auto docutils container">
-<table class="docutils align-default">
-<thead>
-<tr class="row-odd"><th class="head text-left"><p>Service Name</p></th>
-<th class="head text-left"><p>Service Type</p></th>
-<th class="head text-left"><p>Description</p></th>
-</tr>
-</thead>
-<tbody>
-<tr class="row-even"><td class="text-left"><p><code class="docutils literal notranslate"><span class="pre">~/save_calibration</span></code></p></td>
-<td class="text-left"><p><code class="docutils literal notranslate"><span class="pre">std_srvs/srv/Trigger</span></code></p></td>
-<td class="text-left"><p>Saves the current calibration offsets to the file specified in parameters.</p></td>
-</tr>
-<tr class="row-odd"><td class="text-left"><p><code class="docutils literal notranslate"><span class="pre">~/calibration_request</span></code></p></td>
-<td class="text-left"><p><code class="docutils literal notranslate"><span class="pre">std_srvs/srv/Trigger</span></code></p></td>
-<td class="text-left"><p>Immediately responds with a JSON string of the current calibration status.</p></td>
-</tr>
-<tr class="row-even"><td class="text-left"><p><code class="docutils literal notranslate"><span class="pre">~/reset</span></code></p></td>
-<td class="text-left"><p><code class="docutils literal notranslate"><span class="pre">std_srvs/srv/Trigger</span></code></p></td>
-<td class="text-left"><p>Triggers a software hardware-reset of the BNO055 and reinitializes it automatically.</p></td>
-</tr>
-</tbody>
-</table>
-</div>
-</section>
-<section id="core-parameters">
-<h4>Core Parameters<a class="headerlink" href="#core-parameters" title="Link to this heading">¶</a></h4>
-<div class="table-wrapper colwidths-auto docutils container">
-<table class="docutils align-default">
-<thead>
-<tr class="row-odd"><th class="head text-left"><p>Parameter</p></th>
-<th class="head text-left"><p>Default</p></th>
-<th class="head text-left"><p>Description</p></th>
-</tr>
-</thead>
-<tbody>
-<tr class="row-even"><td class="text-left"><p><code class="docutils literal notranslate"><span class="pre">connection_type</span></code></p></td>
-<td class="text-left"><p><code class="docutils literal notranslate"><span class="pre">&quot;i2c&quot;</span></code></p></td>
-<td class="text-left"><p><code class="docutils literal notranslate"><span class="pre">&quot;i2c&quot;</span></code> or <code class="docutils literal notranslate"><span class="pre">&quot;uart&quot;</span></code>. Determines the hardware communication interface.</p></td>
-</tr>
-<tr class="row-odd"><td class="text-left"><p><code class="docutils literal notranslate"><span class="pre">device</span></code></p></td>
-<td class="text-left"><p><code class="docutils literal notranslate"><span class="pre">&quot;/dev/i2c-1&quot;</span></code></p></td>
-<td class="text-left"><p>Path to the I2C device node (used if <code class="docutils literal notranslate"><span class="pre">connection_type</span></code> is <code class="docutils literal notranslate"><span class="pre">&quot;i2c&quot;</span></code>).</p></td>
-</tr>
-<tr class="row-even"><td class="text-left"><p><code class="docutils literal notranslate"><span class="pre">address</span></code></p></td>
-<td class="text-left"><p><code class="docutils literal notranslate"><span class="pre">40</span></code></p></td>
-<td class="text-left"><p>I2C address of the sensor (<code class="docutils literal notranslate"><span class="pre">40</span></code> for 0x28, <code class="docutils literal notranslate"><span class="pre">41</span></code> for 0x29).</p></td>
-</tr>
-<tr class="row-odd"><td class="text-left"><p><code class="docutils literal notranslate"><span class="pre">uart_port</span></code></p></td>
-<td class="text-left"><p><code class="docutils literal notranslate"><span class="pre">&quot;/dev/ttyUSB0&quot;</span></code></p></td>
-<td class="text-left"><p>Path to the UART device node (used if <code class="docutils literal notranslate"><span class="pre">connection_type</span></code> is <code class="docutils literal notranslate"><span class="pre">&quot;uart&quot;</span></code>).</p></td>
-</tr>
-<tr class="row-even"><td class="text-left"><p><code class="docutils literal notranslate"><span class="pre">uart_baudrate</span></code></p></td>
-<td class="text-left"><p><code class="docutils literal notranslate"><span class="pre">115200</span></code></p></td>
-<td class="text-left"><p>Baudrate for the UART connection.</p></td>
-</tr>
-<tr class="row-odd"><td class="text-left"><p><code class="docutils literal notranslate"><span class="pre">operation_mode</span></code></p></td>
-<td class="text-left"><p><code class="docutils literal notranslate"><span class="pre">&quot;ndof&quot;</span></code></p></td>
-<td class="text-left"><p>Sensor fusion mode (<code class="docutils literal notranslate"><span class="pre">&quot;ndof&quot;</span></code>, <code class="docutils literal notranslate"><span class="pre">&quot;imu_plus&quot;</span></code>, <code class="docutils literal notranslate"><span class="pre">&quot;compass&quot;</span></code>, etc.).</p></td>
-</tr>
-<tr class="row-even"><td class="text-left"><p><code class="docutils literal notranslate"><span class="pre">publish_rate</span></code></p></td>
-<td class="text-left"><p><code class="docutils literal notranslate"><span class="pre">100.0</span></code></p></td>
-<td class="text-left"><p>Publishing frequency in Hz.</p></td>
-</tr>
-<tr class="row-odd"><td class="text-left"><p><code class="docutils literal notranslate"><span class="pre">frame_id</span></code></p></td>
-<td class="text-left"><p><code class="docutils literal notranslate"><span class="pre">&quot;imu_link&quot;</span></code></p></td>
-<td class="text-left"><p>TF frame ID attached to message headers.</p></td>
-</tr>
-<tr class="row-even"><td class="text-left"><p><code class="docutils literal notranslate"><span class="pre">enable_auto_calibration</span></code></p></td>
-<td class="text-left"><p><code class="docutils literal notranslate"><span class="pre">false</span></code></p></td>
-<td class="text-left"><p>Enable automatic loading and saving of the calibration binary profile.</p></td>
-</tr>
-</tbody>
-</table>
-</div>
-</section>
 </section>
 </section>
 <hr class="docutils" />
-<section id="detailed-project-documentation">
-<h2>Detailed Project Documentation<a class="headerlink" href="#detailed-project-documentation" title="Link to this heading">¶</a></h2>
-<p>For advanced configuration, integration, and detailed specifications, please refer to the dedicated markdown files in the <code class="docutils literal notranslate"><span class="pre">docs/</span></code> directory or view the <a class="reference external" href="https://lazytatzv.github.io/libbno055-linux/">Official Web Documentation</a>.</p>
+<section id="complete-documentation">
+<h2>📚 Complete Documentation<a class="headerlink" href="#complete-documentation" title="Link to this heading">¶</a></h2>
 <ul class="simple">
-<li><p><strong><a class="reference internal" href="#docs/API_REFERENCE.md"><span class="xref myst">API Reference</span></a></strong>: Full class, struct, and function reference for <code class="docutils literal notranslate"><span class="pre">bno055lib::BNO055</span></code>.</p></li>
-<li><p><strong><a class="reference internal" href="#docs/INTEGRATION.md"><span class="xref myst">Advanced Integration &amp; Kernel Tuning Guide</span></a></strong>: Details on CMake integration, ROS 2 configuration parameters, I2C speed configurations (400kHz), UART driver optimizations, <code class="docutils literal notranslate"><span class="pre">PREEMPT_RT</span></code> scheduler priorities, and isolated CPU cores.</p></li>
-<li><p><strong><a class="reference internal" href="#docs/ARCHITECTURE.md"><span class="xref myst">Architecture &amp; Design Decisions</span></a></strong>: Details on PIMPL compilation firewall, thread safety, auto-recovery state machine, <code class="docutils literal notranslate"><span class="pre">Transport</span></code> DI abstraction, float math FPU optimizations, and lock granularity scopes.</p></li>
-<li><p><strong><a class="reference internal" href="#docs/SENSOR_OVERVIEW.md"><span class="xref myst">Sensor Overview &amp; Calibration</span></a></strong>: Detailed specs on BNO055 fusion modes, sensor coordinate systems, and saving/restoring calibration offsets.</p></li>
-<li><p><strong><a class="reference internal" href="#docs/TROUBLESHOOTING.md"><span class="xref myst">Troubleshooting &amp; FAQ</span></a></strong>: Solutions for I2C permission denied, Raspberry Pi clock stretching lockups, and indoor magnetic interference.</p></li>
+<li><p>📖 <strong><a class="reference internal" href="#docs/API_REFERENCE.md"><span class="xref myst">API Reference</span></a></strong> - Full class and function reference for C++, C, Python, and Rust.</p></li>
+<li><p>🛠️ <strong><a class="reference internal" href="#docs/INTEGRATION.md"><span class="xref myst">Integration &amp; Tuning Guide</span></a></strong> - ROS 2 YAML parameters, EKF setup, 400kHz I2C, UART 921600 bps tuning, and Rust integration.</p></li>
+<li><p>🏗️ <strong><a class="reference internal" href="#docs/ARCHITECTURE.md"><span class="xref myst">Architecture &amp; Design</span></a></strong> - PIMPL design, zero-copy transport, FFI layers, and state machines.</p></li>
+<li><p>🔧 <strong><a class="reference internal" href="#docs/TROUBLESHOOTING.md"><span class="xref myst">Troubleshooting &amp; FAQ</span></a></strong> - Hardware wiring, permissions, and clock-stretching fixes.</p></li>
 </ul>
 </section>
 <hr class="docutils" />
-<section id="hardware-configuration-prerequisites">
-<h2>Hardware Configuration (Prerequisites)<a class="headerlink" href="#hardware-configuration-prerequisites" title="Link to this heading">¶</a></h2>
-<p>Ensure the physical sensor is wired correctly and I2C permissions are set up on your Linux machine.</p>
-<section id="wiring-raspberry-pi-example">
-<h3>1. Wiring (Raspberry Pi Example)<a class="headerlink" href="#wiring-raspberry-pi-example" title="Link to this heading">¶</a></h3>
-<div class="table-wrapper colwidths-auto docutils container">
-<table class="docutils align-default">
-<thead>
-<tr class="row-odd"><th class="head text-left"><p>BNO055 Pin</p></th>
-<th class="head text-left"><p>Raspberry Pi Pin</p></th>
-<th class="head text-left"><p>Description</p></th>
-</tr>
-</thead>
-<tbody>
-<tr class="row-even"><td class="text-left"><p><strong>Vin</strong></p></td>
-<td class="text-left"><p><code class="docutils literal notranslate"><span class="pre">3.3V</span></code> (Pin 1 or 17)</p></td>
-<td class="text-left"><p>Power supply</p></td>
-</tr>
-<tr class="row-odd"><td class="text-left"><p><strong>GND</strong></p></td>
-<td class="text-left"><p><code class="docutils literal notranslate"><span class="pre">GND</span></code> (Pin 6 or 9)</p></td>
-<td class="text-left"><p>Ground</p></td>
-</tr>
-<tr class="row-even"><td class="text-left"><p><strong>SDA</strong></p></td>
-<td class="text-left"><p><code class="docutils literal notranslate"><span class="pre">GPIO</span> <span class="pre">2</span></code> (Pin 3)</p></td>
-<td class="text-left"><p>I2C Data</p></td>
-</tr>
-<tr class="row-odd"><td class="text-left"><p><strong>SCL</strong></p></td>
-<td class="text-left"><p><code class="docutils literal notranslate"><span class="pre">GPIO</span> <span class="pre">3</span></code> (Pin 5)</p></td>
-<td class="text-left"><p>I2C Clock</p></td>
-</tr>
-<tr class="row-even"><td class="text-left"><p><strong>ADR</strong></p></td>
-<td class="text-left"><p><code class="docutils literal notranslate"><span class="pre">GND</span></code> (or open)</p></td>
-<td class="text-left"><p>Sets address to <code class="docutils literal notranslate"><span class="pre">0x28</span></code>. Connect to <code class="docutils literal notranslate"><span class="pre">3.3V</span></code> for <code class="docutils literal notranslate"><span class="pre">0x29</span></code>.</p></td>
-</tr>
-</tbody>
-</table>
-</div>
-</section>
-<section id="permissions-i2c-enable">
-<h3>2. Permissions &amp; I2C Enable<a class="headerlink" href="#permissions-i2c-enable" title="Link to this heading">¶</a></h3>
-<ol class="arabic">
-<li><p>Enable the I2C interface via <code class="docutils literal notranslate"><span class="pre">sudo</span> <span class="pre">raspi-config</span></code> (Interface Options -&gt; I2C).</p></li>
-<li><p>Add your user to the <code class="docutils literal notranslate"><span class="pre">i2c</span></code> group to run programs without <code class="docutils literal notranslate"><span class="pre">sudo</span></code>:</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>sudo<span class="w"> </span>usermod<span class="w"> </span>-aG<span class="w"> </span>i2c<span class="w"> </span><span class="nv">$USER</span>
-</pre></div>
-</div>
-<p><em>Note: Log out and log back in for changes to take effect.</em></p>
-</li>
-</ol>
-</section>
-</section>
-<hr class="docutils" />
 <section id="license">
-<h2>License<a class="headerlink" href="#license" title="Link to this heading">¶</a></h2>
-<p>This project is licensed under the MIT License - see the <a class="reference internal" href="#LICENSE"><span class="xref myst">LICENSE</span></a> file for details.</p>
+<h2>📄 License<a class="headerlink" href="#license" title="Link to this heading">¶</a></h2>
+<p>This project is released under the <a class="reference internal" href="#LICENSE"><span class="xref myst">MIT License</span></a>.</p>
 </section>
 </section>
 
@@ -728,32 +397,16 @@ Launch the zero-copy node (default) or the lifecycle node:</p>
           <div class="toc-tree">
             <ul>
 <li><a class="reference internal" href="#">libbno055-linux</a><ul>
-<li><a class="reference internal" href="#features">Features</a></li>
-<li><a class="reference internal" href="#burst-read-state-estimation-ekf-features">Burst Read &amp; State Estimation (EKF) Features</a></li>
-<li><a class="reference internal" href="#quick-start">Quick Start</a><ul>
-<li><a class="reference internal" href="#a-standalone-c-no-ros">A. Standalone C++ (No-ROS)</a></li>
-<li><a class="reference internal" href="#b-ros-2">B. ROS 2</a><ul>
-<li><a class="reference internal" href="#option-1-binary-installation-via-apt">Option 1: Binary Installation (via <code class="docutils literal notranslate"><span class="pre">apt</span></code>)</a></li>
-<li><a class="reference internal" href="#option-2-build-from-source-colcon-workspace">Option 2: Build from Source (colcon workspace)</a></li>
+<li><a class="reference internal" href="#features">⚡ Features</a></li>
+<li><a class="reference internal" href="#quick-start-by-language">🚀 Quick Start by Language</a><ul>
+<li><a class="reference internal" href="#rust-crates-io">🦀 Rust (<code class="docutils literal notranslate"><span class="pre">crates.io</span></code>)</a></li>
+<li><a class="reference internal" href="#python-pip">🐍 Python (<code class="docutils literal notranslate"><span class="pre">pip</span></code>)</a></li>
+<li><a class="reference internal" href="#c-17-native-cmake">⚡ C++17 (Native CMake)</a></li>
+<li><a class="reference internal" href="#ros-2-node-binary-installation">🤖 ROS 2 Node (Binary Installation)</a></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#c-python-import-libbno055">C. Python (<code class="docutils literal notranslate"><span class="pre">import</span> <span class="pre">libbno055</span></code>)</a></li>
-<li><a class="reference internal" href="#d-rust-use-libbno055-bno055-opmode">D. Rust (<code class="docutils literal notranslate"><span class="pre">use</span> <span class="pre">libbno055::{BNO055,</span> <span class="pre">OpMode}</span></code>)</a></li>
-<li><a class="reference internal" href="#e-ros-2-api-reference">E. ROS 2 API Reference</a><ul>
-<li><a class="reference internal" href="#published-topics">Published Topics</a></li>
-<li><a class="reference internal" href="#services">Services</a></li>
-<li><a class="reference internal" href="#core-parameters">Core Parameters</a></li>
-</ul>
-</li>
-</ul>
-</li>
-<li><a class="reference internal" href="#detailed-project-documentation">Detailed Project Documentation</a></li>
-<li><a class="reference internal" href="#hardware-configuration-prerequisites">Hardware Configuration (Prerequisites)</a><ul>
-<li><a class="reference internal" href="#wiring-raspberry-pi-example">1. Wiring (Raspberry Pi Example)</a></li>
-<li><a class="reference internal" href="#permissions-i2c-enable">2. Permissions &amp; I2C Enable</a></li>
-</ul>
-</li>
-<li><a class="reference internal" href="#license">License</a></li>
+<li><a class="reference internal" href="#complete-documentation">📚 Complete Documentation</a></li>
+<li><a class="reference internal" href="#license">📄 License</a></li>
 </ul>
 </li>
 </ul>
