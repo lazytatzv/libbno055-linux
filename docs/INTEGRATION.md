@@ -463,22 +463,46 @@ For **`interrupt`** mode, you must connect the BNO055's physical **INT (Interrup
 
 ---
 
-### 8.3. ROS 2 YAML Parameter Configuration
-To enable the interrupt mode, add the `read_mode` and `interrupt_gpio_pin` parameters to your `bno055_params.yaml`:
+### 8.3. ROS 2 Full YAML Parameter Configuration
+
+The driver supports extensive configuration via parameters. Below is a comprehensive `bno055_params.yaml` file containing all supported parameters:
 
 ```yaml
 bno055_node:
   ros__parameters:
-    connection_type: "i2c"
-    device: "/dev/i2c-1"
-    address: 40                    # 0x28
+    # --- Hardware Connection ---
+    connection_type: "i2c"           # "i2c" or "uart"
+    device: "/dev/i2c-1"             # I2C device path (or UART port e.g. "/dev/ttyUSB0")
+    address: 40                      # I2C address (0x28 = 40, 0x29 = 41). Ignored for UART.
+    uart_baudrate: 115200            # UART baud rate (only used if connection_type is "uart")
+    uart_timeout: 0.1                # UART timeout in seconds
     
-    # Select read mode: "standard", "raw_async", or "interrupt"
-    read_mode: "interrupt"
-    interrupt_gpio_pin: 24         # GPIO Pin connected to INT
+    # --- Execution & Read Mode ---
+    read_mode: "standard"            # "standard", "raw_async", or "interrupt"
+    interrupt_gpio_pin: 24           # GPIO Pin connected to INT (Required for "interrupt" mode)
+    publish_rate: 100.0              # Publishing frequency in Hz (Ignored in "interrupt" mode)
     
-    publish_rate: 100.0            # Used for standard/raw_async. Ignored in interrupt mode.
-    frame_id: "imu_link"
+    # --- Sensor Operation Mode ---
+    operation_mode: "imu_plus"       # Sensor fusion mode (e.g., "ndof", "imu_plus", "amg")
+    use_external_crystal: true       # Use BNO055 external 32.768 kHz crystal (improves accuracy)
+    axis_map_config: "p1"            # Axis mapping configuration ("p0" to "p7")
+    axis_map_sign: "p1"              # Axis mapping sign ("p0" to "p7")
+    
+    # --- Calibration Management ---
+    calibration_file: ""             # Path to master calibration file to load on startup (e.g., "/etc/bno055_calib.bin")
+    enable_auto_calibration: false   # Auto-save calibration file periodically. NOT recommended for flight/production!
+    
+    # --- ROS 2 Publishing & QoS ---
+    frame_id: "imu_link"             # TF frame ID for the IMU messages
+    qos_reliability: "best_effort"   # "best_effort" (SensorData) or "reliable". Best Effort is highly recommended.
+    qos_history_depth: 10            # Message history queue depth
+    
+    # --- Covariance Matrices (Optional Overrides) ---
+    # Diagonals represent variance. You can override these based on your specific robot's vibration.
+    # orientation_covariance: [0.0, ...]
+    # angular_velocity_covariance: [0.0, ...]
+    # linear_acceleration_covariance: [0.0, ...]
+    # magnetic_field_covariance: [0.0, ...]
 ```
 
 ---
