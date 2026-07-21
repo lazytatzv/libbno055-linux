@@ -31,6 +31,16 @@
     # "standard"  : Safe CPU polling. Gathers Quaternions, Gyro, Accel, Mag.
     # "raw_async" : Background polling thread. Ultra-fast, but raw data only.
     # "interrupt" : THE ULTIMATE MODE. Zero-CPU polling. Requires INT pin wired!
+    #
+    # [PRO TIP: 1kHz / 2kHz Hardware Overclocking Profile]
+    # To actually stream data at 1000Hz+, you MUST combine the following settings:
+    #   1. connection_type: "uart" (I2C is too slow)
+    #   2. uart_baudrate: 921600, uart_low_latency: true
+    #   3. read_mode: "raw_async" (Dedicated background thread)
+    #   4. publish_rate: 1000.0 (Or 2000.0)
+    #   5. thread_priority: 90 (Real-time scheduling)
+    #   6. operation_mode: "amg" (Unlocks hardware ODR limits)
+    # -------------------------------------------------------------------------
     read_mode: "standard"
     
     # Target publishing rate (Hz). Ignored in "interrupt" mode. (Max 100Hz for fusion)
