@@ -9,9 +9,9 @@
 [![Coverage](https://codecov.io/gh/lazytatzv/libbno055-linux/graph/badge.svg)](https://codecov.io/gh/lazytatzv/libbno055-linux)
 [![Docs](https://img.shields.io/badge/docs-GitHub%20Pages-blue.svg)](https://lazytatzv.github.io/libbno055-linux/)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
-> **The ultimate, high-performance BNO055 IMU driver for modern robotics and IoT.**
+> **A robust, low-latency BNO055 IMU driver for Linux, supporting I2C/UART with auto-recovery.**
 
-A high-performance, polyglot C++17, ROS 2, Python, C, and Rust driver for the Bosch BNO055 9-DOF IMU sensor on Linux systems.
+A polyglot C++17, ROS 2, Python, C, and Rust driver for the Bosch BNO055 9-DOF IMU sensor.
 
 ## Demonstration
 
@@ -44,12 +44,12 @@ A high-performance, polyglot C++17, ROS 2, Python, C, and Rust driver for the Bo
 
 ### Userspace vs. Kernel IIO Driver
 
-While the mainline Linux kernel includes an excellent IIO driver (`drivers/iio/imu/bno055`) starting from Linux 6.1, `libbno055-linux` is designed as a highly optimized **Userspace Driver** to solve specific practical pain points in modern robotics (e.g. ROS 2) and rapid prototyping:
+While the mainline Linux kernel includes an IIO driver (`drivers/iio/imu/bno055`) starting from Linux 6.1, `libbno055-linux` is implemented as a **Userspace Driver** to address specific integration requirements in robotics (e.g., ROS 2) and rapid prototyping:
 
-1. **Zero-Configuration Setup**: No need to compile kernel modules or write Device Tree Overlays (DTO). Just `pip install`, `cargo add`, or `apt install`, and it works immediately on any standard I2C/UART port.
-2. **`I2C_RDWR` Optimization**: Uses `ioctl(I2C_RDWR)` for Repeated Start burst-reading. It achieves near-kernel latency (~450µs for 18-bytes) in userspace by cutting system calls down to exactly one per read.
-3. **Interrupt Driven**: Uses Linux `poll()` on sysfs GPIOs to wait for hardware INT pin edges in a background thread, achieving the same CPU-free idling as kernel-triggered buffers, but entirely in userspace.
-4. **Native ROS 2 Integration**: Directly publishes Zero-Copy `sensor_msgs/Imu` without the massive CPU overhead of parsing multiple kernel sysfs text files (`in_accel_x_raw`, etc) in a high-speed polling loop.
+1. **Zero-Configuration Setup**: No need to compile kernel modules or write Device Tree Overlays (DTO). Installable via `pip install`, `cargo add`, or `apt install`, and operates on any standard I2C/UART port.
+2. **`I2C_RDWR` Utilization**: Uses `ioctl(I2C_RDWR)` for Repeated Start burst-reading. It achieves low latency (~450µs for 18-bytes) in userspace by reducing system calls.
+3. **Interrupt Driven**: Uses Linux `poll()` on sysfs GPIOs to wait for hardware INT pin edges in a background thread, achieving CPU-free idling similar to kernel-triggered buffers.
+4. **Native ROS 2 Integration**: Directly publishes Zero-Copy `sensor_msgs/Imu`, avoiding the overhead of parsing multiple kernel sysfs text files (`in_accel_x_raw`, etc.) in a polling loop.
 
 ---
 
