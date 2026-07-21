@@ -100,6 +100,7 @@ endif()
 
 # Optional ROS 2 integration (conditional build of ROS 2 publisher samples)
 find_package(rclcpp QUIET)
+find_package(rclcpp_components QUIET)
 find_package(rclcpp_lifecycle QUIET)
 find_package(sensor_msgs QUIET)
 find_package(diagnostic_msgs QUIET)
@@ -114,24 +115,58 @@ if(rclcpp_FOUND AND sensor_msgs_FOUND AND diagnostic_msgs_FOUND AND std_srvs_FOU
     set(ament_cmake_xmllint_FOUND TRUE)
     set(ament_cmake_flake8_FOUND TRUE)
     message(STATUS "ROS 2 environment detected. Building ROS 2 publisher node sample.")
+    
+    # --- 1. Standalone Executable (Publisher) ---
     add_executable(bno055_publisher_node src/ros2/ros2_publisher_node.cpp)
     target_link_libraries(bno055_publisher_node libbno055-linux)
-    ament_target_dependencies(bno055_publisher_node rclcpp sensor_msgs diagnostic_msgs std_srvs)
+    ament_target_dependencies(bno055_publisher_node rclcpp rclcpp_components sensor_msgs diagnostic_msgs std_srvs)
 
     install(TARGETS bno055_publisher_node
         DESTINATION lib/${PROJECT_NAME}
     )
 
+    # --- 2. Composable Node Shared Library (Publisher) ---
+    if(rclcpp_components_FOUND)
+        message(STATUS "rclcpp_components detected. Building Composable Node library.")
+        add_library(bno055_ros2_components SHARED src/ros2/ros2_publisher_node.cpp)
+        target_compile_definitions(bno055_ros2_components PRIVATE BNO055_ROS2_BUILDING_COMPONENT)
+        target_link_libraries(bno055_ros2_components libbno055-linux)
+        ament_target_dependencies(bno055_ros2_components rclcpp rclcpp_components sensor_msgs diagnostic_msgs std_srvs)
+        rclcpp_components_register_node(bno055_ros2_components PLUGIN "bno055_ros2::BNO055PublisherNode" EXECUTABLE bno055_publisher_node_container)
+
+        install(TARGETS bno055_ros2_components
+            ARCHIVE DESTINATION lib
+            LIBRARY DESTINATION lib
+            RUNTIME DESTINATION bin
+        )
+    endif()
+
     if(rclcpp_lifecycle_FOUND)
         message(STATUS "ROS 2 Lifecycle detected. Building Lifecycle Node sample.")
-        # Lifecycle Node (Managed Node)
+        # --- 3. Standalone Executable (Lifecycle) ---
         add_executable(bno055_lifecycle_publisher_node src/ros2/ros2_lifecycle_publisher_node.cpp)
         target_link_libraries(bno055_lifecycle_publisher_node libbno055-linux)
-        ament_target_dependencies(bno055_lifecycle_publisher_node rclcpp rclcpp_lifecycle sensor_msgs diagnostic_msgs std_srvs)
+        ament_target_dependencies(bno055_lifecycle_publisher_node rclcpp rclcpp_lifecycle rclcpp_components sensor_msgs diagnostic_msgs std_srvs)
 
         install(TARGETS bno055_lifecycle_publisher_node
             DESTINATION lib/${PROJECT_NAME}
         )
+
+        # --- 4. Composable Node Shared Library (Lifecycle) ---
+        if(rclcpp_components_FOUND)
+            message(STATUS "Building Lifecycle Composable Node library.")
+            add_library(bno055_ros2_lifecycle_components SHARED src/ros2/ros2_lifecycle_publisher_node.cpp)
+            target_compile_definitions(bno055_ros2_lifecycle_components PRIVATE BNO055_ROS2_BUILDING_COMPONENT)
+            target_link_libraries(bno055_ros2_lifecycle_components libbno055-linux)
+            ament_target_dependencies(bno055_ros2_lifecycle_components rclcpp rclcpp_lifecycle rclcpp_components sensor_msgs diagnostic_msgs std_srvs)
+            rclcpp_components_register_node(bno055_ros2_lifecycle_components PLUGIN "bno055_ros2::BNO055LifecyclePublisherNode" EXECUTABLE bno055_lifecycle_publisher_node_container)
+
+            install(TARGETS bno055_ros2_lifecycle_components
+                ARCHIVE DESTINATION lib
+                LIBRARY DESTINATION lib
+                RUNTIME DESTINATION bin
+            )
+        endif()
     endif()
 
     # Install ROS 2 configuration and launch files
