@@ -14,6 +14,28 @@ A high-performance, polyglot C++17, ROS 2, Python, C, and Rust driver for the Bo
 
 ---
 
+## Highlights
+
+- **Native I2C & UART Support**: Fast POSIX drivers with hardware auto-recovery for I2C bus lockups and UART overrun errors.
+- **ROS 2 Lifecycle & Diagnostics**: Production ROS 2 lifecycle nodes with zero-copy publishing and diagnostic streams.
+- **Multi-Language FFI Bindings**: C++17 core engine with native C, Python (`pip`), and safe Rust (`crates.io`) interfaces.
+
+---
+
+## Why libbno055-linux?
+
+| Feature | `libbno055-linux` | Adafruit BNO055 | Bosch Reference |
+| :--- | :---: | :---: | :---: |
+| **Linux I2C & UART** | Yes | Partial | No |
+| **Automatic Recovery** | Yes | No | No |
+| **ROS 2 & Lifecycle** | Yes | No | No |
+| **Zero-Allocation Hot Path** | Yes | No | No |
+| **Rust & Python Bindings** | Yes | Python Only | No |
+| **Burst Read (18-Byte)** | Yes | No | No |
+| **GPIO IRQ Latency** | Sub-ms | Polling | Polling |
+
+---
+
 ## Features
 
 - **Polyglot Bindings**: First-class support for C++17, ROS 2, Python (`pip`), Rust (`crates.io`), and native C.
