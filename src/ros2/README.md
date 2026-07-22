@@ -16,7 +16,7 @@ This directory contains the production ROS 2 driver nodes and application compon
 - **Standard Composable Nodes (Recommended for General Use)**:
   - Immediate, friction-free startup without requiring a ROS 2 Lifecycle Manager.
   - Zero-Copy intra-process communication inside `component_container_mt`.
-- **Managed Lifecycle Nodes (For Enterprise Nav2 Systems)**:
+- **Managed Lifecycle Nodes (For Nav2 Lifecycle Systems)**:
   - Integrates directly with Nav2 `lifecycle_manager` state transitions (`unconfigured` -> `inactive` -> `active` -> `finalized`).
 
 ---

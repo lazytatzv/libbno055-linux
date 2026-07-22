@@ -1,12 +1,12 @@
 # Robot Straight-Line & Heading PID Controller Architecture
 
-This document provides a comprehensive guide to the **Theoretical Optimal Control Grade Heading Controller** in `libbno055-linux` (`bno055lib::HeadingController`), as well as its production ROS 2 nodes (`bno055_heading_control_node` and `bno055_lifecycle_heading_control_node`).
+This document provides a comprehensive guide to the **Heading Controller** in `libbno055-linux` (`bno055lib::HeadingController`), as well as its ROS 2 nodes (`bno055_heading_control_node` and `bno055_lifecycle_heading_control_node`).
 
 ---
 
-## 🏛️ Theoretical Control Architecture
+## 🏛️ Control Architecture
 
-The heading controller combines **Kinematic Feedforward (FF)** and **Feedback (PID)** optimal control to guarantee zero-drift straight driving and instantaneous transient response.
+The heading controller combines **Kinematic Feedforward (FF)** and **Feedback (PID)** control to maintain target heading and reduce straight-line drift.
 
 ```text
                                 +-----------------------------------+
@@ -16,7 +16,7 @@ The heading controller combines **Kinematic Feedforward (FF)** and **Feedback (P
                                                   |
                                                   v
 +-------------------+   Angle Diff   +------------+------------+   u_total   +-------------------+
-| Target Heading    | -------------> | Optimal PID Controller  | ----------> | Differential      |
+| Target Heading    | -------------> | PID Controller          | ----------> | Differential      |
 | Quaternion / Deg  |  std::remainder| - P: Kp * error         |             | Motor Output      |
 +-------------------+                | - I: Trapezoidal Rule   |             | (Left & Right)    |
                                      | - D: LPF Gyro (-Kd * w) |             +-------------------+

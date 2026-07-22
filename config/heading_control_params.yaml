@@ -1,5 +1,5 @@
 # ==============================================================================
-# BNO055 Theoretical Optimal Heading Controller ROS 2 Parameters Configuration
+# BNO055 Heading Controller Parameters Configuration
 # ==============================================================================
 
 bno055_heading_control_node:
@@ -12,7 +12,7 @@ bno055_heading_control_node:
     cmd_vel_out_topic: "cmd_vel"       # Corrected output velocity command for motors
 
     # --------------------------------------------------------------------------
-    # 2. Theoretical Optimal Control Gains (FF + PID + Filter Architecture)
+    # 2. Control Gains (FF + PID + Filter Architecture)
     # --------------------------------------------------------------------------
     kp: 0.05                           # Proportional Gain (Initial correction force)
     ki: 0.001                          # Integral Gain (Long-term friction bias compensation - Trapezoidal Rule)

@@ -17,11 +17,9 @@
 namespace bno055_ros2 {
 
 /**
- * @brief Production-Grade ROS 2 Composable Heading Corrector Node with Watchdog & IMU Fail-Safe Passthrough.
- * Features:
- *  - Fail-Safe Passthrough: If IMU is missing or disconnected, velocity commands seamlessly pass through.
- *  - Watchdog Safety Timer: Command-loss safety protection (publishes zero velocity on input timeout).
- *  - Zero-Copy Intra-Process transport & Dynamic Parameters.
+ * @brief ROS 2 Composable Heading Corrector Node with Watchdog Safety.
+ * Features: Zero-Copy Intra-Process transport, Dynamic Parameters, Diagnostics, Reset Service,
+ * and a Safety Watchdog Timer to command zero velocity upon command timeout.
  */
 class BNO055HeadingControlNode : public rclcpp::Node {
 public:
@@ -100,13 +98,7 @@ public:
                                                   std::bind(&BNO055HeadingControlNode::publishDiagnostics, this));
         }
 
-<<<<<<< HEAD
-        RCLCPP_INFO(this->get_logger(),
-                    "[Production Composable Node] BNO055 Heading Corrector Node online with Safety Watchdog.");
-=======
-        RCLCPP_INFO(this->get_logger(),
-                    "[Production Composable Node] BNO055 Heading Corrector online (With IMU Fail-Safe Passthrough).");
->>>>>>> 9b5f61a (feat: add IMU Fail-Safe Passthrough Mode to ensure robot keeps moving smoothly even if IMU is offline)
+        RCLCPP_INFO(this->get_logger(), "BNO055 Heading Control Node online.");
     }
 
 private:

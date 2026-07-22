@@ -44,7 +44,7 @@ def generate_launch_description():
     imu_params_file = LaunchConfiguration('imu_params_file')
     control_params_file = LaunchConfiguration('control_params_file')
 
-    # 1. Zero-Copy Composable Container (Production High-Performance Mode)
+    # 1. Zero-Copy Composable Container Mode
     standard_composable_container = ComposableNodeContainer(
         name='bno055_heading_control_container',
         namespace='',
