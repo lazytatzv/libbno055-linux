@@ -1,8 +1,14 @@
+#include <pthread.h>
+#include <sched.h>
+
 #include <chrono>
+#include <memory>
+#include <string>
+#include <vector>
+
 #include <diagnostic_msgs/msg/diagnostic_array.hpp>
 #include <diagnostic_msgs/msg/diagnostic_status.hpp>
 #include <diagnostic_msgs/msg/key_value.hpp>
-#include <memory>
 #include <rclcpp/executors/multi_threaded_executor.hpp>
 #include <rclcpp/rclcpp.hpp>
 #include <rclcpp_components/register_node_macro.hpp>
@@ -10,8 +16,6 @@
 #include <sensor_msgs/msg/magnetic_field.hpp>
 #include <sensor_msgs/msg/temperature.hpp>
 #include <std_srvs/srv/trigger.hpp>
-#include <string>
-#include <vector>
 
 #include "libbno055-linux/bno055.hpp"
 #include "ros2/bno055_ros2_common.hpp"
@@ -19,12 +23,28 @@
 namespace bno055_ros2 {
 
 /**
- * @brief ROS 2 Driver Publisher Node for BNO055 with Isolated Callback Groups.
+ * @brief Elegantly attempts to set Linux SCHED_FIFO real-time thread priority without hard crashing.
+ */
+inline void trySetRealtimePriority(rclcpp::Logger logger, int priority = 85) noexcept {
+#if defined(__linux__)
+    struct sched_param param;
+    param.sched_priority = priority;
+    if (pthread_setschedparam(pthread_self(), SCHED_FIFO, &param) == 0) {
+        RCLCPP_INFO(logger, "Successfully elevated thread priority to SCHED_FIFO (Priority: %d)", priority);
+    } else {
+        RCLCPP_DEBUG(logger, "Running with default OS scheduling (SCHED_FIFO requires CAP_SYS_NICE privileges)");
+    }
+#endif
+}
+
+/**
+ * @brief ROS 2 Driver Publisher Node for BNO055 with Isolated Callback Groups & Real-time Scheduling.
  */
 class BNO055PublisherNode : public rclcpp::Node {
 public:
     explicit BNO055PublisherNode(const rclcpp::NodeOptions& options = rclcpp::NodeOptions())
         : Node("bno055_publisher_node", options), initialized_(false) {
+
         // 1. Declare Parameters
         this->declare_parameter<std::string>("device", "/dev/i2c-1");
         this->declare_parameter<int>("address", 0x28);
@@ -51,21 +71,24 @@ public:
         imu_pub_ = this->create_publisher<sensor_msgs::msg::Imu>("imu/data", rclcpp::SensorDataQoS());
         mag_pub_ = this->create_publisher<sensor_msgs::msg::MagneticField>("imu/mag", rclcpp::SensorDataQoS());
         temp_pub_ = this->create_publisher<sensor_msgs::msg::Temperature>("imu/temp", rclcpp::SensorDataQoS());
-        diag_pub_ =
-            this->create_publisher<diagnostic_msgs::msg::DiagnosticArray>("diagnostics", rclcpp::SystemDefaultsQoS());
+        diag_pub_ = this->create_publisher<diagnostic_msgs::msg::DiagnosticArray>("diagnostics", rclcpp::SystemDefaultsQoS());
 
         // 5. Sensor Polling Timer (High-Frequency Sensor Callback Group)
         const int rate_hz = this->get_parameter("publish_rate_hz").as_int();
         const auto period = std::chrono::milliseconds(1000 / std::max(1, rate_hz));
 
-        sensor_timer_ =
-            this->create_wall_timer(period, std::bind(&BNO055PublisherNode::publishSensorData, this), sensor_cb_group_);
+        sensor_timer_ = this->create_wall_timer(
+            period,
+            std::bind(&BNO055PublisherNode::publishSensorData, this),
+            sensor_cb_group_);
 
         // 6. Diagnostics Timer (1Hz - Admin Callback Group)
         diag_timer_ = this->create_wall_timer(
-            std::chrono::seconds(1), std::bind(&BNO055PublisherNode::publishDiagnostics, this), admin_cb_group_);
+            std::chrono::seconds(1),
+            std::bind(&BNO055PublisherNode::publishDiagnostics, this),
+            admin_cb_group_);
 
-        RCLCPP_INFO(this->get_logger(), "BNO055 Publisher Node online (Multi-Threaded Callback Isolation Enabled).");
+        RCLCPP_INFO(this->get_logger(), "BNO055 Publisher Node online (Isolated CallbackGroups & Real-time Ready).");
     }
 
 private:
@@ -81,6 +104,13 @@ private:
         auto mag = imu_driver_->getMagnetometerNoexcept();
 
         if (quat && gyro && accel) {
+            // Outlier check for NaN/Inf
+            if (BNO055_UNLIKELY(std::isnan(quat->w) || std::isnan(quat->x) || std::isnan(quat->y) || std::isnan(quat->z))) {
+                RCLCPP_WARN_THROTTLE(this->get_logger(), *this->get_clock(), 2000,
+                                     "Corrupted IMU data from I2C/UART dropped.");
+                return;
+            }
+
             auto imu_msg = std::make_unique<sensor_msgs::msg::Imu>();
             imu_msg->header.stamp = now;
             imu_msg->header.frame_id = frame_id;
@@ -157,6 +187,8 @@ RCLCPP_COMPONENTS_REGISTER_NODE(bno055_ros2::BNO055PublisherNode)
 int main(int argc, char* argv[]) {
     rclcpp::init(argc, argv);
     auto node = std::make_shared<bno055_ros2::BNO055PublisherNode>();
+
+    bno055_ros2::trySetRealtimePriority(node->get_logger(), 85);
 
     rclcpp::executors::MultiThreadedExecutor executor;
     executor.add_node(node);
