@@ -6,7 +6,7 @@
 <link rel="index" title="Index" href="genindex.html"><link rel="search" title="Search" href="search.html">
 
     <!-- Generated with Sphinx 8.1.3 and Furo 2025.12.19 -->
-        <title>🚀 Robot Straight-Line &amp; Heading PID Control Guide - libbno055-linux 1.5.6 documentation</title>
+        <title>Robot Straight-Line &amp; Heading PID Controller Architecture - libbno055-linux 1.5.6 documentation</title>
       <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=d111a655" />
     <link rel="stylesheet" type="text/css" href="_static/styles/furo.css?v=7bdb33bb" />
     <link rel="stylesheet" type="text/css" href="_static/styles/furo-extensions.css?v=8dab3a3b" />
@@ -237,139 +237,112 @@
           </label>
         </div>
         <article role="main" id="furo-main-content">
-          <section id="robot-straight-line-heading-pid-control-guide">
-<h1>🚀 Robot Straight-Line &amp; Heading PID Control Guide<a class="headerlink" href="#robot-straight-line-heading-pid-control-guide" title="Link to this heading">¶</a></h1>
-<p>This document provides a comprehensive guide on using <code class="docutils literal notranslate"><span class="pre">libbno055-linux</span></code> for <strong>straight-line drive stability, heading lock, and anti-drift control</strong> in mobile robotics (diff-drive, omni-wheel, and Mecanum chassis).</p>
+          <section id="robot-straight-line-heading-pid-controller-architecture">
+<h1>Robot Straight-Line &amp; Heading PID Controller Architecture<a class="headerlink" href="#robot-straight-line-heading-pid-controller-architecture" title="Link to this heading">¶</a></h1>
+<p>This document provides a comprehensive guide to the <strong>Theoretical Optimal Control Grade Heading Controller</strong> in <code class="docutils literal notranslate"><span class="pre">libbno055-linux</span></code> (<code class="docutils literal notranslate"><span class="pre">bno055lib::HeadingController</span></code>), as well as its production ROS 2 nodes (<code class="docutils literal notranslate"><span class="pre">bno055_heading_control_node</span></code> and <code class="docutils literal notranslate"><span class="pre">bno055_lifecycle_heading_control_node</span></code>).</p>
 <hr class="docutils" />
-<section id="table-of-contents">
-<h2>Table of Contents<a class="headerlink" href="#table-of-contents" title="Link to this heading">¶</a></h2>
+<section id="theoretical-control-architecture">
+<h2>🏛️ Theoretical Control Architecture<a class="headerlink" href="#theoretical-control-architecture" title="Link to this heading">¶</a></h2>
+<p>The heading controller combines <strong>Kinematic Feedforward (FF)</strong> and <strong>Feedback (PID)</strong> optimal control to guarantee zero-drift straight driving and instantaneous transient response.</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>                                +-----------------------------------+
+                                | Kinematic Feedforward (FF Term)   |
+                                |       u_FF = K_ff * w_ref         |
+                                +-----------------+-----------------+
+                                                  |
+                                                  v
++-------------------+   Angle Diff   +------------+------------+   u_total   +-------------------+
+| Target Heading    | -------------&gt; | Optimal PID Controller  | ----------&gt; | Differential      |
+| Quaternion / Deg  |  std::remainder| - P: Kp * error         |             | Motor Output      |
++-------------------+                | - I: Trapezoidal Rule   |             | (Left &amp; Right)    |
+                                     | - D: LPF Gyro (-Kd * w) |             +-------------------+
++-------------------+                +------------+------------+
+| Current IMU Yaw   | ----------------------------+
+| Quaternion / Deg  |  Fast Yaw Extract
++-------------------+
+</pre></div>
+</div>
+</section>
+<hr class="docutils" />
+<section id="key-mathematical-control-engineering-principles">
+<h2>🧠 Key Mathematical &amp; Control Engineering Principles<a class="headerlink" href="#key-mathematical-control-engineering-principles" title="Link to this heading">¶</a></h2>
+<section id="shortest-path-angle-normalization-pm-180-circ-wrapping">
+<h3>1. Shortest-Path Angle Normalization ($\pm 180^\circ$ Wrapping)<a class="headerlink" href="#shortest-path-angle-normalization-pm-180-circ-wrapping" title="Link to this heading">¶</a></h3>
+<p>Angle differences across the $\pm 180^\circ$ boundary are wrapped into $[-180^\circ, +180^\circ]$ degrees using <code class="docutils literal notranslate"><span class="pre">std::remainder</span></code>:</p>
+<p>$$\text{Error} = \text{std::remainder}(\theta_{\text{target}} - \theta_{\text{current}}, 360.0)$$</p>
+<p>This eliminates 360-degree boundary jump singularities and prevents reverse spin accidents.</p>
+</section>
+<section id="trapezoidal-tustin-rule-integration">
+<h3>2. Trapezoidal (Tustin) Rule Integration<a class="headerlink" href="#trapezoidal-tustin-rule-integration" title="Link to this heading">¶</a></h3>
+<p>Rather than standard Euler integration, the integral term uses the <strong>Trapezoidal (Tustin) Rule</strong> for superior mathematical accuracy under sampling time jitter ($\Delta t$):</p>
+<p>$$I(t) = \text{clamp}\left( I(t-1) + K_i \cdot \frac{e(t) + e(t-1)}{2} \cdot \Delta t, \ -I_{\text{max}}, \ +I_{\text{max}} \right)$$</p>
+<p>Anti-windup clamping (<code class="docutils literal notranslate"><span class="pre">max_i_term</span></code>) strictly caps the integral term to prevent saturation when wheels slip or stall.</p>
+</section>
+<section id="st-order-low-pass-filtered-gyro-rate-d-term">
+<h3>3. 1st-Order Low-Pass Filtered Gyro Rate D-Term<a class="headerlink" href="#st-order-low-pass-filtered-gyro-rate-d-term" title="Link to this heading">¶</a></h3>
+<p>To eliminate derivative noise amplification without lag, the controller feeds back the <strong>1st-order Low-Pass Filtered (LPF) Gyro Rate</strong> ($\omega_z$) directly:</p>
+<p>$$\tau = \frac{1}{2\pi \cdot f_{\text{cutoff}}}, \quad \alpha = \frac{\Delta t}{\tau + \Delta t}$$
+$$\omega_{\text{filtered}}(t) = \omega_{\text{filtered}}(t-1) + \alpha \cdot \left(\omega_z(t) - \omega_{\text{filtered}}(t-1)\right)$$
+$$D(t) = -K_d \cdot \omega_{\text{filtered}}(t)$$</p>
+<p>Mechanical motor vibration noise is filtered out while anti-slip counter-torque is applied instantaneously.</p>
+</section>
+<section id="micro-deadband-non-linear-hunting-suppression">
+<h3>4. Micro-Deadband &amp; Non-Linear Hunting Suppression<a class="headerlink" href="#micro-deadband-non-linear-hunting-suppression" title="Link to this heading">¶</a></h3>
+<p>To eliminate high-frequency micro-hunting around zero error, errors below <code class="docutils literal notranslate"><span class="pre">deadband_deg</span></code> (default: $0.02^\circ$) are smoothed to $0.0^\circ$:</p>
+<p>$$e(t) = \begin{cases} 0.0 &amp; \text{if } |e(t)| &lt; \text{deadband_deg} \ e(t) &amp; \text{otherwise} \end{cases}$$</p>
+</section>
+</section>
+<hr class="docutils" />
+<section id="c-api-usage">
+<h2>🛠️ C++ API Usage<a class="headerlink" href="#c-api-usage" title="Link to this heading">¶</a></h2>
+<p>Header: <code class="docutils literal notranslate"><span class="pre">#include</span> <span class="pre">&quot;libbno055-linux/controllers/heading_controller.hpp&quot;</span></code></p>
+<section id="direct-quaternion-euler-angle-updates">
+<h3>Direct Quaternion &amp; Euler Angle Updates<a class="headerlink" href="#direct-quaternion-euler-angle-updates" title="Link to this heading">¶</a></h3>
+<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="cp">#include</span><span class="w"> </span><span class="cpf">&quot;libbno055-linux/controllers/heading_controller.hpp&quot;</span>
+
+<span class="n">bno055lib</span><span class="o">::</span><span class="n">HeadingController</span><span class="w"> </span><span class="n">controller</span><span class="p">;</span>
+
+<span class="c1">// Configuration</span>
+<span class="n">bno055lib</span><span class="o">::</span><span class="n">HeadingController</span><span class="o">::</span><span class="n">Config</span><span class="w"> </span><span class="n">cfg</span><span class="p">;</span>
+<span class="n">cfg</span><span class="p">.</span><span class="n">kp</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mf">0.05</span><span class="p">;</span>
+<span class="n">cfg</span><span class="p">.</span><span class="n">ki</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mf">0.001</span><span class="p">;</span>
+<span class="n">cfg</span><span class="p">.</span><span class="n">kd</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mf">0.01</span><span class="p">;</span>
+<span class="n">cfg</span><span class="p">.</span><span class="n">kff</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mf">0.0</span><span class="p">;</span>
+<span class="n">cfg</span><span class="p">.</span><span class="n">cutoff_freq_hz</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mf">20.0</span><span class="p">;</span><span class="w"> </span><span class="c1">// Low-pass filter cutoff frequency in Hz</span>
+<span class="n">cfg</span><span class="p">.</span><span class="n">max_i_term</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mf">0.2</span><span class="p">;</span>
+<span class="n">controller</span><span class="p">.</span><span class="n">setConfig</span><span class="p">(</span><span class="n">cfg</span><span class="p">);</span>
+
+<span class="c1">// 1. Update using Quaternions (Zero Euler conversion overhead by caller)</span>
+<span class="n">bno055lib</span><span class="o">::</span><span class="n">Quat</span><span class="w"> </span><span class="n">q_target</span><span class="p">{</span><span class="mf">1.0</span><span class="p">,</span><span class="w"> </span><span class="mf">0.0</span><span class="p">,</span><span class="w"> </span><span class="mf">0.0</span><span class="p">,</span><span class="w"> </span><span class="mf">0.0</span><span class="p">};</span>
+<span class="n">bno055lib</span><span class="o">::</span><span class="n">Quat</span><span class="w"> </span><span class="n">q_current</span><span class="p">{</span><span class="mf">0.7071</span><span class="p">,</span><span class="w"> </span><span class="mf">0.0</span><span class="p">,</span><span class="w"> </span><span class="mf">0.0</span><span class="p">,</span><span class="w"> </span><span class="mf">0.7071</span><span class="p">};</span><span class="w"> </span><span class="c1">// 90 deg Yaw</span>
+
+<span class="k">auto</span><span class="w"> </span><span class="n">out</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">controller</span><span class="p">.</span><span class="n">update</span><span class="p">(</span><span class="n">q_target</span><span class="p">,</span><span class="w"> </span><span class="n">q_current</span><span class="p">,</span><span class="w"> </span><span class="n">dt</span><span class="p">,</span><span class="w"> </span><span class="n">gyro_z_deg</span><span class="p">,</span><span class="w"> </span><span class="n">base_velocity</span><span class="p">);</span>
+
+<span class="c1">// 2. Update using Euler Degrees</span>
+<span class="k">auto</span><span class="w"> </span><span class="n">out2</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">controller</span><span class="p">.</span><span class="n">update</span><span class="p">(</span><span class="n">target_deg</span><span class="p">,</span><span class="w"> </span><span class="n">current_deg</span><span class="p">,</span><span class="w"> </span><span class="n">dt</span><span class="p">,</span><span class="w"> </span><span class="n">gyro_z_deg</span><span class="p">,</span><span class="w"> </span><span class="n">base_velocity</span><span class="p">);</span>
+
+<span class="c1">// Access motor speeds [0.0, 1.0]</span>
+<span class="kt">double</span><span class="w"> </span><span class="n">left_speed</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">out</span><span class="p">.</span><span class="n">left_motor</span><span class="p">;</span>
+<span class="kt">double</span><span class="w"> </span><span class="n">right_speed</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">out</span><span class="p">.</span><span class="n">right_motor</span><span class="p">;</span>
+</pre></div>
+</div>
+</section>
+</section>
+<hr class="docutils" />
+<section id="ros-2-production-nodes-fail-safe-architecture">
+<h2>📡 ROS 2 Production Nodes &amp; Fail-Safe Architecture<a class="headerlink" href="#ros-2-production-nodes-fail-safe-architecture" title="Link to this heading">¶</a></h2>
+<p>The package provides both <strong>Standard Composable Components</strong> and <strong>Managed Lifecycle Nodes</strong>.</p>
+<section id="safety-features-active-out-of-the-box">
+<h3>Safety Features Active Out-of-the-Box<a class="headerlink" href="#safety-features-active-out-of-the-box" title="Link to this heading">¶</a></h3>
 <ol class="arabic simple">
-<li><p><a class="reference internal" href="#overview"><span class="xref myst">Overview</span></a></p></li>
-<li><p><a class="reference internal" href="#core-control-theory--features"><span class="xref myst">Core Control Theory &amp; Features</span></a></p></li>
-<li><p><a class="reference internal" href="#c-production-api-headingcontroller"><span class="xref myst">C++ Production API (<code class="docutils literal notranslate"><span class="pre">HeadingController</span></code>)</span></a></p></li>
-<li><p><a class="reference internal" href="#ros-2-production-node-bno055_heading_control_node"><span class="xref myst">ROS 2 Production Node (<code class="docutils literal notranslate"><span class="pre">bno055_heading_control_node</span></code>)</span></a></p></li>
-<li><p><a class="reference internal" href="#ros-2-launch-file--one-command-setup"><span class="xref myst">ROS 2 Launch File &amp; One-Command Setup</span></a></p></li>
-<li><p><a class="reference internal" href="#tuning-guide--best-practices"><span class="xref myst">Tuning Guide &amp; Best Practices</span></a></p></li>
+<li><p><strong>Command-Loss Safety Watchdog</strong>: If <code class="docutils literal notranslate"><span class="pre">cmd_vel_in</span></code> stops for more than <code class="docutils literal notranslate"><span class="pre">cmd_vel_timeout</span></code> (0.5s), the node automatically publishes Zero Velocity (<code class="docutils literal notranslate"><span class="pre">linear.x</span> <span class="pre">=</span> <span class="pre">0,</span> <span class="pre">angular.z</span> <span class="pre">=</span> <span class="pre">0</span></code>) to prevent runaway accidents.</p></li>
+<li><p><strong>IMU Fail-Safe Passthrough</strong>: If IMU data is lost or times out (<code class="docutils literal notranslate"><span class="pre">imu_timeout</span> <span class="pre">&gt;</span> <span class="pre">1.0s</span></code>), the node switches to <strong>100% Passthrough Mode</strong>, ensuring robot movement never stops.</p></li>
+<li><p><strong>Zero-Copy Transport</strong>: Registers as an <code class="docutils literal notranslate"><span class="pre">rclcpp_components</span></code> plugin for intra-process zero-copy memory transport.</p></li>
 </ol>
 </section>
-<hr class="docutils" />
-<section id="overview">
-<h2>Overview<a class="headerlink" href="#overview" title="Link to this heading">¶</a></h2>
-<p>When a mobile robot travels straight, physical factors such as <strong>wheel diameter discrepancies, surface friction differences, and slip</strong> cause the robot to drift off-course.</p>
-<p><code class="docutils literal notranslate"><span class="pre">libbno055-linux</span></code> provides a production-grade, zero-allocation <strong>Heading PID Controller</strong> that integrates BNO055 high-precision sensor fusion orientation and gyro rate to keep your robot driving straight.</p>
-<div class="highlight-text notranslate"><div class="highlight"><pre><span></span> [Upper System]                  [BNO055 IMU]
- Nav2 / Teleop                     /imu/data
-       │                               │
-       ▼ (cmd_vel_in)                  ▼
-┌────────────────────────────────────────────┐
-│      bno055_heading_control_node           │
-├────────────────────────────────────────────┤
-│ • Turning Command (angular.z != 0):        │
-│   → Passthrough without interference        │
-│ • Straight Driving (angular.z == 0):       │
-│   → Automatically lock heading &amp; apply     │
-│     IMU PID correction to angular.z        │
-└─────────────────────┬──────────────────────┘
-                      │ (cmd_vel)
-                      ▼
-           [Motor Driver / Controller]
-</pre></div>
-</div>
 </section>
 <hr class="docutils" />
-<section id="core-control-theory-features">
-<h2>Core Control Theory &amp; Features<a class="headerlink" href="#core-control-theory-features" title="Link to this heading">¶</a></h2>
-<section id="shortest-path-angle-normalization">
-<h3>1. Shortest-Path Angle Normalization<a class="headerlink" href="#shortest-path-angle-normalization" title="Link to this heading">¶</a></h3>
-<p>Heading angles wrapped between $-180^\circ$ and $+180^\circ$ can cause naive controllers to spin $340^\circ$ in reverse when crossing boundary angles. <code class="docutils literal notranslate"><span class="pre">HeadingController</span></code> uses <code class="docutils literal notranslate"><span class="pre">std::remainder</span></code> for instant shortest-path error calculation:</p>
-<p>$$\text{Error} = \text{normalizeAngleDeg}(\text{Target} - \text{Current})$$</p>
-</section>
-<section id="gyro-based-derivative-control-noise-free-d-term">
-<h3>2. Gyro-Based Derivative Control (Noise-Free D-Term)<a class="headerlink" href="#gyro-based-derivative-control-noise-free-d-term" title="Link to this heading">¶</a></h3>
-<p>Instead of computing numerical finite differences $(\Delta e / \Delta t)$, which amplifies high-frequency noise, the D-term directly utilizes BNO055’s low-noise hardware gyro angular velocity ($\omega_z$). This eliminates derivative kick and provides instant anti-slip braking.</p>
-</section>
-<section id="anti-windup-integral-clamping">
-<h3>3. Anti-Windup Integral Clamping<a class="headerlink" href="#anti-windup-integral-clamping" title="Link to this heading">¶</a></h3>
-<p>To prevent integrator saturation during large disturbances or stuck wheels, the integral accumulator is strictly clamped to <code class="docutils literal notranslate"><span class="pre">max_i_term</span></code>:</p>
-<p>$$I(t) = \text{clamp}\left(I(t-1) + K_i \cdot e(t) \cdot \Delta t, -I_{max}, +I_{max}\right)$$</p>
-</section>
-</section>
-<hr class="docutils" />
-<section id="c-production-api-headingcontroller">
-<h2>C++ Production API (<code class="docutils literal notranslate"><span class="pre">HeadingController</span></code>)<a class="headerlink" href="#c-production-api-headingcontroller" title="Link to this heading">¶</a></h2>
-<p>Header Location: <code class="docutils literal notranslate"><span class="pre">include/libbno055-linux/controllers/heading_controller.hpp</span></code></p>
-<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="cp">#include</span><span class="w"> </span><span class="cpf">&quot;libbno055-linux/bno055.hpp&quot;</span>
-<span class="cp">#include</span><span class="w"> </span><span class="cpf">&quot;libbno055-linux/controllers/heading_controller.hpp&quot;</span>
-
-<span class="c1">// 1. Configure PID parameters</span>
-<span class="n">bno055lib</span><span class="o">::</span><span class="n">HeadingController</span><span class="o">::</span><span class="n">Config</span><span class="w"> </span><span class="n">cfg</span><span class="p">;</span>
-<span class="n">cfg</span><span class="p">.</span><span class="n">kp</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mf">0.04</span><span class="p">;</span>
-<span class="n">cfg</span><span class="p">.</span><span class="n">ki</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mf">0.001</span><span class="p">;</span>
-<span class="n">cfg</span><span class="p">.</span><span class="n">kd</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mf">0.008</span><span class="p">;</span>
-<span class="n">cfg</span><span class="p">.</span><span class="n">max_output</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mf">0.5</span><span class="p">;</span><span class="w"> </span><span class="c1">// Max correction in rad/s</span>
-
-<span class="n">bno055lib</span><span class="o">::</span><span class="n">HeadingController</span><span class="w"> </span><span class="nf">controller</span><span class="p">(</span><span class="n">cfg</span><span class="p">);</span>
-
-<span class="c1">// 2. Control Loop (100Hz)</span>
-<span class="kt">double</span><span class="w"> </span><span class="n">target_heading</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mf">0.0</span><span class="p">;</span><span class="w"> </span><span class="c1">// Locked orientation in degrees</span>
-<span class="kt">double</span><span class="w"> </span><span class="n">current_heading</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mf">10.0</span><span class="p">;</span><span class="w"> </span><span class="c1">// Current IMU orientation in degrees</span>
-<span class="kt">double</span><span class="w"> </span><span class="n">gyro_z_deg</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mf">1.5</span><span class="p">;</span><span class="w"> </span><span class="c1">// Gyro yaw rate in deg/s</span>
-
-<span class="k">auto</span><span class="w"> </span><span class="n">out</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">controller</span><span class="p">.</span><span class="n">update</span><span class="p">(</span><span class="n">target_heading</span><span class="p">,</span><span class="w"> </span><span class="n">current_heading</span><span class="p">,</span><span class="w"> </span><span class="mf">0.01</span><span class="p">,</span><span class="w"> </span><span class="n">gyro_z_deg</span><span class="p">,</span><span class="w"> </span><span class="cm">/*base_velocity=*/</span><span class="mf">0.5</span><span class="p">);</span>
-
-<span class="n">std</span><span class="o">::</span><span class="n">cout</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="s">&quot;Correction (u): &quot;</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="n">out</span><span class="p">.</span><span class="n">correction</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="s">&quot;</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">;</span>
-<span class="n">std</span><span class="o">::</span><span class="n">cout</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="s">&quot;Left Wheel Speed: &quot;</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="n">out</span><span class="p">.</span><span class="n">left_motor</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="s">&quot;</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">;</span>
-<span class="n">std</span><span class="o">::</span><span class="n">cout</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="s">&quot;Right Wheel Speed: &quot;</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="n">out</span><span class="p">.</span><span class="n">right_motor</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="s">&quot;</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">;</span>
-</pre></div>
-</div>
-</section>
-<hr class="docutils" />
-<section id="ros-2-production-node-bno055-heading-control-node">
-<h2>ROS 2 Production Node (<code class="docutils literal notranslate"><span class="pre">bno055_heading_control_node</span></code>)<a class="headerlink" href="#ros-2-production-node-bno055-heading-control-node" title="Link to this heading">¶</a></h2>
-<p>The ROS 2 node is built as a <strong>Composable Node Component (<code class="docutils literal notranslate"><span class="pre">rclcpp_components</span></code>)</strong> supporting <strong>Zero-Copy Intra-Process Transport</strong>, <strong>Dynamic Parameters</strong>, and <strong>Live Diagnostics</strong>.</p>
-<section id="topics-services">
-<h3>Topics &amp; Services<a class="headerlink" href="#topics-services" title="Link to this heading">¶</a></h3>
-<div class="table-wrapper colwidths-auto docutils container">
-<table class="docutils align-default">
-<thead>
-<tr class="row-odd"><th class="head text-left"><p>Name</p></th>
-<th class="head text-left"><p>Type</p></th>
-<th class="head text-center"><p>Direction</p></th>
-<th class="head text-left"><p>Description</p></th>
-</tr>
-</thead>
-<tbody>
-<tr class="row-even"><td class="text-left"><p><code class="docutils literal notranslate"><span class="pre">imu/data</span></code></p></td>
-<td class="text-left"><p><code class="docutils literal notranslate"><span class="pre">sensor_msgs/msg/Imu</span></code></p></td>
-<td class="text-center"><p>Sub</p></td>
-<td class="text-left"><p>BNO055 IMU orientation and angular velocity.</p></td>
-</tr>
-<tr class="row-odd"><td class="text-left"><p><code class="docutils literal notranslate"><span class="pre">cmd_vel_in</span></code></p></td>
-<td class="text-left"><p><code class="docutils literal notranslate"><span class="pre">geometry_msgs/msg/Twist</span></code></p></td>
-<td class="text-center"><p>Sub</p></td>
-<td class="text-left"><p>Raw input velocity command from Teleop or Nav2.</p></td>
-</tr>
-<tr class="row-even"><td class="text-left"><p><code class="docutils literal notranslate"><span class="pre">cmd_vel</span></code></p></td>
-<td class="text-left"><p><code class="docutils literal notranslate"><span class="pre">geometry_msgs/msg/Twist</span></code></p></td>
-<td class="text-center"><p>Pub</p></td>
-<td class="text-left"><p>IMU-corrected output velocity command for motors.</p></td>
-</tr>
-<tr class="row-odd"><td class="text-left"><p><code class="docutils literal notranslate"><span class="pre">diagnostics</span></code></p></td>
-<td class="text-left"><p><code class="docutils literal notranslate"><span class="pre">diagnostic_msgs/msg/DiagnosticArray</span></code></p></td>
-<td class="text-center"><p>Pub</p></td>
-<td class="text-left"><p>Real-time PID error, correction output, and lock status.</p></td>
-</tr>
-<tr class="row-even"><td class="text-left"><p><code class="docutils literal notranslate"><span class="pre">~/reset_heading</span></code></p></td>
-<td class="text-left"><p><code class="docutils literal notranslate"><span class="pre">std_srvs/srv/Trigger</span></code></p></td>
-<td class="text-center"><p>Service</p></td>
-<td class="text-left"><p>Resets target heading to current robot orientation.</p></td>
-</tr>
-</tbody>
-</table>
-</div>
-</section>
-<section id="dynamic-ros-2-parameters">
-<h3>Dynamic ROS 2 Parameters<a class="headerlink" href="#dynamic-ros-2-parameters" title="Link to this heading">¶</a></h3>
+<section id="ros-2-parameter-reference-config-heading-control-params-yaml">
+<h2>⚙️ ROS 2 Parameter Reference (<code class="docutils literal notranslate"><span class="pre">config/heading_control_params.yaml</span></code>)<a class="headerlink" href="#ros-2-parameter-reference-config-heading-control-params-yaml" title="Link to this heading">¶</a></h2>
 <div class="table-wrapper colwidths-auto docutils container">
 <table class="docutils align-default">
 <thead>
@@ -383,69 +356,72 @@
 <tr class="row-even"><td class="text-left"><p><code class="docutils literal notranslate"><span class="pre">kp</span></code></p></td>
 <td class="text-center"><p><code class="docutils literal notranslate"><span class="pre">double</span></code></p></td>
 <td class="text-center"><p><code class="docutils literal notranslate"><span class="pre">0.05</span></code></p></td>
-<td class="text-left"><p>Proportional gain.</p></td>
+<td class="text-left"><p>Proportional gain for heading error correction.</p></td>
 </tr>
 <tr class="row-odd"><td class="text-left"><p><code class="docutils literal notranslate"><span class="pre">ki</span></code></p></td>
 <td class="text-center"><p><code class="docutils literal notranslate"><span class="pre">double</span></code></p></td>
 <td class="text-center"><p><code class="docutils literal notranslate"><span class="pre">0.001</span></code></p></td>
-<td class="text-left"><p>Integral gain.</p></td>
+<td class="text-left"><p>Integral gain (Trapezoidal Rule integration).</p></td>
 </tr>
 <tr class="row-even"><td class="text-left"><p><code class="docutils literal notranslate"><span class="pre">kd</span></code></p></td>
 <td class="text-center"><p><code class="docutils literal notranslate"><span class="pre">double</span></code></p></td>
 <td class="text-center"><p><code class="docutils literal notranslate"><span class="pre">0.01</span></code></p></td>
-<td class="text-left"><p>Derivative gain (gyro-based).</p></td>
+<td class="text-left"><p>Derivative gain (Filtered Gyro-based).</p></td>
 </tr>
-<tr class="row-odd"><td class="text-left"><p><code class="docutils literal notranslate"><span class="pre">max_i_term</span></code></p></td>
+<tr class="row-odd"><td class="text-left"><p><code class="docutils literal notranslate"><span class="pre">kff</span></code></p></td>
+<td class="text-center"><p><code class="docutils literal notranslate"><span class="pre">double</span></code></p></td>
+<td class="text-center"><p><code class="docutils literal notranslate"><span class="pre">0.0</span></code></p></td>
+<td class="text-left"><p>Kinematic Feedforward gain.</p></td>
+</tr>
+<tr class="row-even"><td class="text-left"><p><code class="docutils literal notranslate"><span class="pre">max_i_term</span></code></p></td>
 <td class="text-center"><p><code class="docutils literal notranslate"><span class="pre">double</span></code></p></td>
 <td class="text-center"><p><code class="docutils literal notranslate"><span class="pre">0.2</span></code></p></td>
 <td class="text-left"><p>Anti-windup integral saturation limit.</p></td>
 </tr>
+<tr class="row-odd"><td class="text-left"><p><code class="docutils literal notranslate"><span class="pre">max_output</span></code></p></td>
+<td class="text-center"><p><code class="docutils literal notranslate"><span class="pre">double</span></code></p></td>
+<td class="text-center"><p><code class="docutils literal notranslate"><span class="pre">1.0</span></code></p></td>
+<td class="text-left"><p>Maximum correction velocity output (rad/s).</p></td>
+</tr>
+<tr class="row-even"><td class="text-left"><p><code class="docutils literal notranslate"><span class="pre">deadband_deg</span></code></p></td>
+<td class="text-center"><p><code class="docutils literal notranslate"><span class="pre">double</span></code></p></td>
+<td class="text-center"><p><code class="docutils literal notranslate"><span class="pre">0.02</span></code></p></td>
+<td class="text-left"><p>Micro-deadband threshold (deg) to suppress hunting.</p></td>
+</tr>
+<tr class="row-odd"><td class="text-left"><p><code class="docutils literal notranslate"><span class="pre">cutoff_freq_hz</span></code></p></td>
+<td class="text-center"><p><code class="docutils literal notranslate"><span class="pre">double</span></code></p></td>
+<td class="text-center"><p><code class="docutils literal notranslate"><span class="pre">20.0</span></code></p></td>
+<td class="text-left"><p>Low-pass filter cutoff frequency for gyro rate (Hz).</p></td>
+</tr>
 <tr class="row-even"><td class="text-left"><p><code class="docutils literal notranslate"><span class="pre">cmd_vel_timeout</span></code></p></td>
 <td class="text-center"><p><code class="docutils literal notranslate"><span class="pre">double</span></code></p></td>
 <td class="text-center"><p><code class="docutils literal notranslate"><span class="pre">0.5</span></code></p></td>
-<td class="text-left"><p>Safety Watchdog timeout in seconds. Triggers Zero Velocity output if <code class="docutils literal notranslate"><span class="pre">cmd_vel_in</span></code> is lost.</p></td>
+<td class="text-left"><p>Safety Watchdog timeout (s) for command loss.</p></td>
 </tr>
 <tr class="row-odd"><td class="text-left"><p><code class="docutils literal notranslate"><span class="pre">imu_timeout</span></code></p></td>
 <td class="text-center"><p><code class="docutils literal notranslate"><span class="pre">double</span></code></p></td>
 <td class="text-center"><p><code class="docutils literal notranslate"><span class="pre">1.0</span></code></p></td>
-<td class="text-left"><p>IMU connection loss timeout in seconds. Triggers Fail-Safe Passthrough if IMU is offline.</p></td>
+<td class="text-left"><p>IMU connection loss timeout (s) for Fail-Safe Passthrough.</p></td>
 </tr>
 <tr class="row-even"><td class="text-left"><p><code class="docutils literal notranslate"><span class="pre">angular_deadband</span></code></p></td>
 <td class="text-center"><p><code class="docutils literal notranslate"><span class="pre">double</span></code></p></td>
 <td class="text-center"><p><code class="docutils literal notranslate"><span class="pre">0.01</span></code></p></td>
-<td class="text-left"><p>Turning threshold to disengage heading lock.</p></td>
+<td class="text-left"><p>Turning velocity threshold (rad/s) to unlock heading.</p></td>
 </tr>
 </tbody>
 </table>
 </div>
 </section>
-</section>
 <hr class="docutils" />
-<section id="ros-2-launch-file-one-command-setup">
-<h2>ROS 2 Launch File &amp; One-Command Setup<a class="headerlink" href="#ros-2-launch-file-one-command-setup" title="Link to this heading">¶</a></h2>
-<p>Launch the core BNO055 driver and Heading PID Controller in a single zero-copy composable container:</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>ros2<span class="w"> </span>launch<span class="w"> </span>libbno055_linux<span class="w"> </span>heading_control_launch.py
-</pre></div>
-</div>
-<section id="live-parameter-tuning-service-trigger">
-<h3>Live Parameter Tuning &amp; Service Trigger<a class="headerlink" href="#live-parameter-tuning-service-trigger" title="Link to this heading">¶</a></h3>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Dynamically adjust Proportional Gain on the fly</span>
-ros2<span class="w"> </span>param<span class="w"> </span><span class="nb">set</span><span class="w"> </span>/bno055_heading_control_node<span class="w"> </span>kp<span class="w"> </span><span class="m">0</span>.08
+<section id="quick-start-guide">
+<h2>🚀 Quick Start Guide<a class="headerlink" href="#quick-start-guide" title="Link to this heading">¶</a></h2>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># One-Command Launch (Production Composable Container Mode)</span>
+ros2<span class="w"> </span>launch<span class="w"> </span>libbno055_linux<span class="w"> </span>heading_control_launch.py
 
-<span class="c1"># Trigger Manual Target Heading Reset</span>
-ros2<span class="w"> </span>service<span class="w"> </span>call<span class="w"> </span>/bno055_heading_control_node/reset_heading<span class="w"> </span>std_srvs/srv/Trigger
+<span class="c1"># Launch Nav2 Lifecycle Manager Compatible Mode</span>
+ros2<span class="w"> </span>launch<span class="w"> </span>libbno055_linux<span class="w"> </span>heading_control_launch.py<span class="w"> </span>node_type:<span class="o">=</span>lifecycle
 </pre></div>
 </div>
-</section>
-</section>
-<hr class="docutils" />
-<section id="tuning-guide-best-practices">
-<h2>Tuning Guide &amp; Best Practices<a class="headerlink" href="#tuning-guide-best-practices" title="Link to this heading">¶</a></h2>
-<ol class="arabic simple">
-<li><p><strong>Start with $K_p$</strong>: Set $K_i = 0$ and $K_d = 0$. Increase $K_p$ until the robot firmly corrects straight-line drift without oscillating.</p></li>
-<li><p><strong>Add $K_d$ for Damping</strong>: If the robot overshoots or wiggles when returning to course, increase $K_d$ to apply smooth gyro-based braking.</p></li>
-<li><p><strong>Add Small $K_i$ for Bias</strong>: If persistent friction pulls the robot slightly to one side over long distances, add a small $K_i$ (e.g., $0.001$).</p></li>
-</ol>
 </section>
 </section>
 
@@ -486,26 +462,25 @@ ros2<span class="w"> </span>service<span class="w"> </span>call<span class="w"> 
         <div class="toc-tree-container">
           <div class="toc-tree">
             <ul>
-<li><a class="reference internal" href="#">🚀 Robot Straight-Line &amp; Heading PID Control Guide</a><ul>
-<li><a class="reference internal" href="#table-of-contents">Table of Contents</a></li>
-<li><a class="reference internal" href="#overview">Overview</a></li>
-<li><a class="reference internal" href="#core-control-theory-features">Core Control Theory &amp; Features</a><ul>
-<li><a class="reference internal" href="#shortest-path-angle-normalization">1. Shortest-Path Angle Normalization</a></li>
-<li><a class="reference internal" href="#gyro-based-derivative-control-noise-free-d-term">2. Gyro-Based Derivative Control (Noise-Free D-Term)</a></li>
-<li><a class="reference internal" href="#anti-windup-integral-clamping">3. Anti-Windup Integral Clamping</a></li>
+<li><a class="reference internal" href="#">Robot Straight-Line &amp; Heading PID Controller Architecture</a><ul>
+<li><a class="reference internal" href="#theoretical-control-architecture">🏛️ Theoretical Control Architecture</a></li>
+<li><a class="reference internal" href="#key-mathematical-control-engineering-principles">🧠 Key Mathematical &amp; Control Engineering Principles</a><ul>
+<li><a class="reference internal" href="#shortest-path-angle-normalization-pm-180-circ-wrapping">1. Shortest-Path Angle Normalization ($\pm 180^\circ$ Wrapping)</a></li>
+<li><a class="reference internal" href="#trapezoidal-tustin-rule-integration">2. Trapezoidal (Tustin) Rule Integration</a></li>
+<li><a class="reference internal" href="#st-order-low-pass-filtered-gyro-rate-d-term">3. 1st-Order Low-Pass Filtered Gyro Rate D-Term</a></li>
+<li><a class="reference internal" href="#micro-deadband-non-linear-hunting-suppression">4. Micro-Deadband &amp; Non-Linear Hunting Suppression</a></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#c-production-api-headingcontroller">C++ Production API (<code class="docutils literal notranslate"><span class="pre">HeadingController</span></code>)</a></li>
-<li><a class="reference internal" href="#ros-2-production-node-bno055-heading-control-node">ROS 2 Production Node (<code class="docutils literal notranslate"><span class="pre">bno055_heading_control_node</span></code>)</a><ul>
-<li><a class="reference internal" href="#topics-services">Topics &amp; Services</a></li>
-<li><a class="reference internal" href="#dynamic-ros-2-parameters">Dynamic ROS 2 Parameters</a></li>
+<li><a class="reference internal" href="#c-api-usage">🛠️ C++ API Usage</a><ul>
+<li><a class="reference internal" href="#direct-quaternion-euler-angle-updates">Direct Quaternion &amp; Euler Angle Updates</a></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#ros-2-launch-file-one-command-setup">ROS 2 Launch File &amp; One-Command Setup</a><ul>
-<li><a class="reference internal" href="#live-parameter-tuning-service-trigger">Live Parameter Tuning &amp; Service Trigger</a></li>
+<li><a class="reference internal" href="#ros-2-production-nodes-fail-safe-architecture">📡 ROS 2 Production Nodes &amp; Fail-Safe Architecture</a><ul>
+<li><a class="reference internal" href="#safety-features-active-out-of-the-box">Safety Features Active Out-of-the-Box</a></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#tuning-guide-best-practices">Tuning Guide &amp; Best Practices</a></li>
+<li><a class="reference internal" href="#ros-2-parameter-reference-config-heading-control-params-yaml">⚙️ ROS 2 Parameter Reference (<code class="docutils literal notranslate"><span class="pre">config/heading_control_params.yaml</span></code>)</a></li>
+<li><a class="reference internal" href="#quick-start-guide">🚀 Quick Start Guide</a></li>
 </ul>
 </li>
 </ul>
