@@ -1,13 +1,12 @@
 # Examples Overview & Directory Guide
 
-This directory contains application examples categorized by language and framework, clearly decoupled from the core driver engine.
+This directory contains standalone application examples categorized by language, clearly decoupled from the core driver engine and official ROS 2 nodes.
 
 ## Directory Structure
 
 ```text
 examples/
 ├── cpp/       # Native C++17 application examples
-├── ros2/      # ROS 2 application & control nodes
 ├── c/         # C99 API examples
 └── python/    # Python 3 binding examples
 ```
@@ -21,7 +20,6 @@ examples/
 | **`read_data_noexcept.cpp`** | `cpp/` | C++17 | Non-throwing `noexcept` API usage pattern suitable for hard real-time / safety-critical systems. |
 | **`calibrate.cpp`** | `cpp/` | C++17 | Interactive sensor calibration helper & status logger. |
 | **`benchmark_imu.cpp`** | `cpp/` | C++17 | Low-latency I2C/UART bus throughput and read timing benchmark tool. |
-| **`ros2_heading_control_node.cpp`** | `ros2/` | ROS 2 C++ | ROS 2 node subscribing to `/imu/data` and publishing `/cmd_vel` for heading alignment. |
 | **`c_demo.c`** | `c/` | C99 | C FFI API binding usage example for legacy C codebases. |
 | **`python_demo.py`** | `python/` | Python 3 | High-level Python binding (`libbno055`) example with exception handling. |
 
