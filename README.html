@@ -375,18 +375,40 @@ sudo<span class="w"> </span>apt<span class="w"> </span>install<span class="w"> <
 <div><p>The <code class="docutils literal notranslate"><span class="pre">apt</span></code> binary is updated periodically by ROS Buildfarm. For the latest release (v1.7.1), build from source.</p>
 </div></blockquote>
 </section>
-<section id="option-b-colcon-ros-2-source-build">
-<h3>Option B: colcon (ROS 2 source build)<a class="headerlink" href="#option-b-colcon-ros-2-source-build" title="Link to this heading">¶</a></h3>
+<section id="option-b-vcstool-recommended-for-team-production-workspaces">
+<h3>Option B: vcstool (recommended for team/production workspaces)<a class="headerlink" href="#option-b-vcstool-recommended-for-team-production-workspaces" title="Link to this heading">¶</a></h3>
+<p>Add this package to your robot’s <code class="docutils literal notranslate"><span class="pre">.repos</span></code> file:</p>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="c1"># robot.repos</span>
+<span class="nt">repositories</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">libbno055-linux</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">git</span>
+<span class="w">    </span><span class="nt">url</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">https://github.com/lazytatzv/libbno055-linux.git</span>
+<span class="w">    </span><span class="nt">version</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">v1.7.1</span>
+</pre></div>
+</div>
+<p>Then import and build:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="nb">cd</span><span class="w"> </span>~/ros2_ws
+vcs<span class="w"> </span>import<span class="w"> </span>src<span class="w"> </span>&lt;<span class="w"> </span>robot.repos
+rosdep<span class="w"> </span>install<span class="w"> </span>--from-paths<span class="w"> </span>src<span class="w"> </span>--ignore-src<span class="w"> </span>-r<span class="w"> </span>-y
+colcon<span class="w"> </span>build
+<span class="nb">source</span><span class="w"> </span>install/setup.bash
+</pre></div>
+</div>
+<p>To update to a new version, change <code class="docutils literal notranslate"><span class="pre">version:</span></code> in the <code class="docutils literal notranslate"><span class="pre">.repos</span></code> file and run <code class="docutils literal notranslate"><span class="pre">vcs</span> <span class="pre">import</span> <span class="pre">src</span> <span class="pre">&lt;</span> <span class="pre">robot.repos</span></code> again.</p>
+</section>
+<section id="option-c-colcon-ros-2-source-build">
+<h3>Option C: colcon (ROS 2 source build)<a class="headerlink" href="#option-c-colcon-ros-2-source-build" title="Link to this heading">¶</a></h3>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="nb">cd</span><span class="w"> </span>~/ros2_ws/src
 git<span class="w"> </span>clone<span class="w"> </span>https://github.com/lazytatzv/libbno055-linux.git
 <span class="nb">cd</span><span class="w"> </span>~/ros2_ws
+rosdep<span class="w"> </span>install<span class="w"> </span>--from-paths<span class="w"> </span>src<span class="w"> </span>--ignore-src<span class="w"> </span>-r<span class="w"> </span>-y
 colcon<span class="w"> </span>build<span class="w"> </span>--packages-select<span class="w"> </span>libbno055_linux
 <span class="nb">source</span><span class="w"> </span>install/setup.bash
 </pre></div>
 </div>
 </section>
-<section id="option-c-cmake-standalone-c-library">
-<h3>Option C: CMake (standalone C++ library)<a class="headerlink" href="#option-c-cmake-standalone-c-library" title="Link to this heading">¶</a></h3>
+<section id="option-d-cmake-standalone-c-library">
+<h3>Option D: CMake (standalone C++ library)<a class="headerlink" href="#option-d-cmake-standalone-c-library" title="Link to this heading">¶</a></h3>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>git<span class="w"> </span>clone<span class="w"> </span>https://github.com/lazytatzv/libbno055-linux.git
 <span class="nb">cd</span><span class="w"> </span>libbno055-linux
 mkdir<span class="w"> </span>build<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="nb">cd</span><span class="w"> </span>build
@@ -524,8 +546,9 @@ sudo<span class="w"> </span>make<span class="w"> </span>install
 </li>
 <li><a class="reference internal" href="#installation">Installation</a><ul>
 <li><a class="reference internal" href="#option-a-apt-ros-2-binary">Option A: apt (ROS 2 binary)</a></li>
-<li><a class="reference internal" href="#option-b-colcon-ros-2-source-build">Option B: colcon (ROS 2 source build)</a></li>
-<li><a class="reference internal" href="#option-c-cmake-standalone-c-library">Option C: CMake (standalone C++ library)</a></li>
+<li><a class="reference internal" href="#option-b-vcstool-recommended-for-team-production-workspaces">Option B: vcstool (recommended for team/production workspaces)</a></li>
+<li><a class="reference internal" href="#option-c-colcon-ros-2-source-build">Option C: colcon (ROS 2 source build)</a></li>
+<li><a class="reference internal" href="#option-d-cmake-standalone-c-library">Option D: CMake (standalone C++ library)</a></li>
 </ul>
 </li>
 <li><a class="reference internal" href="#ros-2-parameters">ROS 2 Parameters</a></li>
