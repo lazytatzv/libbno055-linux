@@ -310,33 +310,35 @@ cmake<span class="w"> </span>..<span class="w"> </span><span class="o">&amp;&amp
 <hr class="docutils" />
 <section id="installation-building">
 <h2>Installation &amp; Building<a class="headerlink" href="#installation-building" title="Link to this heading">¶</a></h2>
-<section id="prerequisites">
-<h3>Prerequisites<a class="headerlink" href="#prerequisites" title="Link to this heading">¶</a></h3>
-<ul class="simple">
-<li><p>Linux (Ubuntu 20.04+, Raspberry Pi OS, etc.)</p></li>
-<li><p>C++17 compatible compiler (<code class="docutils literal notranslate"><span class="pre">gcc</span></code> 8+ or <code class="docutils literal notranslate"><span class="pre">clang</span></code> 7+)</p></li>
-<li><p>CMake 3.10+</p></li>
-<li><p>(Optional) ROS 2 Humble / Iron / Jazzy</p></li>
-</ul>
+<section id="option-a-ros-2-package-manager-apt">
+<h3>Option A: ROS 2 Package Manager (<code class="docutils literal notranslate"><span class="pre">apt</span></code>)<a class="headerlink" href="#option-a-ros-2-package-manager-apt" title="Link to this heading">¶</a></h3>
+<p>Standard binary installation for ROS 2:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>sudo<span class="w"> </span>apt<span class="w"> </span>update
+sudo<span class="w"> </span>apt<span class="w"> </span>install<span class="w"> </span>ros-<span class="nv">$ROS_DISTRO</span>-libbno055-linux
+</pre></div>
+</div>
+<blockquote>
+<div><p><strong>Note</strong>: Official <code class="docutils literal notranslate"><span class="pre">apt</span></code> binaries are updated periodically by ROS Buildfarm. For the latest features (Heading PID Controller, Slew-Rate Limiting, Safety Watchdog, v1.7+), build from source as shown below.</p>
+</div></blockquote>
 </section>
-<section id="building-from-source">
-<h3>Building from Source<a class="headerlink" href="#building-from-source" title="Link to this heading">¶</a></h3>
+<section id="option-b-ros-2-workspace-source-build-colcon-recommended-for-latest-features">
+<h3>Option B: ROS 2 Workspace Source Build (<code class="docutils literal notranslate"><span class="pre">colcon</span></code>) - Recommended for Latest Features<a class="headerlink" href="#option-b-ros-2-workspace-source-build-colcon-recommended-for-latest-features" title="Link to this heading">¶</a></h3>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="nb">cd</span><span class="w"> </span>~/ros2_ws/src
+git<span class="w"> </span>clone<span class="w"> </span>https://github.com/lazytatzv/libbno055-linux.git
+<span class="nb">cd</span><span class="w"> </span>~/ros2_ws
+colcon<span class="w"> </span>build<span class="w"> </span>--packages-select<span class="w"> </span>libbno055_linux
+<span class="nb">source</span><span class="w"> </span>install/setup.bash
+</pre></div>
+</div>
+</section>
+<section id="option-c-c-standalone-library-build-cmake">
+<h3>Option C: C++ Standalone Library Build (CMake)<a class="headerlink" href="#option-c-c-standalone-library-build-cmake" title="Link to this heading">¶</a></h3>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>git<span class="w"> </span>clone<span class="w"> </span>https://github.com/lazytatzv/libbno055-linux.git
 <span class="nb">cd</span><span class="w"> </span>libbno055-linux
 mkdir<span class="w"> </span>build<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="nb">cd</span><span class="w"> </span>build
 cmake<span class="w"> </span>..
 make<span class="w"> </span>-j<span class="k">$(</span>nproc<span class="k">)</span>
 sudo<span class="w"> </span>make<span class="w"> </span>install
-</pre></div>
-</div>
-</section>
-<section id="ros-2-workspace-build-colcon">
-<h3>ROS 2 Workspace Build (<code class="docutils literal notranslate"><span class="pre">colcon</span></code>)<a class="headerlink" href="#ros-2-workspace-build-colcon" title="Link to this heading">¶</a></h3>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="nb">cd</span><span class="w"> </span>~/ros2_ws/src
-git<span class="w"> </span>clone<span class="w"> </span>https://github.com/lazytatzv/libbno055-linux.git
-<span class="nb">cd</span><span class="w"> </span>~/ros2_ws
-colcon<span class="w"> </span>build<span class="w"> </span>--packages-select<span class="w"> </span>libbno055_linux
-<span class="nb">source</span><span class="w"> </span>install/setup.bash
 </pre></div>
 </div>
 </section>
@@ -448,9 +450,9 @@ colcon<span class="w"> </span>build<span class="w"> </span>--packages-select<spa
 </li>
 <li><a class="reference internal" href="#features">Features</a></li>
 <li><a class="reference internal" href="#installation-building">Installation &amp; Building</a><ul>
-<li><a class="reference internal" href="#prerequisites">Prerequisites</a></li>
-<li><a class="reference internal" href="#building-from-source">Building from Source</a></li>
-<li><a class="reference internal" href="#ros-2-workspace-build-colcon">ROS 2 Workspace Build (<code class="docutils literal notranslate"><span class="pre">colcon</span></code>)</a></li>
+<li><a class="reference internal" href="#option-a-ros-2-package-manager-apt">Option A: ROS 2 Package Manager (<code class="docutils literal notranslate"><span class="pre">apt</span></code>)</a></li>
+<li><a class="reference internal" href="#option-b-ros-2-workspace-source-build-colcon-recommended-for-latest-features">Option B: ROS 2 Workspace Source Build (<code class="docutils literal notranslate"><span class="pre">colcon</span></code>) - Recommended for Latest Features</a></li>
+<li><a class="reference internal" href="#option-c-c-standalone-library-build-cmake">Option C: C++ Standalone Library Build (CMake)</a></li>
 </ul>
 </li>
 <li><a class="reference internal" href="#configuration">Configuration</a></li>

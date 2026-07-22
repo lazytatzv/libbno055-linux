@@ -68,14 +68,28 @@ pip install libbno055-linux
 
 ## Installation & Building
 
-### Prerequisites
+### Option A: ROS 2 Package Manager (`apt`)
 
-- Linux (Ubuntu 20.04+, Raspberry Pi OS, etc.)
-- C++17 compatible compiler (`gcc` 8+ or `clang` 7+)
-- CMake 3.10+
-- (Optional) ROS 2 Humble / Iron / Jazzy
+Standard binary installation for ROS 2:
 
-### Building from Source
+```bash
+sudo apt update
+sudo apt install ros-$ROS_DISTRO-libbno055-linux
+```
+
+> **Note**: Official `apt` binaries are updated periodically by ROS Buildfarm. For the latest features (Heading PID Controller, Slew-Rate Limiting, Safety Watchdog, v1.7+), build from source as shown below.
+
+### Option B: ROS 2 Workspace Source Build (`colcon`) - Recommended for Latest Features
+
+```bash
+cd ~/ros2_ws/src
+git clone https://github.com/lazytatzv/libbno055-linux.git
+cd ~/ros2_ws
+colcon build --packages-select libbno055_linux
+source install/setup.bash
+```
+
+### Option C: C++ Standalone Library Build (CMake)
 
 ```bash
 git clone https://github.com/lazytatzv/libbno055-linux.git
@@ -84,16 +98,6 @@ mkdir build && cd build
 cmake ..
 make -j$(nproc)
 sudo make install
-```
-
-### ROS 2 Workspace Build (`colcon`)
-
-```bash
-cd ~/ros2_ws/src
-git clone https://github.com/lazytatzv/libbno055-linux.git
-cd ~/ros2_ws
-colcon build --packages-select libbno055_linux
-source install/setup.bash
 ```
 
 ---
