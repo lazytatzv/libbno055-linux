@@ -1,28 +1,32 @@
-# ROS 2 Driver & Application Nodes Directory
+# ROS 2 Official Nodes & Components Directory
 
-This directory contains the production ROS 2 nodes and components for `libbno055-linux`.
+This directory contains the production ROS 2 driver nodes and application components for `libbno055-linux`.
 
-## Included ROS 2 Nodes & Components
+## ROS 2 Node Architecture Index
 
-| Source File | Executable / Node | Description |
-| :--- | :--- | :--- |
-| **`ros2_publisher_node.cpp`** | `bno055_publisher_node` | High-frequency ROS 2 Imu publisher (Standard & Composable Node) with DiagnosticArray support. |
-| **`ros2_heading_control_node.cpp`** | `bno055_heading_control_node` | Production Composable Heading PID Corrector Node (`cmd_vel_in` -> `cmd_vel`) with Dynamic Parameters & Trigger Service. |
-| **`ros2_lifecycle_publisher_node.cpp`** | `bno055_lifecycle_publisher_node` | ROS 2 Managed Lifecycle Node with state machine transitions (`configure`, `activate`, `deactivate`, `cleanup`). |
-| **`bno055_ros2_common.hpp`** | Header-only helper | Shared ROS 2 parameter declaration, covariance setup, and diagnostic array builders. |
+| Component Category | Standard Composable Node | Managed Lifecycle Node | Description |
+| :--- | :--- | :--- | :--- |
+| **IMU Driver Publisher** | **`bno055_publisher_node`**<br>(`ros2_publisher_node.cpp`) | **`bno055_lifecycle_publisher_node`**<br>(`ros2_lifecycle_publisher_node.cpp`) | Reads BNO055 hardware over I2C/UART and publishes `/imu/data` & `/diagnostics`. |
+| **Heading PID Corrector** | **`bno055_heading_control_node`**<br>(`ros2_heading_control_node.cpp`) | **`bno055_lifecycle_heading_control_node`**<br>(`ros2_lifecycle_heading_control_node.cpp`) | Subscribes to `cmd_vel_in` & `/imu/data` to output IMU-corrected `cmd_vel` with Fail-Safe Passthrough. |
 
 ---
 
-## How to Build & Run with ROS 2
+## Which Node Architecture Should I Use?
+
+- **Standard Composable Nodes (Recommended for General Use)**:
+  - Immediate, friction-free startup without requiring a ROS 2 Lifecycle Manager.
+  - Zero-Copy intra-process communication inside `component_container_mt`.
+- **Managed Lifecycle Nodes (For Enterprise Nav2 Systems)**:
+  - Integrates directly with Nav2 `lifecycle_manager` state transitions (`unconfigured` -> `inactive` -> `active` -> `finalized`).
+
+---
+
+## Quick Start (One-Command Launch)
 
 ```bash
-cd ~/ros2_ws
-colcon build --packages-select libbno055_linux
-source install/setup.bash
-
-# 1. One-Command Launch (Core Driver + Heading PID Corrector Node in a Zero-Copy Composable Container)
+# 1. Standard Composable Container Mode (Zero-Copy Enabled)
 ros2 launch libbno055_linux heading_control_launch.py
 
-# 2. Launch Core IMU Publisher Node only
-ros2 launch libbno055_linux bno055_launch.py
+# 2. Managed Lifecycle Mode (Nav2 System Compatible)
+ros2 launch libbno055_linux heading_control_launch.py node_type:=lifecycle
 ```

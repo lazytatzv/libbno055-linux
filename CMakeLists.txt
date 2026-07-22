@@ -162,7 +162,11 @@ if(rclcpp_FOUND AND sensor_msgs_FOUND AND geometry_msgs_FOUND AND diagnostic_msg
         target_link_libraries(bno055_lifecycle_publisher_node libbno055-linux)
         ament_target_dependencies(bno055_lifecycle_publisher_node rclcpp rclcpp_lifecycle sensor_msgs diagnostic_msgs std_srvs)
 
-        install(TARGETS bno055_lifecycle_publisher_node
+        add_executable(bno055_lifecycle_heading_control_node src/ros2/ros2_lifecycle_heading_control_node.cpp)
+        target_link_libraries(bno055_lifecycle_heading_control_node libbno055-linux)
+        ament_target_dependencies(bno055_lifecycle_heading_control_node rclcpp rclcpp_lifecycle rclcpp_components sensor_msgs geometry_msgs diagnostic_msgs std_srvs)
+
+        install(TARGETS bno055_lifecycle_publisher_node bno055_lifecycle_heading_control_node
             DESTINATION lib/${PROJECT_NAME}
         )
 
@@ -175,7 +179,12 @@ if(rclcpp_FOUND AND sensor_msgs_FOUND AND geometry_msgs_FOUND AND diagnostic_msg
             ament_target_dependencies(bno055_ros2_lifecycle_components rclcpp rclcpp_lifecycle rclcpp_components sensor_msgs diagnostic_msgs std_srvs)
             rclcpp_components_register_node(bno055_ros2_lifecycle_components PLUGIN "bno055_ros2::BNO055LifecyclePublisherNode" EXECUTABLE bno055_lifecycle_publisher_node_container)
 
-            install(TARGETS bno055_ros2_lifecycle_components
+            add_library(bno055_lifecycle_heading_control_components SHARED src/ros2/ros2_lifecycle_heading_control_node.cpp)
+            target_link_libraries(bno055_lifecycle_heading_control_components libbno055-linux)
+            ament_target_dependencies(bno055_lifecycle_heading_control_components rclcpp rclcpp_lifecycle rclcpp_components sensor_msgs geometry_msgs diagnostic_msgs std_srvs)
+            rclcpp_components_register_node(bno055_lifecycle_heading_control_components PLUGIN "bno055_ros2::BNO055LifecycleHeadingControlNode" EXECUTABLE bno055_lifecycle_heading_control_container)
+
+            install(TARGETS bno055_ros2_lifecycle_components bno055_lifecycle_heading_control_components
                 ARCHIVE DESTINATION lib
                 LIBRARY DESTINATION lib
                 RUNTIME DESTINATION bin
