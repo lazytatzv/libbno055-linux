@@ -133,7 +133,7 @@ fn main() -> Result<(), &'static str> {
 
 ### Python (`pip`)
 
-> **Tip:** See [`examples/python_demo.py`](examples/python_demo.py) for a complete, runnable script featuring diagnostics, error handling, and formatting.
+> **Tip:** See [`examples/python/python_demo.py`](examples/python/python_demo.py) for a complete, runnable script featuring diagnostics, error handling, and formatting.
 
 ```bash
 pip install libbno055-linux  # Or: pip install . (from source)
