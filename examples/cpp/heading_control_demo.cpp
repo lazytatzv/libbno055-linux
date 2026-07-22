@@ -6,7 +6,7 @@
 #include <thread>
 
 #include "libbno055-linux/bno055.hpp"
-#include "libbno055-linux/heading_controller.hpp"
+#include "libbno055-linux/controllers/heading_controller.hpp"
 
 constexpr uint8_t DEFAULT_ADDR = 0x28;
 constexpr auto LOOP_PERIOD = std::chrono::microseconds(10000);  // 100Hz ultra-fast loop (10ms)

@@ -7,7 +7,7 @@
 #include <rclcpp/rclcpp.hpp>
 #include <sensor_msgs/msg/imu.hpp>
 
-#include "libbno055-linux/heading_controller.hpp"
+#include "libbno055-linux/controllers/heading_controller.hpp"
 
 namespace bno055_ros2 {
 
