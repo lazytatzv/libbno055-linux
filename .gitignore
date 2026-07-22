@@ -1,12 +1,23 @@
+# Build directories
 /build/
-/.vscode/
-*~
-*.swp
-*.bin
+/dist/
 /.rosdep/
 /.venv/
-target/
-__pycache__/
-*.egg-info/
+/target/
+/.conan/
+/.pytest_cache/
+
+# IDE & Editor files
+/.vscode/
+/.idea/
+*.swp
+*~
+
+# Compiled objects & libraries
+*.o
 *.so
 *.dylib
+*.a
+*.bin
+*.egg-info/
+__pycache__/

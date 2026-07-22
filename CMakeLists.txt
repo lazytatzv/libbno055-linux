@@ -74,6 +74,9 @@ if(BUILD_EXAMPLES)
     add_executable(benchmark_imu examples/benchmark_imu.cpp)
     target_link_libraries(benchmark_imu PRIVATE libbno055-linux)
 
+    add_executable(heading_control_demo examples/heading_control_demo.cpp)
+    target_link_libraries(heading_control_demo PRIVATE libbno055-linux)
+
     add_executable(c_demo examples/c_demo.c)
     target_link_libraries(c_demo PRIVATE libbno055-linux)
 endif()
@@ -103,10 +106,11 @@ find_package(rclcpp QUIET)
 find_package(rclcpp_components QUIET)
 find_package(rclcpp_lifecycle QUIET)
 find_package(sensor_msgs QUIET)
+find_package(geometry_msgs QUIET)
 find_package(diagnostic_msgs QUIET)
 find_package(std_srvs QUIET)
 
-if(rclcpp_FOUND AND sensor_msgs_FOUND AND diagnostic_msgs_FOUND AND std_srvs_FOUND)
+if(rclcpp_FOUND AND sensor_msgs_FOUND AND geometry_msgs_FOUND AND diagnostic_msgs_FOUND AND std_srvs_FOUND)
     find_package(ament_cmake REQUIRED)
     set(ament_cmake_copyright_FOUND TRUE)
     set(ament_cmake_cpplint_FOUND TRUE)
@@ -114,14 +118,18 @@ if(rclcpp_FOUND AND sensor_msgs_FOUND AND diagnostic_msgs_FOUND AND std_srvs_FOU
     set(ament_cmake_pep257_FOUND TRUE)
     set(ament_cmake_xmllint_FOUND TRUE)
     set(ament_cmake_flake8_FOUND TRUE)
-    message(STATUS "ROS 2 environment detected. Building ROS 2 publisher node sample.")
+    message(STATUS "ROS 2 environment detected. Building ROS 2 publisher and control node samples.")
     
-    # --- 1. Standalone Executable (Publisher) ---
+    # --- 1. Standalone Executable (Publisher & Heading Control) ---
     add_executable(bno055_publisher_node src/ros2/ros2_publisher_node.cpp)
     target_link_libraries(bno055_publisher_node libbno055-linux)
     ament_target_dependencies(bno055_publisher_node rclcpp sensor_msgs diagnostic_msgs std_srvs)
 
-    install(TARGETS bno055_publisher_node
+    add_executable(bno055_heading_control_node src/ros2/ros2_heading_control_node.cpp)
+    target_link_libraries(bno055_heading_control_node libbno055-linux)
+    ament_target_dependencies(bno055_heading_control_node rclcpp sensor_msgs geometry_msgs)
+
+    install(TARGETS bno055_publisher_node bno055_heading_control_node
         DESTINATION lib/${PROJECT_NAME}
     )
 
@@ -192,7 +200,7 @@ install(TARGETS libbno055-linux
 )
 
 if(BUILD_EXAMPLES)
-    install(TARGETS calibrate_imu read_data_noexcept read_all_data benchmark_imu c_demo
+    install(TARGETS calibrate_imu read_data_noexcept read_all_data benchmark_imu heading_control_demo c_demo
         RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
     )
 endif()

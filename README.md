@@ -178,7 +178,19 @@ sudo apt update && sudo apt install ros-${ROS_DISTRO}-libbno055-linux
 ros2 launch libbno055_linux bno055_launch.py
 ```
 
+---
 
+### Robot Straight-Line & Heading PID Control Demo
+
+Want to prevent your robot from drifting during straight-line driving or maintain target heading? Try the included ROS 2-style PID heading controller demo:
+
+```bash
+# C++ Standalone Demo (Visual ASCII Motor Output Dashboard)
+./build/heading_control_demo /dev/i2c-1
+
+# ROS 2 Heading Control Node (publishes cmd_vel from /imu/data)
+ros2 run libbno055_linux bno055_heading_control_node --ros-args -p kp:=0.05 -p base_linear_speed:=0.3
+```
 
 ---
 
