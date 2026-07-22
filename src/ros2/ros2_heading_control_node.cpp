@@ -43,8 +43,11 @@ public:
         this->declare_parameter<double>("kp", 0.05);
         this->declare_parameter<double>("ki", 0.001);
         this->declare_parameter<double>("kd", 0.01);
+        this->declare_parameter<double>("kff", 0.0);
         this->declare_parameter<double>("max_i_term", 0.2);
         this->declare_parameter<double>("max_output", 1.0);
+        this->declare_parameter<double>("deadband_deg", 0.02);
+        this->declare_parameter<double>("cutoff_freq_hz", 20.0);
         this->declare_parameter<double>("angular_deadband", 0.01);
         this->declare_parameter<double>("cmd_vel_timeout", 0.5);  // Command loss Watchdog timeout
         this->declare_parameter<double>("imu_timeout", 1.0);      // IMU connection loss timeout
@@ -112,9 +115,12 @@ private:
         cfg.kp = this->get_parameter("kp").as_double();
         cfg.ki = this->get_parameter("ki").as_double();
         cfg.kd = this->get_parameter("kd").as_double();
+        cfg.kff = this->get_parameter("kff").as_double();
         cfg.max_i_term = this->get_parameter("max_i_term").as_double();
         cfg.max_output = this->get_parameter("max_output").as_double();
         cfg.min_output = -cfg.max_output;
+        cfg.deadband_deg = this->get_parameter("deadband_deg").as_double();
+        cfg.cutoff_freq_hz = this->get_parameter("cutoff_freq_hz").as_double();
         controller_.setConfig(cfg);
     }
 
