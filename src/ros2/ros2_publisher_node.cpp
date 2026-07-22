@@ -2,13 +2,10 @@
 #include <sched.h>
 
 #include <chrono>
-#include <memory>
-#include <string>
-#include <vector>
-
 #include <diagnostic_msgs/msg/diagnostic_array.hpp>
 #include <diagnostic_msgs/msg/diagnostic_status.hpp>
 #include <diagnostic_msgs/msg/key_value.hpp>
+#include <memory>
 #include <rclcpp/executors/multi_threaded_executor.hpp>
 #include <rclcpp/rclcpp.hpp>
 #include <rclcpp_components/register_node_macro.hpp>
@@ -16,6 +13,8 @@
 #include <sensor_msgs/msg/magnetic_field.hpp>
 #include <sensor_msgs/msg/temperature.hpp>
 #include <std_srvs/srv/trigger.hpp>
+#include <string>
+#include <vector>
 
 #include "libbno055-linux/bno055.hpp"
 #include "ros2/bno055_ros2_common.hpp"
@@ -44,7 +43,6 @@ class BNO055PublisherNode : public rclcpp::Node {
 public:
     explicit BNO055PublisherNode(const rclcpp::NodeOptions& options = rclcpp::NodeOptions())
         : Node("bno055_publisher_node", options), initialized_(false) {
-
         // 1. Declare Parameters
         this->declare_parameter<std::string>("device", "/dev/i2c-1");
         this->declare_parameter<int>("address", 0x28);
@@ -71,22 +69,19 @@ public:
         imu_pub_ = this->create_publisher<sensor_msgs::msg::Imu>("imu/data", rclcpp::SensorDataQoS());
         mag_pub_ = this->create_publisher<sensor_msgs::msg::MagneticField>("imu/mag", rclcpp::SensorDataQoS());
         temp_pub_ = this->create_publisher<sensor_msgs::msg::Temperature>("imu/temp", rclcpp::SensorDataQoS());
-        diag_pub_ = this->create_publisher<diagnostic_msgs::msg::DiagnosticArray>("diagnostics", rclcpp::SystemDefaultsQoS());
+        diag_pub_ =
+            this->create_publisher<diagnostic_msgs::msg::DiagnosticArray>("diagnostics", rclcpp::SystemDefaultsQoS());
 
         // 5. Sensor Polling Timer (High-Frequency Sensor Callback Group)
         const int rate_hz = this->get_parameter("publish_rate_hz").as_int();
         const auto period = std::chrono::milliseconds(1000 / std::max(1, rate_hz));
 
-        sensor_timer_ = this->create_wall_timer(
-            period,
-            std::bind(&BNO055PublisherNode::publishSensorData, this),
-            sensor_cb_group_);
+        sensor_timer_ =
+            this->create_wall_timer(period, std::bind(&BNO055PublisherNode::publishSensorData, this), sensor_cb_group_);
 
         // 6. Diagnostics Timer (1Hz - Admin Callback Group)
         diag_timer_ = this->create_wall_timer(
-            std::chrono::seconds(1),
-            std::bind(&BNO055PublisherNode::publishDiagnostics, this),
-            admin_cb_group_);
+            std::chrono::seconds(1), std::bind(&BNO055PublisherNode::publishDiagnostics, this), admin_cb_group_);
 
         RCLCPP_INFO(this->get_logger(), "BNO055 Publisher Node online (Isolated CallbackGroups & Real-time Ready).");
     }
@@ -105,7 +100,8 @@ private:
 
         if (quat && gyro && accel) {
             // Outlier check for NaN/Inf
-            if (BNO055_UNLIKELY(std::isnan(quat->w) || std::isnan(quat->x) || std::isnan(quat->y) || std::isnan(quat->z))) {
+            if (BNO055_UNLIKELY(std::isnan(quat->w) || std::isnan(quat->x) || std::isnan(quat->y) ||
+                                std::isnan(quat->z))) {
                 RCLCPP_WARN_THROTTLE(this->get_logger(), *this->get_clock(), 2000,
                                      "Corrupted IMU data from I2C/UART dropped.");
                 return;
