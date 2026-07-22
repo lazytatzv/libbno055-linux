@@ -1,18 +1,17 @@
 #include <algorithm>
 #include <chrono>
 #include <cmath>
-#include <memory>
-#include <string>
-
 #include <geometry_msgs/msg/twist.hpp>
+#include <memory>
 #include <rclcpp/rclcpp.hpp>
 #include <sensor_msgs/msg/imu.hpp>
+#include <string>
 
 #if defined(__GNUC__) || defined(__clang__)
-#define LIKELY(x) __builtin_expect(!!(x), 1)
+#define LIKELY(x)   __builtin_expect(!!(x), 1)
 #define UNLIKELY(x) __builtin_expect(!!(x), 0)
 #else
-#define LIKELY(x) (x)
+#define LIKELY(x)   (x)
 #define UNLIKELY(x) (x)
 #endif
 
@@ -25,12 +24,17 @@ constexpr double RAD_TO_DEG = 180.0 / M_PI;
  */
 class HighPerfPidController {
 public:
-    constexpr HighPerfPidController(double kp = 0.05, double ki = 0.001, double kd = 0.01,
-                                   double min_output = -2.0, double max_output = 2.0,
-                                   double max_i_term = 0.5) noexcept
-        : kp_(kp), ki_(ki), kd_(kd),
-          min_output_(min_output), max_output_(max_output),
-          max_i_term_(max_i_term), i_term_(0.0), prev_error_(0.0), initialized_(false) {}
+    constexpr HighPerfPidController(double kp = 0.05, double ki = 0.001, double kd = 0.01, double min_output = -2.0,
+                                    double max_output = 2.0, double max_i_term = 0.5) noexcept
+        : kp_(kp),
+          ki_(ki),
+          kd_(kd),
+          min_output_(min_output),
+          max_output_(max_output),
+          max_i_term_(max_i_term),
+          i_term_(0.0),
+          prev_error_(0.0),
+          initialized_(false) {}
 
     inline void setGains(double kp, double ki, double kd) noexcept {
         kp_ = kp;
@@ -44,7 +48,8 @@ public:
         initialized_ = false;
     }
 
-    [[nodiscard]] inline double compute(double error, double dt, double gyro_z = 0.0, bool use_gyro_for_d = true) noexcept {
+    [[nodiscard]] inline double compute(double error, double dt, double gyro_z = 0.0,
+                                        bool use_gyro_for_d = true) noexcept {
         if (UNLIKELY(dt <= 0.0)) return 0.0;
 
         const double p_term = kp_ * error;
@@ -80,10 +85,7 @@ private:
 class BNO055HeadingControlNode : public rclcpp::Node {
 public:
     explicit BNO055HeadingControlNode(const rclcpp::NodeOptions& options = rclcpp::NodeOptions())
-        : Node("bno055_heading_control_node", options),
-          last_time_(this->now()),
-          target_heading_locked_(false) {
-
+        : Node("bno055_heading_control_node", options), last_time_(this->now()), target_heading_locked_(false) {
         // Declare parameters with low overhead defaults
         this->declare_parameter<double>("kp", 0.05);
         this->declare_parameter<double>("ki", 0.001);
@@ -125,13 +127,12 @@ private:
         if (UNLIKELY(dt <= 0.0 || dt > 1.0)) dt = 0.01;  // Fallback 100Hz
 
         // Extract orientation & angular rate efficiently
-        const double current_heading_deg = fastExtractYawDeg(msg->orientation.x, msg->orientation.y,
-                                                             msg->orientation.z, msg->orientation.w);
+        const double current_heading_deg =
+            fastExtractYawDeg(msg->orientation.x, msg->orientation.y, msg->orientation.z, msg->orientation.w);
         const double gyro_z_deg = msg->angular_velocity.z * RAD_TO_DEG;
 
         // Dynamic parameter updates
-        pid_.setGains(this->get_parameter("kp").as_double(),
-                      this->get_parameter("ki").as_double(),
+        pid_.setGains(this->get_parameter("kp").as_double(), this->get_parameter("ki").as_double(),
                       this->get_parameter("kd").as_double());
 
         if (UNLIKELY(this->get_parameter("auto_lock_initial_heading").as_bool() && !target_heading_locked_)) {
