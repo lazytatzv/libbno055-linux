@@ -5,10 +5,10 @@
 #include <cmath>
 
 #if defined(__GNUC__) || defined(__clang__)
-#define BNO055_LIKELY(x) __builtin_expect(!!(x), 1)
+#define BNO055_LIKELY(x)   __builtin_expect(!!(x), 1)
 #define BNO055_UNLIKELY(x) __builtin_expect(!!(x), 0)
 #else
-#define BNO055_LIKELY(x) (x)
+#define BNO055_LIKELY(x)   (x)
 #define BNO055_UNLIKELY(x) (x)
 #endif
 
@@ -53,7 +53,7 @@ public:
         double correction{0.0};   ///< PID correction output u (rad/s or differential velocity)
         double left_motor{0.0};   ///< Left wheel speed normalized [0.0, 1.0]
         double right_motor{0.0};  ///< Right wheel speed normalized [0.0, 1.0]
-        double error_deg{0.0};     ///< Shortest heading error in degrees
+        double error_deg{0.0};    ///< Shortest heading error in degrees
     };
 
     HeadingController() noexcept : config_(), i_term_(0.0), prev_error_(0.0), initialized_(false) {}
@@ -66,13 +66,9 @@ public:
         config_.kd = kd;
     }
 
-    inline void setConfig(const Config& config) noexcept {
-        config_ = config;
-    }
+    inline void setConfig(const Config& config) noexcept { config_ = config; }
 
-    [[nodiscard]] inline const Config& getConfig() const noexcept {
-        return config_;
-    }
+    [[nodiscard]] inline const Config& getConfig() const noexcept { return config_; }
 
     inline void reset() noexcept {
         i_term_ = 0.0;
@@ -88,11 +84,8 @@ public:
      * @param gyro_z_deg Yaw angular velocity in deg/s (for noise-free derivative)
      * @param base_velocity Base forward velocity [0.0, 1.0]
      */
-    [[nodiscard]] inline Output update(double target_heading_deg,
-                                       double current_heading_deg,
-                                       double dt,
-                                       double gyro_z_deg = 0.0,
-                                       double base_velocity = 0.5) noexcept {
+    [[nodiscard]] inline Output update(double target_heading_deg, double current_heading_deg, double dt,
+                                       double gyro_z_deg = 0.0, double base_velocity = 0.5) noexcept {
         Output out{};
         if (BNO055_UNLIKELY(dt <= 0.0)) {
             out.left_motor = std::clamp(base_velocity, 0.0, 1.0);
@@ -107,8 +100,7 @@ public:
         const double p_term = config_.kp * out.error_deg;
 
         // 3. Integral with Anti-windup clamping
-        i_term_ = std::clamp(i_term_ + config_.ki * out.error_deg * dt,
-                             -config_.max_i_term, config_.max_i_term);
+        i_term_ = std::clamp(i_term_ + config_.ki * out.error_deg * dt, -config_.max_i_term, config_.max_i_term);
 
         // 4. Derivative (Prefer direct gyro rate to eliminate noise & derivative kick)
         double d_term = 0.0;
@@ -123,8 +115,7 @@ public:
         initialized_ = true;
 
         // 5. Total Correction Output u
-        out.correction = std::clamp(p_term + i_term_ + d_term,
-                                    config_.min_output, config_.max_output);
+        out.correction = std::clamp(p_term + i_term_ + d_term, config_.min_output, config_.max_output);
 
         // 6. Differential motor speeds
         out.left_motor = std::clamp(base_velocity - out.correction, 0.0, 1.0);
