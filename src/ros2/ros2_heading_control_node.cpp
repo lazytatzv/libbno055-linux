@@ -87,9 +87,8 @@ public:
                                                   std::bind(&BNO055HeadingControlNode::checkWatchdogTimeout, this));
 =======
         // 5. Watchdog & IMU Health Check Timer (Checking at 20Hz / 50ms)
-        watchdog_timer_ = this->create_wall_timer(
-            std::chrono::milliseconds(50),
-            std::bind(&BNO055HeadingControlNode::checkSystemHealth, this));
+        watchdog_timer_ = this->create_wall_timer(std::chrono::milliseconds(50),
+                                                  std::bind(&BNO055HeadingControlNode::checkSystemHealth, this));
 >>>>>>> 9b5f61a (feat: add IMU Fail-Safe Passthrough Mode to ensure robot keeps moving smoothly even if IMU is offline)
 
         // 6. Diagnostics Timer (1Hz)
@@ -102,7 +101,8 @@ public:
         RCLCPP_INFO(this->get_logger(),
                     "[Production Composable Node] BNO055 Heading Corrector Node online with Safety Watchdog.");
 =======
-        RCLCPP_INFO(this->get_logger(), "[Production Composable Node] BNO055 Heading Corrector online (With IMU Fail-Safe Passthrough).");
+        RCLCPP_INFO(this->get_logger(),
+                    "[Production Composable Node] BNO055 Heading Corrector online (With IMU Fail-Safe Passthrough).");
 >>>>>>> 9b5f61a (feat: add IMU Fail-Safe Passthrough Mode to ensure robot keeps moving smoothly even if IMU is offline)
     }
 
@@ -130,12 +130,11 @@ private:
                 RCLCPP_INFO(this->get_logger(), "Dynamic parameter updated: %s = %f", param.get_name().c_str(),
                             param.as_double());
 =======
-            if (param.get_name() == "kp" || param.get_name() == "ki" ||
-                param.get_name() == "kd" || param.get_name() == "max_i_term" ||
-                param.get_name() == "max_output" || param.get_name() == "cmd_vel_timeout" ||
-                param.get_name() == "imu_timeout") {
-                RCLCPP_INFO(this->get_logger(), "Dynamic parameter updated: %s = %f",
-                            param.get_name().c_str(), param.as_double());
+            if (param.get_name() == "kp" || param.get_name() == "ki" || param.get_name() == "kd" ||
+                param.get_name() == "max_i_term" || param.get_name() == "max_output" ||
+                param.get_name() == "cmd_vel_timeout" || param.get_name() == "imu_timeout") {
+                RCLCPP_INFO(this->get_logger(), "Dynamic parameter updated: %s = %f", param.get_name().c_str(),
+                            param.as_double());
 >>>>>>> 9b5f61a (feat: add IMU Fail-Safe Passthrough Mode to ensure robot keeps moving smoothly even if IMU is offline)
             }
         }
@@ -143,10 +142,8 @@ private:
         return result;
     }
 
-    void handleResetHeadingService(
-        const std::shared_ptr<std_srvs::srv::Trigger::Request> /*req*/,
-        std::shared_ptr<std_srvs::srv::Trigger::Response> res) {
-
+    void handleResetHeadingService(const std::shared_ptr<std_srvs::srv::Trigger::Request> /*req*/,
+                                   std::shared_ptr<std_srvs::srv::Trigger::Response> res) {
         if (has_imu_data_ && !is_imu_timeout_) {
             target_quat_ = current_quat_;
             target_heading_deg_ = current_heading_deg_;
@@ -232,7 +229,8 @@ private:
             if ((now - last_imu_time_).seconds() > imu_timeout) {
                 if (!is_imu_timeout_) {
                     RCLCPP_WARN(this->get_logger(),
-                                "IMU Timeout! No IMU data for %.2f s. Switching to Fail-Safe Passthrough Mode (Robot keeps moving normally).",
+                                "IMU Timeout! No IMU data for %.2f s. Switching to Fail-Safe Passthrough Mode (Robot "
+                                "keeps moving normally).",
                                 (now - last_imu_time_).seconds());
                     is_imu_timeout_ = true;
                     target_heading_locked_ = false;
