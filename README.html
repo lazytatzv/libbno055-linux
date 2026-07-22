@@ -244,77 +244,72 @@
 <a class="reference external" href="https://en.cppreference.com/w/cpp/17"><img alt="C++ Standard" src="https://img.shields.io/badge/C%2B%2B-17-blue.svg" /></a>
 <a class="reference external" href="https://docs.ros.org/"><img alt="ROS 2" src="https://img.shields.io/badge/ROS%202-Humble%20%7F%20Jazzy-orange.svg" /></a>
 <a class="reference internal" href="#CHANGELOG.md"><span class="xref myst"><img alt="Version" src="https://img.shields.io/badge/version-1.7.1-green.svg" /></span></a></p>
-<p><strong>A high-performance C++17 library, ROS 2 integration, and multi-language binding (Python, C, Rust) for the Bosch BNO055 9-axis IMU on Linux.</strong></p>
-<p>Features an integrated <strong>Straight-Line &amp; Heading PID Controller</strong> for mobile robots, zero-copy transport, safety watchdog protection, and IMU fail-safe passthrough out of the box.</p>
+<p>A high-performance C++17 library, ROS 2 integration, and multi-language bindings (Python, C, Rust) for the Bosch BNO055 9-axis IMU on Linux.</p>
+<p>Features an integrated <strong>Straight-Line &amp; Heading PID Controller</strong> for mobile robots, zero-copy transport, safety watchdog protection, and IMU fail-safe passthrough.</p>
 <hr class="docutils" />
 <section id="quick-start">
-<h2>⚡ Quick Start<a class="headerlink" href="#quick-start" title="Link to this heading">¶</a></h2>
-<section id="ros-2-users-one-command-launch">
-<h3>1. ROS 2 Users (One-Command Launch)<a class="headerlink" href="#ros-2-users-one-command-launch" title="Link to this heading">¶</a></h3>
-<p>Launch the <strong>IMU Driver</strong> and <strong>Heading PID Controller</strong> in a single command (Zero-Copy Composable Container):</p>
+<h2>Quick Start<a class="headerlink" href="#quick-start" title="Link to this heading">¶</a></h2>
+<section id="ros-2-one-command-launch">
+<h3>ROS 2 (One-Command Launch)<a class="headerlink" href="#ros-2-one-command-launch" title="Link to this heading">¶</a></h3>
+<p>Launch the IMU Driver and Heading PID Controller in a single command (Zero-Copy Composable Container):</p>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>ros2<span class="w"> </span>launch<span class="w"> </span>libbno055_linux<span class="w"> </span>heading_control_launch.py
 </pre></div>
 </div>
-<blockquote>
-<div><p><strong>Need Nav2 Lifecycle Management?</strong> Pass <code class="docutils literal notranslate"><span class="pre">node_type:=lifecycle</span></code>:</p>
+<p>For Nav2 Lifecycle Management, pass <code class="docutils literal notranslate"><span class="pre">node_type:=lifecycle</span></code>:</p>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>ros2<span class="w"> </span>launch<span class="w"> </span>libbno055_linux<span class="w"> </span>heading_control_launch.py<span class="w"> </span>node_type:<span class="o">=</span>lifecycle
 </pre></div>
 </div>
-</div></blockquote>
 </section>
-<section id="standalone-c-users-non-ros">
-<h3>2. Standalone C++ Users (Non-ROS)<a class="headerlink" href="#standalone-c-users-non-ros" title="Link to this heading">¶</a></h3>
-<p>Build and run the interactive 100Hz Heading PID Control Demo:</p>
+<section id="standalone-c-non-ros">
+<h3>Standalone C++ (Non-ROS)<a class="headerlink" href="#standalone-c-non-ros" title="Link to this heading">¶</a></h3>
+<p>Build and run the 100Hz Heading PID Control Demo:</p>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>mkdir<span class="w"> </span>-p<span class="w"> </span>build<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="nb">cd</span><span class="w"> </span>build
 cmake<span class="w"> </span>..<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>make<span class="w"> </span>-j<span class="k">$(</span>nproc<span class="k">)</span>
-
-<span class="c1"># Run the 100Hz PID Heading Control Demo</span>
 ./heading_control_demo<span class="w"> </span>/dev/i2c-1
 </pre></div>
 </div>
 </section>
-<section id="python-users">
-<h3>3. Python Users<a class="headerlink" href="#python-users" title="Link to this heading">¶</a></h3>
+<section id="python">
+<h3>Python<a class="headerlink" href="#python" title="Link to this heading">¶</a></h3>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pip<span class="w"> </span>install<span class="w"> </span>libbno055-linux
-python3<span class="w"> </span>-c<span class="w"> </span><span class="s2">&quot;import libbno055; print(&#39;Installed successfully!&#39;)&quot;</span>
 </pre></div>
 </div>
 </section>
 </section>
 <hr class="docutils" />
 <section id="features">
-<h2>✨ Features<a class="headerlink" href="#features" title="Link to this heading">¶</a></h2>
+<h2>Features<a class="headerlink" href="#features" title="Link to this heading">¶</a></h2>
 <ul class="simple">
-<li><p><strong>🚀 Low Latency &amp; High Rate</strong>: Supports up to 200Hz sensor updates, 1kHz/2kHz hardware ODR, and FTDI UART low-latency mode (<code class="docutils literal notranslate"><span class="pre">ASYNC_LOW_LATENCY</span></code>).</p></li>
-<li><p><strong>🎯 Integrated Heading PID Controller</strong>: Zero-allocation C++17 controller featuring:</p>
+<li><p><strong>Low Latency &amp; High Rate</strong>: Supports up to 200Hz sensor updates, 1kHz/2kHz hardware ODR, and FTDI UART low-latency mode (<code class="docutils literal notranslate"><span class="pre">ASYNC_LOW_LATENCY</span></code>).</p></li>
+<li><p><strong>Heading PID Controller</strong>: Zero-allocation C++17 controller featuring:</p>
 <ul>
-<li><p><strong>Shortest-Path Angle Normalization</strong>: Automatic $\pm 180^\circ$ boundary wrapping.</p></li>
+<li><p><strong>Shortest-Path Angle Normalization</strong>: Automatic $\pm 180^\circ$ boundary wrapping using <code class="docutils literal notranslate"><span class="pre">std::remainder</span></code>.</p></li>
 <li><p><strong>Filtered Gyro D-Term</strong>: 1st-order Low-Pass Filtered gyro rate to eliminate motor vibration noise.</p></li>
-<li><p><strong>Trapezoidal Integration</strong>: Jitter-free integration with anti-windup clamping.</p></li>
+<li><p><strong>Trapezoidal Integration</strong>: Jitter-free integration with anti-windup saturation clamping.</p></li>
 <li><p><strong>Slew-Rate Limiter</strong>: Constrains angular acceleration to prevent wheel slip and motor gear shock.</p></li>
 </ul>
 </li>
-<li><p><strong>🛡️ Safety &amp; Fail-Safe Protection</strong>:</p>
+<li><p><strong>Safety &amp; Fail-Safe Protection</strong>:</p>
 <ul>
-<li><p><strong>Command-Loss Watchdog</strong>: Automatically stops the robot (<code class="docutils literal notranslate"><span class="pre">zero</span> <span class="pre">velocity</span></code>) if input commands time out.</p></li>
-<li><p><strong>IMU Fail-Safe Passthrough</strong>: Seamlessly passes velocity commands through if IMU is offline or disconnected.</p></li>
+<li><p><strong>Command-Loss Watchdog</strong>: Automatically publishes zero velocity if input commands time out.</p></li>
+<li><p><strong>IMU Fail-Safe Passthrough</strong>: Passes velocity commands through seamlessly if IMU is offline or disconnected.</p></li>
 <li><p><strong>Outlier Rejection</strong>: Rejects corrupted or <code class="docutils literal notranslate"><span class="pre">NaN</span></code>/<code class="docutils literal notranslate"><span class="pre">Inf</span></code> quaternion data automatically.</p></li>
 </ul>
 </li>
-<li><p><strong>📡 Advanced ROS 2 Architecture</strong>:</p>
+<li><p><strong>ROS 2 Integration</strong>:</p>
 <ul>
 <li><p><strong>Zero-Copy Composable Components</strong> (<code class="docutils literal notranslate"><span class="pre">rclcpp_components</span></code>).</p></li>
 <li><p><strong>Managed Lifecycle Nodes</strong> (<code class="docutils literal notranslate"><span class="pre">rclcpp_lifecycle</span></code>) for Nav2 integration.</p></li>
-<li><p><strong>Isolated CallbackGroups</strong> (<code class="docutils literal notranslate"><span class="pre">MutuallyExclusive</span></code>) &amp; <code class="docutils literal notranslate"><span class="pre">MultiThreadedExecutor</span></code>.</p></li>
+<li><p><strong>Isolated CallbackGroups</strong> (<code class="docutils literal notranslate"><span class="pre">MutuallyExclusive</span></code>) and <code class="docutils literal notranslate"><span class="pre">MultiThreadedExecutor</span></code>.</p></li>
 <li><p><strong>Linux <code class="docutils literal notranslate"><span class="pre">SCHED_FIFO</span></code> Realtime Priority</strong> support.</p></li>
 </ul>
 </li>
-<li><p><strong>🌐 Polyglot Bindings</strong>: Native support for <strong>C++17</strong>, <strong>C99 FFI</strong>, <strong>Python 3</strong>, and <strong>Rust</strong>.</p></li>
+<li><p><strong>Polyglot Bindings</strong>: Native support for <strong>C++17</strong>, <strong>C99 FFI</strong>, <strong>Python 3</strong>, and <strong>Rust</strong>.</p></li>
 </ul>
 </section>
 <hr class="docutils" />
 <section id="installation-building">
-<h2>🛠️ Installation &amp; Building<a class="headerlink" href="#installation-building" title="Link to this heading">¶</a></h2>
+<h2>Installation &amp; Building<a class="headerlink" href="#installation-building" title="Link to this heading">¶</a></h2>
 <section id="prerequisites">
 <h3>Prerequisites<a class="headerlink" href="#prerequisites" title="Link to this heading">¶</a></h3>
 <ul class="simple">
@@ -347,9 +342,9 @@ colcon<span class="w"> </span>build<span class="w"> </span>--packages-select<spa
 </section>
 </section>
 <hr class="docutils" />
-<section id="configuration-parameter-tuning">
-<h2>⚙️ Configuration &amp; Parameter Tuning<a class="headerlink" href="#configuration-parameter-tuning" title="Link to this heading">¶</a></h2>
-<p>Edit <a class="reference internal" href="#config/heading_control_params.yaml"><span class="xref myst"><code class="docutils literal notranslate"><span class="pre">config/heading_control_params.yaml</span></code></span></a> to tune PID gains or timeouts:</p>
+<section id="configuration">
+<h2>Configuration<a class="headerlink" href="#configuration" title="Link to this heading">¶</a></h2>
+<p>Edit <a class="reference internal" href="#config/heading_control_params.yaml"><span class="xref myst"><code class="docutils literal notranslate"><span class="pre">config/heading_control_params.yaml</span></code></span></a> to tune PID gains or safety timeouts:</p>
 <div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">bno055_heading_control_node</span><span class="p">:</span>
 <span class="w">  </span><span class="nt">ros__parameters</span><span class="p">:</span>
 <span class="w">    </span><span class="nt">imu_topic</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;imu/data&quot;</span><span class="w">             </span><span class="c1"># Input IMU topic</span>
@@ -371,20 +366,20 @@ colcon<span class="w"> </span>build<span class="w"> </span>--packages-select<spa
 </div>
 </section>
 <hr class="docutils" />
-<section id="documentation-guides">
-<h2>📚 Documentation &amp; Guides<a class="headerlink" href="#documentation-guides" title="Link to this heading">¶</a></h2>
+<section id="documentation-index">
+<h2>Documentation Index<a class="headerlink" href="#documentation-index" title="Link to this heading">¶</a></h2>
 <ul class="simple">
-<li><p>📘 <a class="reference internal" href="#docs/HEADING_CONTROL.md"><span class="xref myst">Heading Control Architecture &amp; Tuning Guide</span></a></p></li>
-<li><p>📙 <a class="reference internal" href="#docs/API_REFERENCE.md"><span class="xref myst">C++ / C / Python / Rust API Reference</span></a></p></li>
-<li><p>📗 <a class="reference internal" href="#src/ros2/README.md"><span class="xref myst">ROS 2 Nodes &amp; Component Architecture</span></a></p></li>
-<li><p>📕 <a class="reference internal" href="#examples/README.md"><span class="xref myst">Code Examples Overview</span></a></p></li>
-<li><p>📓 <a class="reference internal" href="#docs/CALIBRATION.md"><span class="xref myst">Hardware Calibration Guide</span></a></p></li>
-<li><p>📒 <a class="reference internal" href="#docs/TROUBLESHOOTING.md"><span class="xref myst">Troubleshooting &amp; FAQ</span></a></p></li>
+<li><p><a class="reference internal" href="#docs/HEADING_CONTROL.md"><span class="xref myst">Heading Control Architecture &amp; Tuning Guide</span></a></p></li>
+<li><p><a class="reference internal" href="#docs/API_REFERENCE.md"><span class="xref myst">C++ / C / Python / Rust API Reference</span></a></p></li>
+<li><p><a class="reference internal" href="#src/ros2/README.md"><span class="xref myst">ROS 2 Nodes &amp; Component Architecture</span></a></p></li>
+<li><p><a class="reference internal" href="#examples/README.md"><span class="xref myst">Code Examples Overview</span></a></p></li>
+<li><p><a class="reference internal" href="#docs/CALIBRATION.md"><span class="xref myst">Hardware Calibration Guide</span></a></p></li>
+<li><p><a class="reference internal" href="#docs/TROUBLESHOOTING.md"><span class="xref myst">Troubleshooting &amp; FAQ</span></a></p></li>
 </ul>
 </section>
 <hr class="docutils" />
 <section id="license">
-<h2>📄 License<a class="headerlink" href="#license" title="Link to this heading">¶</a></h2>
+<h2>License<a class="headerlink" href="#license" title="Link to this heading">¶</a></h2>
 <p>This project is licensed under the <a class="reference internal" href="#LICENSE"><span class="xref myst">MIT License</span></a>.</p>
 </section>
 </section>
@@ -445,22 +440,22 @@ colcon<span class="w"> </span>build<span class="w"> </span>--packages-select<spa
           <div class="toc-tree">
             <ul>
 <li><a class="reference internal" href="#">libbno055-linux</a><ul>
-<li><a class="reference internal" href="#quick-start">⚡ Quick Start</a><ul>
-<li><a class="reference internal" href="#ros-2-users-one-command-launch">1. ROS 2 Users (One-Command Launch)</a></li>
-<li><a class="reference internal" href="#standalone-c-users-non-ros">2. Standalone C++ Users (Non-ROS)</a></li>
-<li><a class="reference internal" href="#python-users">3. Python Users</a></li>
+<li><a class="reference internal" href="#quick-start">Quick Start</a><ul>
+<li><a class="reference internal" href="#ros-2-one-command-launch">ROS 2 (One-Command Launch)</a></li>
+<li><a class="reference internal" href="#standalone-c-non-ros">Standalone C++ (Non-ROS)</a></li>
+<li><a class="reference internal" href="#python">Python</a></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#features">✨ Features</a></li>
-<li><a class="reference internal" href="#installation-building">🛠️ Installation &amp; Building</a><ul>
+<li><a class="reference internal" href="#features">Features</a></li>
+<li><a class="reference internal" href="#installation-building">Installation &amp; Building</a><ul>
 <li><a class="reference internal" href="#prerequisites">Prerequisites</a></li>
 <li><a class="reference internal" href="#building-from-source">Building from Source</a></li>
 <li><a class="reference internal" href="#ros-2-workspace-build-colcon">ROS 2 Workspace Build (<code class="docutils literal notranslate"><span class="pre">colcon</span></code>)</a></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#configuration-parameter-tuning">⚙️ Configuration &amp; Parameter Tuning</a></li>
-<li><a class="reference internal" href="#documentation-guides">📚 Documentation &amp; Guides</a></li>
-<li><a class="reference internal" href="#license">📄 License</a></li>
+<li><a class="reference internal" href="#configuration">Configuration</a></li>
+<li><a class="reference internal" href="#documentation-index">Documentation Index</a></li>
+<li><a class="reference internal" href="#license">License</a></li>
 </ul>
 </li>
 </ul>
