@@ -115,17 +115,43 @@ sudo apt install ros-$ROS_DISTRO-libbno055-linux
 
 > The `apt` binary is updated periodically by ROS Buildfarm. For the latest release (v1.7.1), build from source.
 
-### Option B: colcon (ROS 2 source build)
+### Option B: vcstool (recommended for team/production workspaces)
+
+Add this package to your robot's `.repos` file:
+
+```yaml
+# robot.repos
+repositories:
+  libbno055-linux:
+    type: git
+    url: https://github.com/lazytatzv/libbno055-linux.git
+    version: v1.7.1
+```
+
+Then import and build:
+
+```bash
+cd ~/ros2_ws
+vcs import src < robot.repos
+rosdep install --from-paths src --ignore-src -r -y
+colcon build
+source install/setup.bash
+```
+
+To update to a new version, change `version:` in the `.repos` file and run `vcs import src < robot.repos` again.
+
+### Option C: colcon (ROS 2 source build)
 
 ```bash
 cd ~/ros2_ws/src
 git clone https://github.com/lazytatzv/libbno055-linux.git
 cd ~/ros2_ws
+rosdep install --from-paths src --ignore-src -r -y
 colcon build --packages-select libbno055_linux
 source install/setup.bash
 ```
 
-### Option C: CMake (standalone C++ library)
+### Option D: CMake (standalone C++ library)
 
 ```bash
 git clone https://github.com/lazytatzv/libbno055-linux.git
