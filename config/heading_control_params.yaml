@@ -1,5 +1,5 @@
 # ==============================================================================
-# BNO055 Production Heading Controller ROS 2 Parameters Configuration
+# BNO055 Theoretical Optimal Heading Controller ROS 2 Parameters Configuration
 # ==============================================================================
 
 bno055_heading_control_node:
@@ -12,13 +12,16 @@ bno055_heading_control_node:
     cmd_vel_out_topic: "cmd_vel"       # Corrected output velocity command for motors
 
     # --------------------------------------------------------------------------
-    # 2. Production PID Controller Gains & Anti-Windup Limits
+    # 2. Theoretical Optimal Control Gains (FF + PID + Filter Architecture)
     # --------------------------------------------------------------------------
     kp: 0.05                           # Proportional Gain (Initial correction force)
-    ki: 0.001                          # Integral Gain (Long-term friction bias compensation)
+    ki: 0.001                          # Integral Gain (Long-term friction bias compensation - Trapezoidal Rule)
     kd: 0.01                           # Derivative Gain (Direct Gyro-based anti-slip braking)
+    kff: 0.0                           # Feedforward Gain (Direct command velocity coupling)
     max_i_term: 0.2                    # Anti-windup integral saturation limit (+-0.2)
     max_output: 1.0                    # Maximum angular velocity correction limit (rad/s)
+    deadband_deg: 0.02                 # Micro-deadband (degrees) to eliminate hunting at zero error
+    cutoff_freq_hz: 20.0               # 1st-Order Low-Pass Filter cutoff frequency for gyro noise (Hz)
     angular_deadband: 0.01             # Turning threshold (rad/s) to disengage heading lock
 
     # --------------------------------------------------------------------------
