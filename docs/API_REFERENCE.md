@@ -504,49 +504,71 @@ fn main() -> Result<(), &'static str> {
 
 ## Class HeadingController
 
-Production-grade, zero-allocation PID Controller for robot straight-line driving & heading lock.
+Theoretical Optimal Control Grade PID & Feedforward Controller for robot straight-line driving & heading lock.
 
 Header: `#include "libbno055-linux/controllers/heading_controller.hpp"`
 
 ```cpp
 namespace bno055lib {
 
+struct Quat {
+    double w{1.0};
+    double x{0.0};
+    double y{0.0};
+    double z{0.0};
+};
+
 class HeadingController {
 public:
     struct Config {
-        double kp{0.05};
-        double ki{0.001};
-        double kd{0.01};
-        double min_output{-1.0};
-        double max_output{1.0};
-        double max_i_term{0.2};
+        double kp{0.05};             ///< Proportional Gain
+        double ki{0.001};            ///< Integral Gain (Trapezoidal Rule)
+        double kd{0.01};             ///< Derivative Gain (Filtered Gyro-based)
+        double kff{0.0};             ///< Feedforward Gain
+        double max_output{1.0};      ///< Max angular output limit
+        double min_output{-1.0};     ///< Min angular output limit
+        double max_i_term{0.2};      ///< Anti-windup saturation limit
+        double deadband_deg{0.02};   ///< Micro-deadband (deg)
+        double cutoff_freq_hz{20.0}; ///< Low-pass filter cutoff frequency (Hz)
     };
 
     struct Output {
-        double correction;   // PID output u
-        double left_motor;   // Left wheel speed [0.0, 1.0]
-        double right_motor;  // Right wheel speed [0.0, 1.0]
-        double error_deg;    // Shortest heading error (-180 to +180 deg)
+        double correction{0.0};   ///< Total control output u = u_FF + u_PID
+        double left_motor{0.0};   ///< Left wheel speed [0.0, 1.0]
+        double right_motor{0.0};  ///< Right wheel speed [0.0, 1.0]
+        double error_deg{0.0};     ///< Shortest heading error in degrees
+        double gyro_filtered{0.0}; ///< Low-pass filtered gyro rate
     };
 
     HeadingController() noexcept;
     explicit HeadingController(const Config& config) noexcept;
 
-    void setGains(double kp, double ki, double kd) noexcept;
+    void setGains(double kp, double ki, double kd, double kff = 0.0) noexcept;
     void setConfig(const Config& config) noexcept;
     const Config& getConfig() const noexcept;
     void reset() noexcept;
 
+    // Euler Degrees Update
     Output update(double target_heading_deg,
                   double current_heading_deg,
                   double dt,
                   double gyro_z_deg = 0.0,
-                  double base_velocity = 0.5) noexcept;
+                  double base_velocity = 0.5,
+                  double target_yaw_rate_deg = 0.0) noexcept;
+
+    // Direct Quaternion Update Overload
+    Output update(const Quat& q_target,
+                  const Quat& q_current,
+                  double dt,
+                  double gyro_z_deg = 0.0,
+                  double base_velocity = 0.5,
+                  double target_yaw_rate_deg = 0.0) noexcept;
 };
 
 // Utilities
 double normalizeAngleDeg(double angle_deg) noexcept;
 double fastExtractYawDeg(double qw, double qx, double qy, double qz) noexcept;
+double fastExtractYawDeg(const Quat& q) noexcept;
 
 }  // namespace bno055lib
 ```
