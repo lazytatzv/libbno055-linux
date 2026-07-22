@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # bloom_release_all.sh
-# Runs bloom-release for Humble, Jazzy, and Kilted in sequence.
+# Runs bloom-release for Humble, Jazzy, Kilted, and Lyrical in sequence.
 # Iron is EOL (November 2024) and intentionally skipped.
 #
 # Prerequisites:
@@ -15,7 +15,7 @@
 set -e
 
 PACKAGE="libbno055_linux"
-DISTROS=("humble" "jazzy" "kilted")
+DISTROS=("humble" "jazzy" "kilted" "lyrical")
 
 echo "=================================================="
 echo " bloom-release: ${PACKAGE}"
