@@ -5,6 +5,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.7.1] - 2026-07-22
+
+### Added & Performance
+- **ROS 2 CallbackGroup Isolation**: Fully isolated high-frequency control/sensor callbacks from 1Hz diagnostics and services using dedicated `MutuallyExclusive` CallbackGroups across all driver and controller nodes.
+- **MultiThreadedExecutor**: Upgraded all standalone Node `main()` entrypoints to `rclcpp::executors::MultiThreadedExecutor` for non-blocking parallel execution.
+- **Slew-Rate Limiter**: Added `max_slew_rate` parameter to `HeadingController` to constrain angular acceleration, protecting motor gears and preventing wheel slip shock.
+- **Outlier Validation**: Added `isValidQuat` helper to reject corrupted or NaN/Inf IMU orientation data before PID calculation.
+- **Real-time Priority Elevation**: Added `trySetRealtimePriority` helper to gracefully elevate Linux thread scheduling to `SCHED_FIFO` (Priority 80-85).
+
 ## [1.7.0] - 2026-07-22
 
 ### Added
