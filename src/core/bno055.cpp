@@ -30,7 +30,8 @@ namespace bno055lib {
 namespace {
 
 inline int16_t read16_le(const uint8_t* buf) noexcept {
-    return static_cast<int16_t>(buf[0] | (buf[1] << 8));
+    // Cast to uint16_t before shifting to prevent signed integer overflow (C++ integer promotion).
+    return static_cast<int16_t>(static_cast<uint16_t>(buf[0]) | (static_cast<uint16_t>(buf[1]) << 8));
 }
 
 inline bno055lib::Vector3 parseVector3(const uint8_t* buffer, float scale) noexcept {
@@ -1044,20 +1045,21 @@ bool BNO055::getSensorOffsets(Offsets& offsets) {
     std::array<uint8_t, 22> data;
     if (!getSensorOffsets(data)) return false;
 
-    offsets.accel_offset_x = static_cast<int16_t>(data[0] | (data[1] << 8));
-    offsets.accel_offset_y = static_cast<int16_t>(data[2] | (data[3] << 8));
-    offsets.accel_offset_z = static_cast<int16_t>(data[4] | (data[5] << 8));
+    // Use read16_le to correctly handle unsigned-to-signed conversion without integer promotion UB.
+    offsets.accel_offset_x = read16_le(data.data());
+    offsets.accel_offset_y = read16_le(data.data() + 2);
+    offsets.accel_offset_z = read16_le(data.data() + 4);
 
-    offsets.mag_offset_x = static_cast<int16_t>(data[6] | (data[7] << 8));
-    offsets.mag_offset_y = static_cast<int16_t>(data[8] | (data[9] << 8));
-    offsets.mag_offset_z = static_cast<int16_t>(data[10] | (data[11] << 8));
+    offsets.mag_offset_x = read16_le(data.data() + 6);
+    offsets.mag_offset_y = read16_le(data.data() + 8);
+    offsets.mag_offset_z = read16_le(data.data() + 10);
 
-    offsets.gyro_offset_x = static_cast<int16_t>(data[12] | (data[13] << 8));
-    offsets.gyro_offset_y = static_cast<int16_t>(data[14] | (data[15] << 8));
-    offsets.gyro_offset_z = static_cast<int16_t>(data[16] | (data[17] << 8));
+    offsets.gyro_offset_x = read16_le(data.data() + 12);
+    offsets.gyro_offset_y = read16_le(data.data() + 14);
+    offsets.gyro_offset_z = read16_le(data.data() + 16);
 
-    offsets.accel_radius = static_cast<int16_t>(data[18] | (data[19] << 8));
-    offsets.mag_radius = static_cast<int16_t>(data[20] | (data[21] << 8));
+    offsets.accel_radius = read16_le(data.data() + 18);
+    offsets.mag_radius = read16_le(data.data() + 20);
     return true;
 }
 
@@ -1155,20 +1157,19 @@ bool BNO055::loadCalibrationFile(std::string_view filepath) {
 }
 
 void BNO055::enterSuspendMode() {
-    OpMode prev = impl_->mode_;
+    // Enter Config mode before changing power mode as required by the BNO055 datasheet.
+    // Do NOT restore the previous operating mode: the device is intentionally suspended.
     setMode(OpMode::Config);
     std::this_thread::sleep_for(std::chrono::milliseconds(25));
     impl_->write8(PWR_MODE, POWER_MODE_SUSPEND);
-    setMode(prev);
-    std::this_thread::sleep_for(std::chrono::milliseconds(20));
+    std::this_thread::sleep_for(std::chrono::milliseconds(10));
 }
 
 void BNO055::enterNormalMode() {
-    OpMode prev = impl_->mode_;
-    setMode(OpMode::Config);
-    std::this_thread::sleep_for(std::chrono::milliseconds(25));
+    // Restore normal power, then re-enter the previous operating mode.
     impl_->write8(PWR_MODE, POWER_MODE_NORMAL);
-    setMode(prev);
+    std::this_thread::sleep_for(std::chrono::milliseconds(10));
+    setMode(impl_->mode_);
     std::this_thread::sleep_for(std::chrono::milliseconds(20));
 }
 
