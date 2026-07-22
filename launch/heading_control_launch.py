@@ -19,7 +19,6 @@ def generate_launch_description():
     kp_arg = DeclareLaunchArgument('kp', default_value='0.05', description='Heading PID Proportional Gain')
     ki_arg = DeclareLaunchArgument('ki', default_value='0.001', description='Heading PID Integral Gain')
     kd_arg = DeclareLaunchArgument('kd', default_value='0.01', description='Heading PID Derivative Gain')
-    speed_arg = DeclareLaunchArgument('base_linear_speed', default_value='0.3', description='Base forward linear speed (m/s)')
 
     # 1. BNO055 Core IMU Driver Node (Publishes /imu/data)
     imu_driver_node = Node(
@@ -30,7 +29,8 @@ def generate_launch_description():
         output='screen'
     )
 
-    # 2. Heading PID Controller Application Node (Subscribes /imu/data -> Publishes /cmd_vel)
+    # 2. Twist-In / Twist-Out Heading PID Corrector Node
+    # Subscribes to raw input velocity (cmd_vel_in) & /imu/data -> Publishes corrected velocity (cmd_vel)
     heading_control_node = Node(
         package='libbno055_linux',
         executable='bno055_heading_control_node',
@@ -39,10 +39,9 @@ def generate_launch_description():
             'kp': LaunchConfiguration('kp'),
             'ki': LaunchConfiguration('ki'),
             'kd': LaunchConfiguration('kd'),
-            'base_linear_speed': LaunchConfiguration('base_linear_speed'),
-            'auto_lock_initial_heading': True,
             'imu_topic': 'imu/data',
-            'cmd_vel_topic': 'cmd_vel'
+            'cmd_vel_in_topic': 'cmd_vel_in',
+            'cmd_vel_out_topic': 'cmd_vel'
         }],
         output='screen'
     )
@@ -52,7 +51,6 @@ def generate_launch_description():
         kp_arg,
         ki_arg,
         kd_arg,
-        speed_arg,
         imu_driver_node,
         heading_control_node
     ])
