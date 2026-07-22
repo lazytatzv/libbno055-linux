@@ -5,10 +5,10 @@
 #include <cmath>
 
 #if defined(__GNUC__) || defined(__clang__)
-#define BNO055_LIKELY(x)   __builtin_expect(!!(x), 1)
+#define BNO055_LIKELY(x) __builtin_expect(!!(x), 1)
 #define BNO055_UNLIKELY(x) __builtin_expect(!!(x), 0)
 #else
-#define BNO055_LIKELY(x)   (x)
+#define BNO055_LIKELY(x) (x)
 #define BNO055_UNLIKELY(x) (x)
 #endif
 
@@ -16,6 +16,16 @@ namespace bno055lib {
 
 constexpr double RAD_TO_DEG = 180.0 / M_PI;
 constexpr double DEG_TO_RAD = M_PI / 180.0;
+
+/**
+ * @brief Simple 3D Quaternion representation for heading calculations.
+ */
+struct Quat {
+    double w{1.0};
+    double x{0.0};
+    double y{0.0};
+    double z{0.0};
+};
 
 /**
  * @brief Normalizes angle into [-180.0, +180.0] degrees range using std::remainder.
@@ -34,9 +44,13 @@ constexpr double DEG_TO_RAD = M_PI / 180.0;
     return std::atan2(siny_cosp, cosy_cosp) * RAD_TO_DEG;
 }
 
+[[nodiscard]] inline double fastExtractYawDeg(const Quat& q) noexcept {
+    return fastExtractYawDeg(q.w, q.x, q.y, q.z);
+}
+
 /**
  * @brief Production-grade, zero-allocation Heading PID Controller for Mobile Robots.
- * Designed for real-time Embedded & ROS 2 applications.
+ * Supports both direct Quaternion inputs and Euler Heading degrees.
  */
 class HeadingController {
 public:
@@ -53,7 +67,7 @@ public:
         double correction{0.0};   ///< PID correction output u (rad/s or differential velocity)
         double left_motor{0.0};   ///< Left wheel speed normalized [0.0, 1.0]
         double right_motor{0.0};  ///< Right wheel speed normalized [0.0, 1.0]
-        double error_deg{0.0};    ///< Shortest heading error in degrees
+        double error_deg{0.0};     ///< Shortest heading error in degrees
     };
 
     HeadingController() noexcept : config_(), i_term_(0.0), prev_error_(0.0), initialized_(false) {}
@@ -66,9 +80,13 @@ public:
         config_.kd = kd;
     }
 
-    inline void setConfig(const Config& config) noexcept { config_ = config; }
+    inline void setConfig(const Config& config) noexcept {
+        config_ = config;
+    }
 
-    [[nodiscard]] inline const Config& getConfig() const noexcept { return config_; }
+    [[nodiscard]] inline const Config& getConfig() const noexcept {
+        return config_;
+    }
 
     inline void reset() noexcept {
         i_term_ = 0.0;
@@ -78,14 +96,12 @@ public:
 
     /**
      * @brief Computes PID correction given current & target heading in degrees.
-     * @param target_heading_deg Desired target heading in [-180, 180] deg
-     * @param current_heading_deg Current IMU heading in [-180, 180] deg
-     * @param dt Time delta in seconds
-     * @param gyro_z_deg Yaw angular velocity in deg/s (for noise-free derivative)
-     * @param base_velocity Base forward velocity [0.0, 1.0]
      */
-    [[nodiscard]] inline Output update(double target_heading_deg, double current_heading_deg, double dt,
-                                       double gyro_z_deg = 0.0, double base_velocity = 0.5) noexcept {
+    [[nodiscard]] inline Output update(double target_heading_deg,
+                                       double current_heading_deg,
+                                       double dt,
+                                       double gyro_z_deg = 0.0,
+                                       double base_velocity = 0.5) noexcept {
         Output out{};
         if (BNO055_UNLIKELY(dt <= 0.0)) {
             out.left_motor = std::clamp(base_velocity, 0.0, 1.0);
@@ -93,16 +109,17 @@ public:
             return out;
         }
 
-        // 1. Shortest path angle difference (-180 to +180)
+        // Shortest path angle difference (-180 to +180)
         out.error_deg = normalizeAngleDeg(target_heading_deg - current_heading_deg);
 
-        // 2. Proportional
+        // Proportional
         const double p_term = config_.kp * out.error_deg;
 
-        // 3. Integral with Anti-windup clamping
-        i_term_ = std::clamp(i_term_ + config_.ki * out.error_deg * dt, -config_.max_i_term, config_.max_i_term);
+        // Integral with Anti-windup clamping
+        i_term_ = std::clamp(i_term_ + config_.ki * out.error_deg * dt,
+                             -config_.max_i_term, config_.max_i_term);
 
-        // 4. Derivative (Prefer direct gyro rate to eliminate noise & derivative kick)
+        // Derivative (Prefer direct gyro rate to eliminate noise & derivative kick)
         double d_term = 0.0;
         if (BNO055_LIKELY(gyro_z_deg != 0.0 || !initialized_)) {
             d_term = -config_.kd * gyro_z_deg;
@@ -114,14 +131,28 @@ public:
         prev_error_ = out.error_deg;
         initialized_ = true;
 
-        // 5. Total Correction Output u
-        out.correction = std::clamp(p_term + i_term_ + d_term, config_.min_output, config_.max_output);
+        // Total Correction Output u
+        out.correction = std::clamp(p_term + i_term_ + d_term,
+                                    config_.min_output, config_.max_output);
 
-        // 6. Differential motor speeds
+        // Differential motor speeds
         out.left_motor = std::clamp(base_velocity - out.correction, 0.0, 1.0);
         out.right_motor = std::clamp(base_velocity + out.correction, 0.0, 1.0);
 
         return out;
+    }
+
+    /**
+     * @brief Direct Quaternion Update Overload (No manual Euler conversion required by caller).
+     */
+    [[nodiscard]] inline Output update(const Quat& q_target,
+                                       const Quat& q_current,
+                                       double dt,
+                                       double gyro_z_deg = 0.0,
+                                       double base_velocity = 0.5) noexcept {
+        const double target_heading_deg = fastExtractYawDeg(q_target);
+        const double current_heading_deg = fastExtractYawDeg(q_current);
+        return update(target_heading_deg, current_heading_deg, dt, gyro_z_deg, base_velocity);
     }
 
 private:

@@ -111,6 +111,7 @@ private:
     void handleResetHeadingService(const std::shared_ptr<std_srvs::srv::Trigger::Request> /*req*/,
                                    std::shared_ptr<std_srvs::srv::Trigger::Response> res) {
         if (has_imu_data_) {
+            target_quat_ = current_quat_;
             target_heading_deg_ = current_heading_deg_;
             target_heading_locked_ = true;
             controller_.reset();
@@ -127,8 +128,8 @@ private:
     }
 
     void imuCallback(const sensor_msgs::msg::Imu::SharedPtr msg) noexcept {
-        current_heading_deg_ = bno055lib::fastExtractYawDeg(msg->orientation.w, msg->orientation.x, msg->orientation.y,
-                                                            msg->orientation.z);
+        current_quat_ = bno055lib::Quat{msg->orientation.w, msg->orientation.x, msg->orientation.y, msg->orientation.z};
+        current_heading_deg_ = bno055lib::fastExtractYawDeg(current_quat_);
         gyro_z_deg_ = msg->angular_velocity.z * bno055lib::RAD_TO_DEG;
         has_imu_data_ = true;
     }
@@ -154,13 +155,14 @@ private:
             last_correction_ = 0.0;
             last_error_deg_ = 0.0;
         } else {
-            // Lock target heading & apply PID correction when driving straight
+            // Straight driving or stationary -> Lock target heading and apply IMU PID correction
             if (!target_heading_locked_) {
+                target_quat_ = current_quat_;
                 target_heading_deg_ = current_heading_deg_;
                 target_heading_locked_ = true;
             }
 
-            auto out = controller_.update(target_heading_deg_, current_heading_deg_, dt, gyro_z_deg_, msg->linear.x);
+            auto out = controller_.update(target_quat_, current_quat_, dt, gyro_z_deg_, msg->linear.x);
 
             out_twist->angular.z = out.correction;
             last_correction_ = out.correction;
@@ -217,6 +219,8 @@ private:
     bno055lib::HeadingController controller_;
 
     rclcpp::Time last_time_;
+    bno055lib::Quat current_quat_;
+    bno055lib::Quat target_quat_;
     double current_heading_deg_;
     double gyro_z_deg_;
     double target_heading_deg_;
