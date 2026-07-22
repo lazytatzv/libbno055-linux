@@ -108,4 +108,16 @@ TEST(HeadingControllerTest, DifferentialWheelSpeedClamping) {
     EXPECT_NEAR(out.right_motor, 0.6, 1e-6);
 }
 
+TEST(HeadingControllerTest, DirectQuaternionUpdate) {
+    HeadingController controller;
+
+    // Target Quat: Identity (0 deg)
+    Quat q_target{1.0, 0.0, 0.0, 0.0};
+    // Current Quat: 90 deg yaw (w=0.7071, z=0.7071) -> error = -90 deg
+    Quat q_current{0.7071067811865476, 0.0, 0.0, 0.7071067811865476};
+
+    auto out = controller.update(q_target, q_current, 0.01);
+    EXPECT_NEAR(out.error_deg, -90.0, 1e-3);
+}
+
 }  // namespace bno055lib::test
