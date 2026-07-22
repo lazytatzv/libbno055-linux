@@ -1,17 +1,16 @@
 #include <algorithm>
 #include <chrono>
-#include <memory>
-#include <string>
-#include <vector>
-
 #include <diagnostic_msgs/msg/diagnostic_array.hpp>
 #include <diagnostic_msgs/msg/diagnostic_status.hpp>
 #include <diagnostic_msgs/msg/key_value.hpp>
 #include <geometry_msgs/msg/twist.hpp>
+#include <memory>
 #include <rclcpp/rclcpp.hpp>
 #include <rclcpp_components/register_node_macro.hpp>
 #include <sensor_msgs/msg/imu.hpp>
 #include <std_srvs/srv/trigger.hpp>
+#include <string>
+#include <vector>
 
 #include "libbno055-linux/controllers/heading_controller.hpp"
 
@@ -32,7 +31,6 @@ public:
           has_imu_data_(false),
           last_correction_(0.0),
           last_error_deg_(0.0) {
-
         // 1. Declare Dynamic Parameters
         this->declare_parameter<double>("kp", 0.05);
         this->declare_parameter<double>("ki", 0.001);
@@ -57,28 +55,27 @@ public:
         const std::string cmd_vel_in_topic = this->get_parameter("cmd_vel_in_topic").as_string();
         const std::string cmd_vel_out_topic = this->get_parameter("cmd_vel_out_topic").as_string();
 
-        cmd_vel_pub_ = this->create_publisher<geometry_msgs::msg::Twist>(cmd_vel_out_topic, rclcpp::SystemDefaultsQoS());
-        diag_pub_ = this->create_publisher<diagnostic_msgs::msg::DiagnosticArray>("diagnostics", rclcpp::SystemDefaultsQoS());
+        cmd_vel_pub_ =
+            this->create_publisher<geometry_msgs::msg::Twist>(cmd_vel_out_topic, rclcpp::SystemDefaultsQoS());
+        diag_pub_ =
+            this->create_publisher<diagnostic_msgs::msg::DiagnosticArray>("diagnostics", rclcpp::SystemDefaultsQoS());
 
         imu_sub_ = this->create_subscription<sensor_msgs::msg::Imu>(
             imu_topic, rclcpp::SensorDataQoS(),
             std::bind(&BNO055HeadingControlNode::imuCallback, this, std::placeholders::_1));
 
         cmd_vel_sub_ = this->create_subscription<geometry_msgs::msg::Twist>(
-            cmd_vel_in_topic, 10,
-            std::bind(&BNO055HeadingControlNode::cmdVelInCallback, this, std::placeholders::_1));
+            cmd_vel_in_topic, 10, std::bind(&BNO055HeadingControlNode::cmdVelInCallback, this, std::placeholders::_1));
 
         // 4. ROS 2 Service Server for Manual Heading Reset
         reset_heading_srv_ = this->create_service<std_srvs::srv::Trigger>(
-            "~/reset_heading",
-            std::bind(&BNO055HeadingControlNode::handleResetHeadingService, this,
-                      std::placeholders::_1, std::placeholders::_2));
+            "~/reset_heading", std::bind(&BNO055HeadingControlNode::handleResetHeadingService, this,
+                                         std::placeholders::_1, std::placeholders::_2));
 
         // 5. Diagnostics Timer (1Hz)
         if (this->get_parameter("enable_diagnostics").as_bool()) {
-            diag_timer_ = this->create_wall_timer(
-                std::chrono::seconds(1),
-                std::bind(&BNO055HeadingControlNode::publishDiagnostics, this));
+            diag_timer_ = this->create_wall_timer(std::chrono::seconds(1),
+                                                  std::bind(&BNO055HeadingControlNode::publishDiagnostics, this));
         }
 
         RCLCPP_INFO(this->get_logger(), "[Production Composable Node] BNO055 Heading Corrector Node initialized.");
@@ -96,35 +93,31 @@ private:
         controller_.setConfig(cfg);
     }
 
-    rcl_interfaces::msg::SetParametersResult onParameterChange(
-        const std::vector<rclcpp::Parameter>& parameters) {
-
+    rcl_interfaces::msg::SetParametersResult onParameterChange(const std::vector<rclcpp::Parameter>& parameters) {
         rcl_interfaces::msg::SetParametersResult result;
         result.successful = true;
 
         for (const auto& param : parameters) {
-            if (param.get_name() == "kp" || param.get_name() == "ki" ||
-                param.get_name() == "kd" || param.get_name() == "max_i_term" ||
-                param.get_name() == "max_output") {
-                RCLCPP_INFO(this->get_logger(), "Dynamic parameter updated: %s = %f",
-                            param.get_name().c_str(), param.as_double());
+            if (param.get_name() == "kp" || param.get_name() == "ki" || param.get_name() == "kd" ||
+                param.get_name() == "max_i_term" || param.get_name() == "max_output") {
+                RCLCPP_INFO(this->get_logger(), "Dynamic parameter updated: %s = %f", param.get_name().c_str(),
+                            param.as_double());
             }
         }
         updateControllerConfigFromParams();
         return result;
     }
 
-    void handleResetHeadingService(
-        const std::shared_ptr<std_srvs::srv::Trigger::Request> /*req*/,
-        std::shared_ptr<std_srvs::srv::Trigger::Response> res) {
-
+    void handleResetHeadingService(const std::shared_ptr<std_srvs::srv::Trigger::Request> /*req*/,
+                                   std::shared_ptr<std_srvs::srv::Trigger::Response> res) {
         if (has_imu_data_) {
             target_heading_deg_ = current_heading_deg_;
             target_heading_locked_ = true;
             controller_.reset();
             res->success = true;
-            res->message = "Heading target successfully reset to current orientation: " +
-                           std::to_string(target_heading_deg_) + " deg";
+            res->message =
+                "Heading target successfully reset to current orientation: " + std::to_string(target_heading_deg_) +
+                " deg";
             RCLCPP_INFO(this->get_logger(), "%s", res->message.c_str());
         } else {
             res->success = false;
@@ -134,8 +127,8 @@ private:
     }
 
     void imuCallback(const sensor_msgs::msg::Imu::SharedPtr msg) noexcept {
-        current_heading_deg_ = bno055lib::fastExtractYawDeg(
-            msg->orientation.w, msg->orientation.x, msg->orientation.y, msg->orientation.z);
+        current_heading_deg_ = bno055lib::fastExtractYawDeg(msg->orientation.w, msg->orientation.x, msg->orientation.y,
+                                                            msg->orientation.z);
         gyro_z_deg_ = msg->angular_velocity.z * bno055lib::RAD_TO_DEG;
         has_imu_data_ = true;
     }
