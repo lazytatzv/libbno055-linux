@@ -14,6 +14,7 @@ set(SOURCES
 set(HEADERS
     include/libbno055-linux/bno055.hpp
     include/libbno055-linux/bno055_c.h
+    include/libbno055-linux/heading_controller.hpp
 )
 
 # Add library
@@ -266,6 +267,7 @@ if(BUILD_TESTING AND NOT rclcpp_FOUND)
 
     add_executable(libbno055-linux_tests
         tests/test_bno055.cpp
+        tests/test_heading_controller.cpp
     )
 
     if(TARGET GTest::gtest_main)
