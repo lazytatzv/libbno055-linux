@@ -5,10 +5,10 @@
 #include <cmath>
 
 #if defined(__GNUC__) || defined(__clang__)
-#define BNO055_LIKELY(x) __builtin_expect(!!(x), 1)
+#define BNO055_LIKELY(x)   __builtin_expect(!!(x), 1)
 #define BNO055_UNLIKELY(x) __builtin_expect(!!(x), 0)
 #else
-#define BNO055_LIKELY(x) (x)
+#define BNO055_LIKELY(x)   (x)
 #define BNO055_UNLIKELY(x) (x)
 #endif
 
@@ -58,23 +58,23 @@ struct Quat {
 class HeadingController {
 public:
     struct Config {
-        double kp{0.05};             ///< Proportional Gain
-        double ki{0.001};            ///< Integral Gain
-        double kd{0.01};             ///< Derivative Gain (Gyro-based)
-        double kff{0.0};             ///< Feedforward Gain (Direct command velocity coupling)
-        double max_output{1.0};      ///< Maximum angular output limit (rad/s or normalized)
-        double min_output{-1.0};     ///< Minimum angular output limit
-        double max_i_term{0.2};      ///< Anti-windup integral saturation limit
-        double deadband_deg{0.02};   ///< Micro-deadband in degrees to eliminate hunting
-        double cutoff_freq_hz{20.0}; ///< Low-pass filter cutoff frequency for gyro noise (Hz)
+        double kp{0.05};              ///< Proportional Gain
+        double ki{0.001};             ///< Integral Gain
+        double kd{0.01};              ///< Derivative Gain (Gyro-based)
+        double kff{0.0};              ///< Feedforward Gain (Direct command velocity coupling)
+        double max_output{1.0};       ///< Maximum angular output limit (rad/s or normalized)
+        double min_output{-1.0};      ///< Minimum angular output limit
+        double max_i_term{0.2};       ///< Anti-windup integral saturation limit
+        double deadband_deg{0.02};    ///< Micro-deadband in degrees to eliminate hunting
+        double cutoff_freq_hz{20.0};  ///< Low-pass filter cutoff frequency for gyro noise (Hz)
     };
 
     struct Output {
-        double correction{0.0};   ///< Total control output u = u_FF + u_PID
-        double left_motor{0.0};   ///< Left wheel speed normalized [0.0, 1.0]
-        double right_motor{0.0};  ///< Right wheel speed normalized [0.0, 1.0]
-        double error_deg{0.0};     ///< Shortest heading error in degrees
-        double gyro_filtered{0.0}; ///< Low-pass filtered gyro rate
+        double correction{0.0};     ///< Total control output u = u_FF + u_PID
+        double left_motor{0.0};     ///< Left wheel speed normalized [0.0, 1.0]
+        double right_motor{0.0};    ///< Right wheel speed normalized [0.0, 1.0]
+        double error_deg{0.0};      ///< Shortest heading error in degrees
+        double gyro_filtered{0.0};  ///< Low-pass filtered gyro rate
     };
 
     HeadingController() noexcept
@@ -90,13 +90,9 @@ public:
         config_.kff = kff;
     }
 
-    inline void setConfig(const Config& config) noexcept {
-        config_ = config;
-    }
+    inline void setConfig(const Config& config) noexcept { config_ = config; }
 
-    [[nodiscard]] inline const Config& getConfig() const noexcept {
-        return config_;
-    }
+    [[nodiscard]] inline const Config& getConfig() const noexcept { return config_; }
 
     inline void reset() noexcept {
         i_term_ = 0.0;
@@ -114,11 +110,8 @@ public:
      * @param base_velocity Base forward linear velocity [0.0, 1.0]
      * @param target_yaw_rate_deg Reference target yaw rate in deg/s for Feedforward (FF)
      */
-    [[nodiscard]] inline Output update(double target_heading_deg,
-                                       double current_heading_deg,
-                                       double dt,
-                                       double gyro_z_deg = 0.0,
-                                       double base_velocity = 0.5,
+    [[nodiscard]] inline Output update(double target_heading_deg, double current_heading_deg, double dt,
+                                       double gyro_z_deg = 0.0, double base_velocity = 0.5,
                                        double target_yaw_rate_deg = 0.0) noexcept {
         Output out{};
         if (BNO055_UNLIKELY(dt <= 0.0)) {
@@ -142,8 +135,8 @@ public:
         // 4. Trapezoidal (Tustin) Rule Integration for Anti-Jitter Precision & Anti-Windup
         if (BNO055_LIKELY(initialized_)) {
             const double trapezoidal_error = (out.error_deg + prev_error_) * 0.5;
-            i_term_ = std::clamp(i_term_ + config_.ki * trapezoidal_error * dt,
-                                 -config_.max_i_term, config_.max_i_term);
+            i_term_ =
+                std::clamp(i_term_ + config_.ki * trapezoidal_error * dt, -config_.max_i_term, config_.max_i_term);
         }
 
         // 5. 1st-Order Low-Pass Filtered Gyro Rate for D-Term (Suppresses motor vibration)
@@ -187,12 +180,8 @@ public:
     /**
      * @brief Direct Quaternion Update Overload
      */
-    [[nodiscard]] inline Output update(const Quat& q_target,
-                                       const Quat& q_current,
-                                       double dt,
-                                       double gyro_z_deg = 0.0,
-                                       double base_velocity = 0.5,
-                                       double target_yaw_rate_deg = 0.0) noexcept {
+    [[nodiscard]] inline Output update(const Quat& q_target, const Quat& q_current, double dt, double gyro_z_deg = 0.0,
+                                       double base_velocity = 0.5, double target_yaw_rate_deg = 0.0) noexcept {
         const double target_heading_deg = fastExtractYawDeg(q_target);
         const double current_heading_deg = fastExtractYawDeg(q_current);
         return update(target_heading_deg, current_heading_deg, dt, gyro_z_deg, base_velocity, target_yaw_rate_deg);
