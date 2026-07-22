@@ -6,8 +6,8 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 # Source files
 set(SOURCES
-    src/bno055.cpp
-    src/bno055_c.cpp
+    src/core/bno055.cpp
+    src/core/bno055_c.cpp
 )
 
 # Header files
@@ -62,22 +62,22 @@ target_link_libraries(libbno055-linux PRIVATE Threads::Threads)
 option(BUILD_EXAMPLES "Build example executables" ON)
 
 if(BUILD_EXAMPLES)
-    add_executable(calibrate_imu examples/calibrate.cpp)
+    add_executable(calibrate_imu examples/cpp/calibrate.cpp)
     target_link_libraries(calibrate_imu PRIVATE libbno055-linux)
 
-    add_executable(read_data_noexcept examples/read_data_noexcept.cpp)
+    add_executable(read_data_noexcept examples/cpp/read_data_noexcept.cpp)
     target_link_libraries(read_data_noexcept PRIVATE libbno055-linux)
 
-    add_executable(read_all_data examples/read_all_data.cpp)
+    add_executable(read_all_data examples/cpp/read_all_data.cpp)
     target_link_libraries(read_all_data PRIVATE libbno055-linux)
 
-    add_executable(benchmark_imu examples/benchmark_imu.cpp)
+    add_executable(benchmark_imu examples/cpp/benchmark_imu.cpp)
     target_link_libraries(benchmark_imu PRIVATE libbno055-linux)
 
-    add_executable(heading_control_demo examples/heading_control_demo.cpp)
+    add_executable(heading_control_demo examples/cpp/heading_control_demo.cpp)
     target_link_libraries(heading_control_demo PRIVATE libbno055-linux)
 
-    add_executable(c_demo examples/c_demo.c)
+    add_executable(c_demo examples/c/c_demo.c)
     target_link_libraries(c_demo PRIVATE libbno055-linux)
 endif()
 
@@ -125,7 +125,7 @@ if(rclcpp_FOUND AND sensor_msgs_FOUND AND geometry_msgs_FOUND AND diagnostic_msg
     target_link_libraries(bno055_publisher_node libbno055-linux)
     ament_target_dependencies(bno055_publisher_node rclcpp sensor_msgs diagnostic_msgs std_srvs)
 
-    add_executable(bno055_heading_control_node src/ros2/ros2_heading_control_node.cpp)
+    add_executable(bno055_heading_control_node examples/ros2/ros2_heading_control_node.cpp)
     target_link_libraries(bno055_heading_control_node libbno055-linux)
     ament_target_dependencies(bno055_heading_control_node rclcpp sensor_msgs geometry_msgs)
 
