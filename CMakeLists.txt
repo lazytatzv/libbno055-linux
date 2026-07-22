@@ -128,22 +128,27 @@ if(rclcpp_FOUND AND sensor_msgs_FOUND AND geometry_msgs_FOUND AND diagnostic_msg
 
     add_executable(bno055_heading_control_node examples/ros2/ros2_heading_control_node.cpp)
     target_link_libraries(bno055_heading_control_node libbno055-linux)
-    ament_target_dependencies(bno055_heading_control_node rclcpp sensor_msgs geometry_msgs)
+    ament_target_dependencies(bno055_heading_control_node rclcpp rclcpp_components sensor_msgs geometry_msgs diagnostic_msgs std_srvs)
 
     install(TARGETS bno055_publisher_node bno055_heading_control_node
         DESTINATION lib/${PROJECT_NAME}
     )
 
-    # --- 2. Composable Node Shared Library (Publisher) ---
+    # --- 2. Composable Node Shared Library (Publisher & Heading Control) ---
     if(rclcpp_components_FOUND)
-        message(STATUS "rclcpp_components detected. Building Composable Node library.")
+        message(STATUS "rclcpp_components detected. Building Composable Node libraries.")
         add_library(bno055_ros2_components SHARED src/ros2/ros2_publisher_node.cpp)
         target_compile_definitions(bno055_ros2_components PRIVATE BNO055_ROS2_BUILDING_COMPONENT)
         target_link_libraries(bno055_ros2_components libbno055-linux)
         ament_target_dependencies(bno055_ros2_components rclcpp rclcpp_components sensor_msgs diagnostic_msgs std_srvs)
         rclcpp_components_register_node(bno055_ros2_components PLUGIN "bno055_ros2::BNO055PublisherNode" EXECUTABLE bno055_publisher_node_container)
 
-        install(TARGETS bno055_ros2_components
+        add_library(bno055_heading_control_components SHARED examples/ros2/ros2_heading_control_node.cpp)
+        target_link_libraries(bno055_heading_control_components libbno055-linux)
+        ament_target_dependencies(bno055_heading_control_components rclcpp rclcpp_components sensor_msgs geometry_msgs diagnostic_msgs std_srvs)
+        rclcpp_components_register_node(bno055_heading_control_components PLUGIN "bno055_ros2::BNO055HeadingControlNode" EXECUTABLE bno055_heading_control_container)
+
+        install(TARGETS bno055_ros2_components bno055_heading_control_components
             ARCHIVE DESTINATION lib
             LIBRARY DESTINATION lib
             RUNTIME DESTINATION bin
