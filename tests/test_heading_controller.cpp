@@ -1,8 +1,7 @@
 #include <gtest/gtest.h>
 
 #include <cmath>
-
-#include "libbno055-linux/heading_controller.hpp"
+#include "libbno055-linux/controllers/heading_controller.hpp"
 
 namespace bno055lib::test {
 

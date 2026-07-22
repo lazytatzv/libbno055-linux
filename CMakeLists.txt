@@ -14,7 +14,7 @@ set(SOURCES
 set(HEADERS
     include/libbno055-linux/bno055.hpp
     include/libbno055-linux/bno055_c.h
-    include/libbno055-linux/heading_controller.hpp
+    include/libbno055-linux/controllers/heading_controller.hpp
 )
 
 # Add library
