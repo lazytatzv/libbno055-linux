@@ -1,205 +1,143 @@
 # libbno055-linux
 
-[![C++17](https://img.shields.io/badge/C%2B%2B-17-blue.svg)](include/libbno055-linux/bno055.hpp)
-[![PyPI](https://img.shields.io/pypi/v/libbno055-linux.svg)](https://pypi.org/project/libbno055-linux/)
-[![crates.io](https://img.shields.io/crates/v/libbno055.svg)](https://crates.io/crates/libbno055)
-[![Python](https://img.shields.io/badge/Python-3.8%2B-3776AB.svg)](src/python/bindings.cpp)
-[![ROS 2](https://img.shields.io/badge/ROS%202-Humble%20%7C%20Jazzy%20%7C%20Kilted-22314E.svg)](docs/INTEGRATION.md)
-[![Ubuntu](https://img.shields.io/badge/Ubuntu-22.04%20%7C%2024.04-E95420.svg)](docs/INTEGRATION.md)
-[![CI](https://github.com/lazytatzv/libbno055-linux/actions/workflows/ci.yml/badge.svg)](https://github.com/lazytatzv/libbno055-linux/actions/workflows/ci.yml)
-[![Coverage](https://codecov.io/gh/lazytatzv/libbno055-linux/graph/badge.svg)](https://codecov.io/gh/lazytatzv/libbno055-linux)
-[![Docs](https://img.shields.io/badge/docs-GitHub%20Pages-blue.svg)](https://lazytatzv.github.io/libbno055-linux/)
-[![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+[![Build & Test](https://github.com/lazytatzv/libbno055-linux/actions/workflows/ci.yml/badge.svg)](https://github.com/lazytatzv/libbno055-linux/actions)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![C++ Standard](https://img.shields.io/badge/C%2B%2B-17-blue.svg)](https://en.cppreference.com/w/cpp/17)
+[![ROS 2](https://img.shields.io/badge/ROS%202-Humble%20%7F%20Jazzy-orange.svg)](https://docs.ros.org/)
+[![Version](https://img.shields.io/badge/version-1.7.1-green.svg)](CHANGELOG.md)
 
-> **A robust, low-latency (270µs) BNO055 IMU driver for Linux, supporting I2C/UART with auto-recovery.**
+**A high-performance C++17 library, ROS 2 integration, and multi-language binding (Python, C, Rust) for the Bosch BNO055 9-axis IMU on Linux.**
 
-A C++17 driver with C, Python, Rust, and ROS 2 bindings for the Bosch BNO055 9-DOF IMU sensor.
-
-## Demonstration
-
-```console
-$ ros2 topic echo /imu/data
-header:
-  stamp:
-    sec: 1718920102
-    nanosec: 432100000
-  frame_id: 'imu_link'
-orientation:
-  x: 0.001
-  y: 0.002
-  z: 0.707
-  w: 0.707
-angular_velocity:
-  x: 0.012
-  y: -0.004
-  z: 0.001
-linear_acceleration:
-  x: 0.02
-  y: -0.01
-  z: 9.81
-```
+Features an integrated **Straight-Line & Heading PID Controller** for mobile robots, zero-copy transport, safety watchdog protection, and IMU fail-safe passthrough out of the box.
 
 ---
 
-## Features
+## ⚡ Quick Start
 
-| Feature | `libbno055-linux` | Adafruit | Kernel IIO |
-| :--- | :---: | :---: | :---: |
-| **ROS 2** | ✅ | ❌ | △ |
-| **Python** | ✅ | ✅ | ❌ |
-| **Rust** | ✅ | ❌ | ❌ |
-| **UART (921600 bps)** | ✅ | ❌ | △ |
-| **Auto Recovery** | ✅ | ❌ | ❌ |
-| **Zero-CPU Interrupts**| ✅ | ❌ | ❌ |
+### 1. ROS 2 Users (One-Command Launch)
 
----
+Launch the **IMU Driver** and **Heading PID Controller** in a single command (Zero-Copy Composable Container):
 
-## Highlights
-
-- **Native I2C & UART Support**: Fast POSIX drivers with hardware auto-recovery for I2C bus lockups.
-- **ROS 2 Lifecycle Integration**: High-performance intra-process publishing and diagnostic streams.
-- **Multi-Language APIs**: C++17 core engine with native C, Python (`pip`), and safe Rust (`crates.io`).
-
----
-
-## Documentation
-
-This README is a quick overview. Please see the `docs/` directory for detailed information:
-
-- **[Sphinx API Documentation (Web)](https://lazytatzv.github.io/libbno055-linux/)**: Auto-generated web documentation for C++ and Python APIs.
-- **[Heading & Straight-Line PID Control Guide](docs/HEADING_CONTROL.md)**: Production-grade anti-drift PID control theory, C++ API, ROS 2 Composable Node, and live tuning.
-- **[Features & Comparison](docs/FEATURES_AND_COMPARISON.md)**: Detailed feature list and why you should choose this over Kernel IIO drivers.
-- **[Calibration Best Practices](docs/CALIBRATION.md)**: The "Pro Workflow" for managing calibration in real-time robotic control loops.
-- **[API Reference (Markdown)](docs/API_REFERENCE.md)**: Full class and function reference for C++, C, Python, and Rust.
-- **[Integration & Tuning Guide](docs/INTEGRATION.md)**: ROS 2 YAML parameters, EKF setup, 400kHz I2C, UART 921600 bps tuning.
-- **[Architecture & Design](docs/ARCHITECTURE.md)**: PIMPL design, zero-copy transport, FFI layers, and state machines.
-- **[Troubleshooting & FAQ](docs/TROUBLESHOOTING.md)**: Hardware wiring, permissions, and clock-stretching fixes.
-
----
-
-## Installation
-
-### Ubuntu (APT / ROS 2)
 ```bash
-sudo apt update && sudo apt install ros-${ROS_DISTRO}-libbno055-linux
+ros2 launch libbno055_linux heading_control_launch.py
 ```
 
-### Python (pip)
+> **Need Nav2 Lifecycle Management?** Pass `node_type:=lifecycle`:
+> ```bash
+> ros2 launch libbno055_linux heading_control_launch.py node_type:=lifecycle
+> ```
+
+### 2. Standalone C++ Users (Non-ROS)
+
+Build and run the interactive 100Hz Heading PID Control Demo:
+
+```bash
+mkdir -p build && cd build
+cmake .. && make -j$(nproc)
+
+# Run the 100Hz PID Heading Control Demo
+./heading_control_demo /dev/i2c-1
+```
+
+### 3. Python Users
+
 ```bash
 pip install libbno055-linux
+python3 -c "import libbno055; print('Installed successfully!')"
 ```
 
-### Rust (Cargo)
-```bash
-cargo add libbno055
-```
+---
 
-### Build from Source
+## ✨ Features
+
+- **🚀 Low Latency & High Rate**: Supports up to 200Hz sensor updates, 1kHz/2kHz hardware ODR, and FTDI UART low-latency mode (`ASYNC_LOW_LATENCY`).
+- **🎯 Integrated Heading PID Controller**: Zero-allocation C++17 controller featuring:
+  - **Shortest-Path Angle Normalization**: Automatic $\pm 180^\circ$ boundary wrapping.
+  - **Filtered Gyro D-Term**: 1st-order Low-Pass Filtered gyro rate to eliminate motor vibration noise.
+  - **Trapezoidal Integration**: Jitter-free integration with anti-windup clamping.
+  - **Slew-Rate Limiter**: Constrains angular acceleration to prevent wheel slip and motor gear shock.
+- **🛡️ Safety & Fail-Safe Protection**:
+  - **Command-Loss Watchdog**: Automatically stops the robot (`zero velocity`) if input commands time out.
+  - **IMU Fail-Safe Passthrough**: Seamlessly passes velocity commands through if IMU is offline or disconnected.
+  - **Outlier Rejection**: Rejects corrupted or `NaN`/`Inf` quaternion data automatically.
+- **📡 Advanced ROS 2 Architecture**:
+  - **Zero-Copy Composable Components** (`rclcpp_components`).
+  - **Managed Lifecycle Nodes** (`rclcpp_lifecycle`) for Nav2 integration.
+  - **Isolated CallbackGroups** (`MutuallyExclusive`) & `MultiThreadedExecutor`.
+  - **Linux `SCHED_FIFO` Realtime Priority** support.
+- **🌐 Polyglot Bindings**: Native support for **C++17**, **C99 FFI**, **Python 3**, and **Rust**.
+
+---
+
+## 🛠️ Installation & Building
+
+### Prerequisites
+
+- Linux (Ubuntu 20.04+, Raspberry Pi OS, etc.)
+- C++17 compatible compiler (`gcc` 8+ or `clang` 7+)
+- CMake 3.10+
+- (Optional) ROS 2 Humble / Iron / Jazzy
+
+### Building from Source
+
 ```bash
 git clone https://github.com/lazytatzv/libbno055-linux.git
 cd libbno055-linux
 mkdir build && cd build
-cmake .. && make
+cmake ..
+make -j$(nproc)
 sudo make install
 ```
 
----
-
-## Quick Start
-
-### Rust (`crates.io`)
-
-> **Tip:** See [`rust/examples/demo.rs`](rust/examples/demo.rs) for a complete, runnable example. You can run it instantly with `cargo run --example demo`.
+### ROS 2 Workspace Build (`colcon`)
 
 ```bash
-cargo add libbno055
-```
-
-```rust
-use libbno055::{BNO055, OpMode};
-
-fn main() -> Result<(), &'static str> {
-    let mut imu = BNO055::new_i2c(0x28, "/dev/i2c-1")?;
-    if imu.begin(OpMode::NDOF) {
-        if let Some(q) = imu.get_quaternion() {
-            let euler = BNO055::to_euler_degrees(&q);
-            println!("Roll: {:.2}, Pitch: {:.2}, Yaw: {:.2}", euler.x, euler.y, euler.z);
-        }
-    }
-    Ok(())
-}
+cd ~/ros2_ws/src
+git clone https://github.com/lazytatzv/libbno055-linux.git
+cd ~/ros2_ws
+colcon build --packages-select libbno055_linux
+source install/setup.bash
 ```
 
 ---
 
-### Python (`pip`)
+## ⚙️ Configuration & Parameter Tuning
 
-> **Tip:** See [`examples/python/python_demo.py`](examples/python/python_demo.py) for a complete, runnable script featuring diagnostics, error handling, and formatting.
+Edit [`config/heading_control_params.yaml`](config/heading_control_params.yaml) to tune PID gains or timeouts:
 
-```bash
-pip install libbno055-linux  # Or: pip install . (from source)
-```
+```yaml
+bno055_heading_control_node:
+  ros__parameters:
+    imu_topic: "imu/data"             # Input IMU topic
+    cmd_vel_in_topic: "cmd_vel_in"     # Raw input velocity command
+    cmd_vel_out_topic: "cmd_vel"       # Corrected output velocity command
 
-```python
-import libbno055
+    # PID & Control Gains
+    kp: 0.05                           # Proportional Gain
+    ki: 0.001                          # Integral Gain (Trapezoidal Rule)
+    kd: 0.01                           # Derivative Gain (Filtered Gyro)
+    kff: 0.0                           # Feedforward Gain
+    max_i_term: 0.2                    # Anti-windup saturation limit
+    max_slew_rate: 2.0                 # Max output change rate (rad/s^2)
 
-imu = libbno055.BNO055(address=0x28, device="/dev/i2c-1")
-if imu.begin(libbno055.OpMode.NDOF):
-    q = imu.get_quaternion()
-    if q:
-        euler = libbno055.to_euler_degrees(q)
-        print(f"Roll: {euler.x:.2f}, Pitch: {euler.y:.2f}, Yaw: {euler.z:.2f}")
-```
-
----
-
-### C++17 (Native CMake)
-
-```cpp
-#include <libbno055-linux/bno055.hpp>
-#include <iostream>
-
-int main() {
-    bno055lib::BNO055 imu(0x28, "/dev/i2c-1");
-    if (imu.begin(bno055lib::OpMode::NDOF)) {
-        if (auto q = imu.getQuaternionNoexcept()) {
-            auto euler = bno055lib::toEulerDegrees(*q);
-            std::cout << "Roll: " << euler.x << " Pitch: " << euler.y << " Yaw: " << euler.z << "\n";
-        }
-    }
-}
+    # Safety Timeouts
+    cmd_vel_timeout: 0.5               # Command loss Watchdog timeout (seconds)
+    imu_timeout: 1.0                   # IMU loss Fail-Safe timeout (seconds)
 ```
 
 ---
 
-### ROS 2 Node (Binary Installation)
+## 📚 Documentation & Guides
 
-```bash
-sudo apt update && sudo apt install ros-${ROS_DISTRO}-libbno055-linux
-ros2 launch libbno055_linux bno055_launch.py
-```
-
----
-
-### Robot Straight-Line & Heading PID Control
-
-Want to prevent your robot from drifting during straight-line driving or maintain target heading? Run the ROS 2 node using:
-
-```bash
-# Launch IMU Driver + Heading PID Controller
-ros2 launch libbno055_linux heading_control_launch.py
-```
-
-- **Features Active Out-of-the-Box**: Zero-Copy transport, PID anti-drift, IMU Fail-Safe passthrough, and Watchdog command-loss safety.
-- **Custom Configuration**: Edit [`config/heading_control_params.yaml`](config/heading_control_params.yaml) to tune PID gains (`kp`, `ki`, `kd`) or timeouts.
-
-```bash
-# Standalone C++ Demo (Visual ASCII Motor Output Dashboard for non-ROS users)
-./build/heading_control_demo /dev/i2c-1
-```
+- 📘 [Heading Control Architecture & Tuning Guide](docs/HEADING_CONTROL.md)
+- 📙 [C++ / C / Python / Rust API Reference](docs/API_REFERENCE.md)
+- 📗 [ROS 2 Nodes & Component Architecture](src/ros2/README.md)
+- 📕 [Code Examples Overview](examples/README.md)
+- 📓 [Hardware Calibration Guide](docs/CALIBRATION.md)
+- 📒 [Troubleshooting & FAQ](docs/TROUBLESHOOTING.md)
 
 ---
 
-## License
+## 📄 License
 
-This project is released under the [MIT License](LICENSE).
+This project is licensed under the [MIT License](LICENSE).
