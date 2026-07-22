@@ -113,6 +113,7 @@ The ROS 2 node is built as a **Composable Node Component (`rclcpp_components`)**
 | `kd` | `double` | `0.01` | Derivative gain (gyro-based). |
 | `max_i_term` | `double` | `0.2` | Anti-windup integral saturation limit. |
 | `cmd_vel_timeout` | `double` | `0.5` | Safety Watchdog timeout in seconds. Triggers Zero Velocity output if `cmd_vel_in` is lost. |
+| `imu_timeout` | `double` | `1.0` | IMU connection loss timeout in seconds. Triggers Fail-Safe Passthrough if IMU is offline. |
 | `angular_deadband` | `double` | `0.01` | Turning threshold to disengage heading lock. |
 
 ---
