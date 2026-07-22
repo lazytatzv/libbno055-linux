@@ -1,18 +1,20 @@
 #include <algorithm>
 #include <chrono>
+#include <memory>
+#include <string>
+#include <vector>
+
 #include <diagnostic_msgs/msg/diagnostic_array.hpp>
 #include <diagnostic_msgs/msg/diagnostic_status.hpp>
 #include <diagnostic_msgs/msg/key_value.hpp>
 #include <geometry_msgs/msg/twist.hpp>
-#include <memory>
+#include <rclcpp/executors/multi_threaded_executor.hpp>
 #include <rclcpp/rclcpp.hpp>
 #include <rclcpp_components/register_node_macro.hpp>
 #include <rclcpp_lifecycle/lifecycle_node.hpp>
 #include <rclcpp_lifecycle/lifecycle_publisher.hpp>
 #include <sensor_msgs/msg/imu.hpp>
 #include <std_srvs/srv/trigger.hpp>
-#include <string>
-#include <vector>
 
 #include "libbno055-linux/controllers/heading_controller.hpp"
 
@@ -21,7 +23,7 @@ namespace bno055_ros2 {
 using CallbackReturn = rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn;
 
 /**
- * @brief Managed Lifecycle Heading Corrector Node.
+ * @brief Managed Lifecycle Heading Corrector Node with Multi-threaded Callback Isolation.
  * Integrates with ROS 2 Lifecycle State Machines (unconfigured -> inactive -> active -> finalized).
  * Ideal for Nav2 Lifecycle Manager integration.
  */
@@ -38,12 +40,16 @@ public:
           is_imu_timeout_(false),
           last_correction_(0.0),
           last_error_deg_(0.0) {
+
         // Declare Parameters
         this->declare_parameter<double>("kp", 0.05);
         this->declare_parameter<double>("ki", 0.001);
         this->declare_parameter<double>("kd", 0.01);
+        this->declare_parameter<double>("kff", 0.0);
         this->declare_parameter<double>("max_i_term", 0.2);
         this->declare_parameter<double>("max_output", 1.0);
+        this->declare_parameter<double>("deadband_deg", 0.02);
+        this->declare_parameter<double>("cutoff_freq_hz", 20.0);
         this->declare_parameter<double>("angular_deadband", 0.01);
         this->declare_parameter<double>("cmd_vel_timeout", 0.5);
         this->declare_parameter<double>("imu_timeout", 1.0);
@@ -52,8 +58,7 @@ public:
         this->declare_parameter<std::string>("cmd_vel_out_topic", "cmd_vel");
         this->declare_parameter<bool>("enable_diagnostics", true);
 
-        RCLCPP_INFO(this->get_logger(),
-                    "[Lifecycle Node] BNO055 Lifecycle Heading Control Node created (State: Unconfigured).");
+        RCLCPP_INFO(this->get_logger(), "[Lifecycle Node] BNO055 Lifecycle Heading Control Node created.");
     }
 
     // --- Lifecycle State Transitions ---
@@ -65,28 +70,40 @@ public:
         param_callback_handle_ = this->add_on_set_parameters_callback(
             std::bind(&BNO055LifecycleHeadingControlNode::onParameterChange, this, std::placeholders::_1));
 
+        control_cb_group_ = this->create_callback_group(rclcpp::CallbackGroupType::MutuallyExclusive);
+        admin_cb_group_ = this->create_callback_group(rclcpp::CallbackGroupType::MutuallyExclusive);
+
+        auto imu_sub_options = rclcpp::SubscriptionOptions();
+        imu_sub_options.callback_group = control_cb_group_;
+
+        auto cmd_vel_sub_options = rclcpp::SubscriptionOptions();
+        cmd_vel_sub_options.callback_group = control_cb_group_;
+
         const std::string imu_topic = this->get_parameter("imu_topic").as_string();
         const std::string cmd_vel_in_topic = this->get_parameter("cmd_vel_in_topic").as_string();
         const std::string cmd_vel_out_topic = this->get_parameter("cmd_vel_out_topic").as_string();
 
-        cmd_vel_pub_ =
-            this->create_publisher<geometry_msgs::msg::Twist>(cmd_vel_out_topic, rclcpp::SystemDefaultsQoS());
-        diag_pub_ =
-            this->create_publisher<diagnostic_msgs::msg::DiagnosticArray>("diagnostics", rclcpp::SystemDefaultsQoS());
+        cmd_vel_pub_ = this->create_publisher<geometry_msgs::msg::Twist>(cmd_vel_out_topic, rclcpp::SystemDefaultsQoS());
+        diag_pub_ = this->create_publisher<diagnostic_msgs::msg::DiagnosticArray>("diagnostics", rclcpp::SystemDefaultsQoS());
 
         imu_sub_ = this->create_subscription<sensor_msgs::msg::Imu>(
             imu_topic, rclcpp::SensorDataQoS(),
-            std::bind(&BNO055LifecycleHeadingControlNode::imuCallback, this, std::placeholders::_1));
+            std::bind(&BNO055LifecycleHeadingControlNode::imuCallback, this, std::placeholders::_1),
+            imu_sub_options);
 
         cmd_vel_sub_ = this->create_subscription<geometry_msgs::msg::Twist>(
             cmd_vel_in_topic, 10,
-            std::bind(&BNO055LifecycleHeadingControlNode::cmdVelInCallback, this, std::placeholders::_1));
+            std::bind(&BNO055LifecycleHeadingControlNode::cmdVelInCallback, this, std::placeholders::_1),
+            cmd_vel_sub_options);
 
         reset_heading_srv_ = this->create_service<std_srvs::srv::Trigger>(
-            "~/reset_heading", std::bind(&BNO055LifecycleHeadingControlNode::handleResetHeadingService, this,
-                                         std::placeholders::_1, std::placeholders::_2));
+            "~/reset_heading",
+            std::bind(&BNO055LifecycleHeadingControlNode::handleResetHeadingService, this,
+                      std::placeholders::_1, std::placeholders::_2),
+            rmw_qos_profile_services_default,
+            admin_cb_group_);
 
-        RCLCPP_INFO(this->get_logger(), "Node configured successfully.");
+        RCLCPP_INFO(this->get_logger(), "Node configured successfully with isolated CallbackGroups.");
         return CallbackReturn::SUCCESS;
     }
 
@@ -102,14 +119,18 @@ public:
         last_imu_time_ = now;
 
         watchdog_timer_ = this->create_wall_timer(
-            std::chrono::milliseconds(50), std::bind(&BNO055LifecycleHeadingControlNode::checkSystemHealth, this));
+            std::chrono::milliseconds(50),
+            std::bind(&BNO055LifecycleHeadingControlNode::checkSystemHealth, this),
+            control_cb_group_);
 
         if (this->get_parameter("enable_diagnostics").as_bool()) {
             diag_timer_ = this->create_wall_timer(
-                std::chrono::seconds(1), std::bind(&BNO055LifecycleHeadingControlNode::publishDiagnostics, this));
+                std::chrono::seconds(1),
+                std::bind(&BNO055LifecycleHeadingControlNode::publishDiagnostics, this),
+                admin_cb_group_);
         }
 
-        RCLCPP_INFO(this->get_logger(), "Node activated. Output streaming online.");
+        RCLCPP_INFO(this->get_logger(), "Node activated.");
         return CallbackReturn::SUCCESS;
     }
 
@@ -119,7 +140,6 @@ public:
         watchdog_timer_.reset();
         diag_timer_.reset();
 
-        // Safely publish Zero Velocity before stopping
         if (cmd_vel_pub_->is_activated()) {
             auto stop_twist = std::make_unique<geometry_msgs::msg::Twist>();
             cmd_vel_pub_->publish(std::move(stop_twist));
@@ -143,6 +163,8 @@ public:
         cmd_vel_sub_.reset();
         reset_heading_srv_.reset();
         param_callback_handle_.reset();
+        control_cb_group_.reset();
+        admin_cb_group_.reset();
 
         has_imu_data_ = false;
         has_cmd_vel_in_ = false;
@@ -162,30 +184,39 @@ private:
         cfg.kp = this->get_parameter("kp").as_double();
         cfg.ki = this->get_parameter("ki").as_double();
         cfg.kd = this->get_parameter("kd").as_double();
+        cfg.kff = this->get_parameter("kff").as_double();
         cfg.max_i_term = this->get_parameter("max_i_term").as_double();
         cfg.max_output = this->get_parameter("max_output").as_double();
         cfg.min_output = -cfg.max_output;
+        cfg.deadband_deg = this->get_parameter("deadband_deg").as_double();
+        cfg.cutoff_freq_hz = this->get_parameter("cutoff_freq_hz").as_double();
         controller_.setConfig(cfg);
     }
 
-    rcl_interfaces::msg::SetParametersResult onParameterChange(const std::vector<rclcpp::Parameter>& parameters) {
+    rcl_interfaces::msg::SetParametersResult onParameterChange(
+        const std::vector<rclcpp::Parameter>& parameters) {
+
         rcl_interfaces::msg::SetParametersResult result;
         result.successful = true;
 
         for (const auto& param : parameters) {
-            if (param.get_name() == "kp" || param.get_name() == "ki" || param.get_name() == "kd" ||
+            if (param.get_name() == "kp" || param.get_name() == "ki" ||
+                param.get_name() == "kd" || param.get_name() == "kff" ||
                 param.get_name() == "max_i_term" || param.get_name() == "max_output" ||
+                param.get_name() == "deadband_deg" || param.get_name() == "cutoff_freq_hz" ||
                 param.get_name() == "cmd_vel_timeout" || param.get_name() == "imu_timeout") {
-                RCLCPP_INFO(this->get_logger(), "Dynamic parameter updated: %s = %f", param.get_name().c_str(),
-                            param.as_double());
+                RCLCPP_INFO(this->get_logger(), "Dynamic parameter updated: %s = %f",
+                            param.get_name().c_str(), param.as_double());
             }
         }
         updateControllerConfigFromParams();
         return result;
     }
 
-    void handleResetHeadingService(const std::shared_ptr<std_srvs::srv::Trigger::Request> /*req*/,
-                                   std::shared_ptr<std_srvs::srv::Trigger::Response> res) {
+    void handleResetHeadingService(
+        const std::shared_ptr<std_srvs::srv::Trigger::Request> /*req*/,
+        std::shared_ptr<std_srvs::srv::Trigger::Response> res) {
+
         if (has_imu_data_ && !is_imu_timeout_) {
             target_quat_ = current_quat_;
             target_heading_deg_ = current_heading_deg_;
@@ -340,6 +371,9 @@ private:
     rclcpp::TimerBase::SharedPtr watchdog_timer_;
     rclcpp::TimerBase::SharedPtr diag_timer_;
 
+    rclcpp::CallbackGroup::SharedPtr control_cb_group_;
+    rclcpp::CallbackGroup::SharedPtr admin_cb_group_;
+
     OnSetParametersCallbackHandle::SharedPtr param_callback_handle_;
     bno055lib::HeadingController controller_;
 
@@ -367,7 +401,11 @@ RCLCPP_COMPONENTS_REGISTER_NODE(bno055_ros2::BNO055LifecycleHeadingControlNode)
 int main(int argc, char* argv[]) {
     rclcpp::init(argc, argv);
     auto node = std::make_shared<bno055_ros2::BNO055LifecycleHeadingControlNode>();
-    rclcpp::spin(node->get_node_base_interface());
+
+    rclcpp::executors::MultiThreadedExecutor executor;
+    executor.add_node(node->get_node_base_interface());
+    executor.spin();
+
     rclcpp::shutdown();
     return 0;
 }

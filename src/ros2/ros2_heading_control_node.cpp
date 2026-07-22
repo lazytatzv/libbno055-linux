@@ -1,25 +1,27 @@
 #include <algorithm>
 #include <chrono>
+#include <memory>
+#include <string>
+#include <vector>
+
 #include <diagnostic_msgs/msg/diagnostic_array.hpp>
 #include <diagnostic_msgs/msg/diagnostic_status.hpp>
 #include <diagnostic_msgs/msg/key_value.hpp>
 #include <geometry_msgs/msg/twist.hpp>
-#include <memory>
+#include <rclcpp/executors/multi_threaded_executor.hpp>
 #include <rclcpp/rclcpp.hpp>
 #include <rclcpp_components/register_node_macro.hpp>
 #include <sensor_msgs/msg/imu.hpp>
 #include <std_srvs/srv/trigger.hpp>
-#include <string>
-#include <vector>
 
 #include "libbno055-linux/controllers/heading_controller.hpp"
 
 namespace bno055_ros2 {
 
 /**
- * @brief ROS 2 Composable Heading Corrector Node with Watchdog Safety.
- * Features: Zero-Copy Intra-Process transport, Dynamic Parameters, Diagnostics, Reset Service,
- * and a Safety Watchdog Timer to command zero velocity upon command timeout.
+ * @brief ROS 2 Composable Heading Corrector Node with Watchdog Safety & Multi-threaded Callback Isolation.
+ * Features: Zero-Copy Intra-Process transport, Dynamic Parameters, Isolated Callback Groups,
+ * Diagnostics, Reset Service, and Safety Watchdog Timer.
  */
 class BNO055HeadingControlNode : public rclcpp::Node {
 public:
@@ -37,6 +39,7 @@ public:
           is_imu_timeout_(false),
           last_correction_(0.0),
           last_error_deg_(0.0) {
+
         // 1. Declare Parameters
         this->declare_parameter<double>("kp", 0.05);
         this->declare_parameter<double>("ki", 0.001);
@@ -47,8 +50,8 @@ public:
         this->declare_parameter<double>("deadband_deg", 0.02);
         this->declare_parameter<double>("cutoff_freq_hz", 20.0);
         this->declare_parameter<double>("angular_deadband", 0.01);
-        this->declare_parameter<double>("cmd_vel_timeout", 0.5);  // Command loss Watchdog timeout
-        this->declare_parameter<double>("imu_timeout", 1.0);      // IMU connection loss timeout
+        this->declare_parameter<double>("cmd_vel_timeout", 0.5);
+        this->declare_parameter<double>("imu_timeout", 1.0);
         this->declare_parameter<std::string>("imu_topic", "imu/data");
         this->declare_parameter<std::string>("cmd_vel_in_topic", "cmd_vel_in");
         this->declare_parameter<std::string>("cmd_vel_out_topic", "cmd_vel");
@@ -60,45 +63,57 @@ public:
         param_callback_handle_ = this->add_on_set_parameters_callback(
             std::bind(&BNO055HeadingControlNode::onParameterChange, this, std::placeholders::_1));
 
-        // 3. Topics & Zero-Copy Transport
+        // 3. Callback Groups Isolation (High-Frequency Control vs Low-Priority Admin)
+        control_cb_group_ = this->create_callback_group(rclcpp::CallbackGroupType::MutuallyExclusive);
+        admin_cb_group_ = this->create_callback_group(rclcpp::CallbackGroupType::MutuallyExclusive);
+
+        auto imu_sub_options = rclcpp::SubscriptionOptions();
+        imu_sub_options.callback_group = control_cb_group_;
+
+        auto cmd_vel_sub_options = rclcpp::SubscriptionOptions();
+        cmd_vel_sub_options.callback_group = control_cb_group_;
+
+        // 4. Topics & Zero-Copy Transport
         const std::string imu_topic = this->get_parameter("imu_topic").as_string();
         const std::string cmd_vel_in_topic = this->get_parameter("cmd_vel_in_topic").as_string();
         const std::string cmd_vel_out_topic = this->get_parameter("cmd_vel_out_topic").as_string();
 
-        cmd_vel_pub_ =
-            this->create_publisher<geometry_msgs::msg::Twist>(cmd_vel_out_topic, rclcpp::SystemDefaultsQoS());
-        diag_pub_ =
-            this->create_publisher<diagnostic_msgs::msg::DiagnosticArray>("diagnostics", rclcpp::SystemDefaultsQoS());
+        cmd_vel_pub_ = this->create_publisher<geometry_msgs::msg::Twist>(cmd_vel_out_topic, rclcpp::SystemDefaultsQoS());
+        diag_pub_ = this->create_publisher<diagnostic_msgs::msg::DiagnosticArray>("diagnostics", rclcpp::SystemDefaultsQoS());
 
         imu_sub_ = this->create_subscription<sensor_msgs::msg::Imu>(
             imu_topic, rclcpp::SensorDataQoS(),
-            std::bind(&BNO055HeadingControlNode::imuCallback, this, std::placeholders::_1));
+            std::bind(&BNO055HeadingControlNode::imuCallback, this, std::placeholders::_1),
+            imu_sub_options);
 
         cmd_vel_sub_ = this->create_subscription<geometry_msgs::msg::Twist>(
-            cmd_vel_in_topic, 10, std::bind(&BNO055HeadingControlNode::cmdVelInCallback, this, std::placeholders::_1));
+            cmd_vel_in_topic, 10,
+            std::bind(&BNO055HeadingControlNode::cmdVelInCallback, this, std::placeholders::_1),
+            cmd_vel_sub_options);
 
-        // 4. Trigger Service
+        // 5. Trigger Service (Admin Callback Group)
         reset_heading_srv_ = this->create_service<std_srvs::srv::Trigger>(
-            "~/reset_heading", std::bind(&BNO055HeadingControlNode::handleResetHeadingService, this,
-                                         std::placeholders::_1, std::placeholders::_2));
+            "~/reset_heading",
+            std::bind(&BNO055HeadingControlNode::handleResetHeadingService, this,
+                      std::placeholders::_1, std::placeholders::_2),
+            rmw_qos_profile_services_default,
+            admin_cb_group_);
 
-<<<<<<< HEAD
-        // 5. Watchdog Safety Timer (Checking at 20Hz / 50ms)
-        watchdog_timer_ = this->create_wall_timer(std::chrono::milliseconds(50),
-                                                  std::bind(&BNO055HeadingControlNode::checkWatchdogTimeout, this));
-=======
-        // 5. Watchdog & IMU Health Check Timer (Checking at 20Hz / 50ms)
-        watchdog_timer_ = this->create_wall_timer(std::chrono::milliseconds(50),
-                                                  std::bind(&BNO055HeadingControlNode::checkSystemHealth, this));
->>>>>>> 9b5f61a (feat: add IMU Fail-Safe Passthrough Mode to ensure robot keeps moving smoothly even if IMU is offline)
+        // 6. Watchdog & IMU Health Check Timer (Checking at 20Hz / 50ms)
+        watchdog_timer_ = this->create_wall_timer(
+            std::chrono::milliseconds(50),
+            std::bind(&BNO055HeadingControlNode::checkSystemHealth, this),
+            control_cb_group_);
 
-        // 6. Diagnostics Timer (1Hz)
+        // 7. Diagnostics Timer (1Hz - Admin Callback Group)
         if (this->get_parameter("enable_diagnostics").as_bool()) {
-            diag_timer_ = this->create_wall_timer(std::chrono::seconds(1),
-                                                  std::bind(&BNO055HeadingControlNode::publishDiagnostics, this));
+            diag_timer_ = this->create_wall_timer(
+                std::chrono::seconds(1),
+                std::bind(&BNO055HeadingControlNode::publishDiagnostics, this),
+                admin_cb_group_);
         }
 
-        RCLCPP_INFO(this->get_logger(), "BNO055 Heading Control Node online.");
+        RCLCPP_INFO(this->get_logger(), "BNO055 Heading Control Node online (Multi-Threaded Callback Isolation Enabled).");
     }
 
 private:
@@ -116,45 +131,41 @@ private:
         controller_.setConfig(cfg);
     }
 
-    rcl_interfaces::msg::SetParametersResult onParameterChange(const std::vector<rclcpp::Parameter>& parameters) {
+    rcl_interfaces::msg::SetParametersResult onParameterChange(
+        const std::vector<rclcpp::Parameter>& parameters) {
+
         rcl_interfaces::msg::SetParametersResult result;
         result.successful = true;
 
         for (const auto& param : parameters) {
-<<<<<<< HEAD
-            if (param.get_name() == "kp" || param.get_name() == "ki" || param.get_name() == "kd" ||
+            if (param.get_name() == "kp" || param.get_name() == "ki" ||
+                param.get_name() == "kd" || param.get_name() == "kff" ||
                 param.get_name() == "max_i_term" || param.get_name() == "max_output" ||
-                param.get_name() == "cmd_vel_timeout") {
-                RCLCPP_INFO(this->get_logger(), "Dynamic parameter updated: %s = %f", param.get_name().c_str(),
-                            param.as_double());
-=======
-            if (param.get_name() == "kp" || param.get_name() == "ki" || param.get_name() == "kd" ||
-                param.get_name() == "max_i_term" || param.get_name() == "max_output" ||
+                param.get_name() == "deadband_deg" || param.get_name() == "cutoff_freq_hz" ||
                 param.get_name() == "cmd_vel_timeout" || param.get_name() == "imu_timeout") {
-                RCLCPP_INFO(this->get_logger(), "Dynamic parameter updated: %s = %f", param.get_name().c_str(),
-                            param.as_double());
->>>>>>> 9b5f61a (feat: add IMU Fail-Safe Passthrough Mode to ensure robot keeps moving smoothly even if IMU is offline)
+                RCLCPP_INFO(this->get_logger(), "Dynamic parameter updated: %s = %f",
+                            param.get_name().c_str(), param.as_double());
             }
         }
         updateControllerConfigFromParams();
         return result;
     }
 
-    void handleResetHeadingService(const std::shared_ptr<std_srvs::srv::Trigger::Request> /*req*/,
-                                   std::shared_ptr<std_srvs::srv::Trigger::Response> res) {
+    void handleResetHeadingService(
+        const std::shared_ptr<std_srvs::srv::Trigger::Request> /*req*/,
+        std::shared_ptr<std_srvs::srv::Trigger::Response> res) {
+
         if (has_imu_data_ && !is_imu_timeout_) {
             target_quat_ = current_quat_;
             target_heading_deg_ = current_heading_deg_;
             target_heading_locked_ = true;
             controller_.reset();
             res->success = true;
-            res->message =
-                "Heading target successfully reset to current orientation: " + std::to_string(target_heading_deg_) +
-                " deg";
+            res->message = "Heading target reset to: " + std::to_string(target_heading_deg_) + " deg";
             RCLCPP_INFO(this->get_logger(), "%s", res->message.c_str());
         } else {
             res->success = false;
-            res->message = "Cannot reset heading: IMU data is not available or timed out.";
+            res->message = "Cannot reset heading: IMU data unavailable.";
             RCLCPP_WARN(this->get_logger(), "%s", res->message.c_str());
         }
     }
@@ -190,16 +201,13 @@ private:
         const double deadband = this->get_parameter("angular_deadband").as_double();
         const bool is_commanded_to_turn = std::abs(msg->angular.z) > deadband;
 
-        // FAIL-SAFE PASSTHROUGH: If IMU is missing/timed out or user is actively turning,
-        // pass input velocity directly to output so robot movement NEVER stops!
         if (is_commanded_to_turn || !has_imu_data_ || is_imu_timeout_) {
             target_heading_locked_ = false;
             controller_.reset();
-            out_twist->angular = msg->angular;  // Seamless 100% Passthrough
+            out_twist->angular = msg->angular;  // Fail-Safe Passthrough
             last_correction_ = 0.0;
             last_error_deg_ = 0.0;
         } else {
-            // Straight driving with healthy IMU -> Apply active PID correction
             if (!target_heading_locked_) {
                 target_quat_ = current_quat_;
                 target_heading_deg_ = current_heading_deg_;
@@ -215,21 +223,14 @@ private:
         cmd_vel_pub_->publish(std::move(out_twist));
     }
 
-    /**
-     * @brief System Health Check: Monitors Watchdog & IMU timeout statuses.
-     */
     void checkSystemHealth() {
         const rclcpp::Time now = this->now();
 
-        // 1. IMU Fail-Safe Timeout Check
         if (has_imu_data_) {
             const double imu_timeout = this->get_parameter("imu_timeout").as_double();
             if ((now - last_imu_time_).seconds() > imu_timeout) {
                 if (!is_imu_timeout_) {
-                    RCLCPP_WARN(this->get_logger(),
-                                "IMU Timeout! No IMU data for %.2f s. Switching to Fail-Safe Passthrough Mode (Robot "
-                                "keeps moving normally).",
-                                (now - last_imu_time_).seconds());
+                    RCLCPP_WARN(this->get_logger(), "IMU Timeout! Fail-Safe Passthrough engaged.");
                     is_imu_timeout_ = true;
                     target_heading_locked_ = false;
                     controller_.reset();
@@ -237,22 +238,18 @@ private:
             }
         }
 
-        // 2. Command Loss Watchdog Timeout Check
         if (has_cmd_vel_in_) {
             const double cmd_timeout = this->get_parameter("cmd_vel_timeout").as_double();
             const double elapsed = (now - last_cmd_vel_in_time_).seconds();
 
             if (elapsed > cmd_timeout) {
                 if (!is_watchdog_triggered_) {
-                    RCLCPP_WARN(this->get_logger(),
-                                "Watchdog Timeout! Input cmd_vel_in lost for %.2f s. Publishing ZERO VELOCITY.",
-                                elapsed);
+                    RCLCPP_WARN(this->get_logger(), "Watchdog Timeout! Publishing ZERO VELOCITY.");
                     is_watchdog_triggered_ = true;
                     target_heading_locked_ = false;
                     controller_.reset();
                 }
 
-                // Continuously publish zero velocity for safety
                 auto stop_twist = std::make_unique<geometry_msgs::msg::Twist>();
                 cmd_vel_pub_->publish(std::move(stop_twist));
             }
@@ -308,6 +305,9 @@ private:
     rclcpp::TimerBase::SharedPtr watchdog_timer_;
     rclcpp::TimerBase::SharedPtr diag_timer_;
 
+    rclcpp::CallbackGroup::SharedPtr control_cb_group_;
+    rclcpp::CallbackGroup::SharedPtr admin_cb_group_;
+
     OnSetParametersCallbackHandle::SharedPtr param_callback_handle_;
     bno055lib::HeadingController controller_;
 
@@ -335,7 +335,12 @@ RCLCPP_COMPONENTS_REGISTER_NODE(bno055_ros2::BNO055HeadingControlNode)
 int main(int argc, char* argv[]) {
     rclcpp::init(argc, argv);
     auto node = std::make_shared<bno055_ros2::BNO055HeadingControlNode>();
-    rclcpp::spin(node);
+    
+    // MultiThreadedExecutor for standalone execution
+    rclcpp::executors::MultiThreadedExecutor executor;
+    executor.add_node(node);
+    executor.spin();
+    
     rclcpp::shutdown();
     return 0;
 }
