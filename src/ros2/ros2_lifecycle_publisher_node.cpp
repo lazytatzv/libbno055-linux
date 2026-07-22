@@ -1,11 +1,8 @@
 #include <chrono>
-#include <memory>
-#include <string>
-#include <vector>
-
 #include <diagnostic_msgs/msg/diagnostic_array.hpp>
 #include <diagnostic_msgs/msg/diagnostic_status.hpp>
 #include <diagnostic_msgs/msg/key_value.hpp>
+#include <memory>
 #include <rclcpp/executors/multi_threaded_executor.hpp>
 #include <rclcpp/rclcpp.hpp>
 #include <rclcpp_components/register_node_macro.hpp>
@@ -15,6 +12,8 @@
 #include <sensor_msgs/msg/magnetic_field.hpp>
 #include <sensor_msgs/msg/temperature.hpp>
 #include <std_srvs/srv/trigger.hpp>
+#include <string>
+#include <vector>
 
 #include "libbno055-linux/bno055.hpp"
 #include "ros2/bno055_ros2_common.hpp"
@@ -30,7 +29,6 @@ class BNO055LifecyclePublisherNode : public rclcpp_lifecycle::LifecycleNode {
 public:
     explicit BNO055LifecyclePublisherNode(const rclcpp::NodeOptions& options = rclcpp::NodeOptions())
         : LifecycleNode("bno055_lifecycle_publisher_node", options), initialized_(false) {
-
         this->declare_parameter<std::string>("device", "/dev/i2c-1");
         this->declare_parameter<int>("address", 0x28);
         this->declare_parameter<int>("publish_rate_hz", 100);
@@ -59,7 +57,8 @@ public:
 
         imu_pub_ = this->create_publisher<sensor_msgs::msg::Imu>("imu/data", rclcpp::SensorDataQoS());
         mag_pub_ = this->create_publisher<sensor_msgs::msg::MagneticField>("imu/mag", rclcpp::SensorDataQoS());
-        diag_pub_ = this->create_publisher<diagnostic_msgs::msg::DiagnosticArray>("diagnostics", rclcpp::SystemDefaultsQoS());
+        diag_pub_ =
+            this->create_publisher<diagnostic_msgs::msg::DiagnosticArray>("diagnostics", rclcpp::SystemDefaultsQoS());
 
         RCLCPP_INFO(this->get_logger(), "Node configured successfully.");
         return CallbackReturn::SUCCESS;
@@ -76,14 +75,11 @@ public:
         const auto period = std::chrono::milliseconds(1000 / std::max(1, rate_hz));
 
         sensor_timer_ = this->create_wall_timer(
-            period,
-            std::bind(&BNO055LifecyclePublisherNode::publishSensorData, this),
-            sensor_cb_group_);
+            period, std::bind(&BNO055LifecyclePublisherNode::publishSensorData, this), sensor_cb_group_);
 
-        diag_timer_ = this->create_wall_timer(
-            std::chrono::seconds(1),
-            std::bind(&BNO055LifecyclePublisherNode::publishDiagnostics, this),
-            admin_cb_group_);
+        diag_timer_ = this->create_wall_timer(std::chrono::seconds(1),
+                                              std::bind(&BNO055LifecyclePublisherNode::publishDiagnostics, this),
+                                              admin_cb_group_);
 
         RCLCPP_INFO(this->get_logger(), "Node activated.");
         return CallbackReturn::SUCCESS;
