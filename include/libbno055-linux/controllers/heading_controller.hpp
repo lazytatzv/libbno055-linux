@@ -5,10 +5,10 @@
 #include <cmath>
 
 #if defined(__GNUC__) || defined(__clang__)
-#define BNO055_LIKELY(x) __builtin_expect(!!(x), 1)
+#define BNO055_LIKELY(x)   __builtin_expect(!!(x), 1)
 #define BNO055_UNLIKELY(x) __builtin_expect(!!(x), 0)
 #else
-#define BNO055_LIKELY(x) (x)
+#define BNO055_LIKELY(x)   (x)
 #define BNO055_UNLIKELY(x) (x)
 #endif
 
@@ -31,8 +31,8 @@ struct Quat {
  * @brief Sanitizes and validates Quaternion data to guard against NaN, Inf, and norm corruption.
  */
 [[nodiscard]] inline bool isValidQuat(const Quat& q) noexcept {
-    if (BNO055_UNLIKELY(std::isnan(q.w) || std::isnan(q.x) || std::isnan(q.y) || std::isnan(q.z) ||
-                        std::isinf(q.w) || std::isinf(q.x) || std::isinf(q.y) || std::isinf(q.z))) {
+    if (BNO055_UNLIKELY(std::isnan(q.w) || std::isnan(q.x) || std::isnan(q.y) || std::isnan(q.z) || std::isinf(q.w) ||
+                        std::isinf(q.x) || std::isinf(q.y) || std::isinf(q.z))) {
         return false;
     }
     const double norm_sq = q.w * q.w + q.x * q.x + q.y * q.y + q.z * q.z;
@@ -71,31 +71,36 @@ struct Quat {
 class HeadingController {
 public:
     struct Config {
-        double kp{0.05};             ///< Proportional Gain
-        double ki{0.001};            ///< Integral Gain (Trapezoidal Rule)
-        double kd{0.01};             ///< Derivative Gain (Filtered Gyro-based)
-        double kff{0.0};             ///< Feedforward Gain
-        double max_output{1.0};      ///< Max angular output limit
-        double min_output{-1.0};     ///< Min angular output limit
-        double max_i_term{0.2};      ///< Anti-windup saturation limit
-        double deadband_deg{0.02};   ///< Micro-deadband (deg) to eliminate hunting
-        double cutoff_freq_hz{20.0}; ///< Low-pass filter cutoff frequency (Hz)
-        double max_slew_rate{0.0};   ///< Max change rate of output per sec (rad/s^2, 0.0 = disabled)
+        double kp{0.05};              ///< Proportional Gain
+        double ki{0.001};             ///< Integral Gain (Trapezoidal Rule)
+        double kd{0.01};              ///< Derivative Gain (Filtered Gyro-based)
+        double kff{0.0};              ///< Feedforward Gain
+        double max_output{1.0};       ///< Max angular output limit
+        double min_output{-1.0};      ///< Min angular output limit
+        double max_i_term{0.2};       ///< Anti-windup saturation limit
+        double deadband_deg{0.02};    ///< Micro-deadband (deg) to eliminate hunting
+        double cutoff_freq_hz{20.0};  ///< Low-pass filter cutoff frequency (Hz)
+        double max_slew_rate{0.0};    ///< Max change rate of output per sec (rad/s^2, 0.0 = disabled)
     };
 
     struct Output {
-        double correction{0.0};   ///< Control output u = u_FF + u_PID (Slew-rate limited)
-        double left_motor{0.0};   ///< Left wheel speed normalized [0.0, 1.0]
-        double right_motor{0.0};  ///< Right wheel speed normalized [0.0, 1.0]
-        double error_deg{0.0};     ///< Shortest heading error in degrees
-        double gyro_filtered{0.0}; ///< Low-pass filtered gyro rate
+        double correction{0.0};     ///< Control output u = u_FF + u_PID (Slew-rate limited)
+        double left_motor{0.0};     ///< Left wheel speed normalized [0.0, 1.0]
+        double right_motor{0.0};    ///< Right wheel speed normalized [0.0, 1.0]
+        double error_deg{0.0};      ///< Shortest heading error in degrees
+        double gyro_filtered{0.0};  ///< Low-pass filtered gyro rate
     };
 
     HeadingController() noexcept
         : config_(), i_term_(0.0), prev_error_(0.0), prev_output_(0.0), filtered_gyro_(0.0), initialized_(false) {}
 
     explicit HeadingController(const Config& config) noexcept
-        : config_(config), i_term_(0.0), prev_error_(0.0), prev_output_(0.0), filtered_gyro_(0.0), initialized_(false) {}
+        : config_(config),
+          i_term_(0.0),
+          prev_error_(0.0),
+          prev_output_(0.0),
+          filtered_gyro_(0.0),
+          initialized_(false) {}
 
     inline void setGains(double kp, double ki, double kd, double kff = 0.0) noexcept {
         config_.kp = kp;
@@ -104,13 +109,9 @@ public:
         config_.kff = kff;
     }
 
-    inline void setConfig(const Config& config) noexcept {
-        config_ = config;
-    }
+    inline void setConfig(const Config& config) noexcept { config_ = config; }
 
-    [[nodiscard]] inline const Config& getConfig() const noexcept {
-        return config_;
-    }
+    [[nodiscard]] inline const Config& getConfig() const noexcept { return config_; }
 
     inline void reset() noexcept {
         i_term_ = 0.0;
@@ -123,11 +124,8 @@ public:
     /**
      * @brief Computes control output given target heading and gyro feedback.
      */
-    [[nodiscard]] inline Output update(double target_heading_deg,
-                                       double current_heading_deg,
-                                       double dt,
-                                       double gyro_z_deg = 0.0,
-                                       double base_velocity = 0.5,
+    [[nodiscard]] inline Output update(double target_heading_deg, double current_heading_deg, double dt,
+                                       double gyro_z_deg = 0.0, double base_velocity = 0.5,
                                        double target_yaw_rate_deg = 0.0) noexcept {
         Output out{};
         if (BNO055_UNLIKELY(dt <= 0.0)) {
@@ -151,8 +149,8 @@ public:
         // 4. Trapezoidal Rule Integration & Anti-Windup
         if (BNO055_LIKELY(initialized_)) {
             const double trapezoidal_error = (out.error_deg + prev_error_) * 0.5;
-            i_term_ = std::clamp(i_term_ + config_.ki * trapezoidal_error * dt,
-                                 -config_.max_i_term, config_.max_i_term);
+            i_term_ =
+                std::clamp(i_term_ + config_.ki * trapezoidal_error * dt, -config_.max_i_term, config_.max_i_term);
         }
 
         // 5. 1st-Order Low-Pass Filtered Gyro Rate for D-Term
@@ -181,8 +179,7 @@ public:
         prev_error_ = out.error_deg;
 
         // 7. Unconstrained Control Output
-        double raw_output = std::clamp(ff_term + p_term + i_term_ + d_term,
-                                       config_.min_output, config_.max_output);
+        double raw_output = std::clamp(ff_term + p_term + i_term_ + d_term, config_.min_output, config_.max_output);
 
         // 8. Slew-Rate Limiter (Max Acceleration Constraint to protect motors)
         if (BNO055_LIKELY(initialized_ && config_.max_slew_rate > 0.0)) {
@@ -205,12 +202,8 @@ public:
     /**
      * @brief Direct Quaternion Update Overload
      */
-    [[nodiscard]] inline Output update(const Quat& q_target,
-                                       const Quat& q_current,
-                                       double dt,
-                                       double gyro_z_deg = 0.0,
-                                       double base_velocity = 0.5,
-                                       double target_yaw_rate_deg = 0.0) noexcept {
+    [[nodiscard]] inline Output update(const Quat& q_target, const Quat& q_current, double dt, double gyro_z_deg = 0.0,
+                                       double base_velocity = 0.5, double target_yaw_rate_deg = 0.0) noexcept {
         const double target_heading_deg = fastExtractYawDeg(q_target);
         const double current_heading_deg = fastExtractYawDeg(q_current);
         return update(target_heading_deg, current_heading_deg, dt, gyro_z_deg, base_velocity, target_yaw_rate_deg);

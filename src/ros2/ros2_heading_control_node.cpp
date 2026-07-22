@@ -142,31 +142,26 @@ private:
         controller_.setConfig(cfg);
     }
 
-    rcl_interfaces::msg::SetParametersResult onParameterChange(
-        const std::vector<rclcpp::Parameter>& parameters) {
-
+    rcl_interfaces::msg::SetParametersResult onParameterChange(const std::vector<rclcpp::Parameter>& parameters) {
         rcl_interfaces::msg::SetParametersResult result;
         result.successful = true;
 
         for (const auto& param : parameters) {
-            if (param.get_name() == "kp" || param.get_name() == "ki" ||
-                param.get_name() == "kd" || param.get_name() == "kff" ||
-                param.get_name() == "max_i_term" || param.get_name() == "max_output" ||
+            if (param.get_name() == "kp" || param.get_name() == "ki" || param.get_name() == "kd" ||
+                param.get_name() == "kff" || param.get_name() == "max_i_term" || param.get_name() == "max_output" ||
                 param.get_name() == "deadband_deg" || param.get_name() == "cutoff_freq_hz" ||
                 param.get_name() == "max_slew_rate" || param.get_name() == "cmd_vel_timeout" ||
                 param.get_name() == "imu_timeout") {
-                RCLCPP_INFO(this->get_logger(), "Dynamic parameter updated: %s = %f",
-                            param.get_name().c_str(), param.as_double());
+                RCLCPP_INFO(this->get_logger(), "Dynamic parameter updated: %s = %f", param.get_name().c_str(),
+                            param.as_double());
             }
         }
         updateControllerConfigFromParams();
         return result;
     }
 
-    void handleResetHeadingService(
-        const std::shared_ptr<std_srvs::srv::Trigger::Request> /*req*/,
-        std::shared_ptr<std_srvs::srv::Trigger::Response> res) {
-
+    void handleResetHeadingService(const std::shared_ptr<std_srvs::srv::Trigger::Request> /*req*/,
+                                   std::shared_ptr<std_srvs::srv::Trigger::Response> res) {
         if (has_imu_data_ && !is_imu_timeout_) {
             target_quat_ = current_quat_;
             target_heading_deg_ = current_heading_deg_;
