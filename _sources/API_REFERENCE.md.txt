@@ -13,6 +13,7 @@
   - [Power Management](#power-management)
   - [Logging](#logging)
 - [Utilities (Class-External)](#utilities-class-external)
+- [Class HeadingController](#class-headingcontroller)
 
 </details>
 
@@ -497,6 +498,57 @@ fn main() -> Result<(), &'static str> {
     }
     Ok(())
 }
+```
+
+---
+
+## Class HeadingController
+
+Production-grade, zero-allocation PID Controller for robot straight-line driving & heading lock.
+
+Header: `#include "libbno055-linux/controllers/heading_controller.hpp"`
+
+```cpp
+namespace bno055lib {
+
+class HeadingController {
+public:
+    struct Config {
+        double kp{0.05};
+        double ki{0.001};
+        double kd{0.01};
+        double min_output{-1.0};
+        double max_output{1.0};
+        double max_i_term{0.2};
+    };
+
+    struct Output {
+        double correction;   // PID output u
+        double left_motor;   // Left wheel speed [0.0, 1.0]
+        double right_motor;  // Right wheel speed [0.0, 1.0]
+        double error_deg;    // Shortest heading error (-180 to +180 deg)
+    };
+
+    HeadingController() noexcept;
+    explicit HeadingController(const Config& config) noexcept;
+
+    void setGains(double kp, double ki, double kd) noexcept;
+    void setConfig(const Config& config) noexcept;
+    const Config& getConfig() const noexcept;
+    void reset() noexcept;
+
+    Output update(double target_heading_deg,
+                  double current_heading_deg,
+                  double dt,
+                  double gyro_z_deg = 0.0,
+                  double base_velocity = 0.5) noexcept;
+};
+
+// Utilities
+double normalizeAngleDeg(double angle_deg) noexcept;
+double fastExtractYawDeg(double qw, double qx, double qy, double qz) noexcept;
+
+}  // namespace bno055lib
 ```
 
 

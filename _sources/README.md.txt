@@ -67,6 +67,7 @@ linear_acceleration:
 This README is a quick overview. Please see the `docs/` directory for detailed information:
 
 - **[Sphinx API Documentation (Web)](https://lazytatzv.github.io/libbno055-linux/)**: Auto-generated web documentation for C++ and Python APIs.
+- **[Heading & Straight-Line PID Control Guide](docs/HEADING_CONTROL.md)**: Production-grade anti-drift PID control theory, C++ API, ROS 2 Composable Node, and live tuning.
 - **[Features & Comparison](docs/FEATURES_AND_COMPARISON.md)**: Detailed feature list and why you should choose this over Kernel IIO drivers.
 - **[Calibration Best Practices](docs/CALIBRATION.md)**: The "Pro Workflow" for managing calibration in real-time robotic control loops.
 - **[API Reference (Markdown)](docs/API_REFERENCE.md)**: Full class and function reference for C++, C, Python, and Rust.

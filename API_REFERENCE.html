@@ -255,6 +255,7 @@
 </ul>
 </li>
 <li><p><a class="reference internal" href="#utilities-class-external"><span class="xref myst">Utilities (Class-External)</span></a></p></li>
+<li><p><a class="reference internal" href="#class-headingcontroller"><span class="xref myst">Class HeadingController</span></a></p></li>
 </ul>
 </details>
 <section id="namespaces-types">
@@ -961,6 +962,54 @@ Reads all 9-axis raw values in a single 18-byte I2C burst transaction (utilizes 
 </section>
 </section>
 </section>
+<hr class="docutils" />
+<section id="class-headingcontroller">
+<h2>Class HeadingController<a class="headerlink" href="#class-headingcontroller" title="Link to this heading">¶</a></h2>
+<p>Production-grade, zero-allocation PID Controller for robot straight-line driving &amp; heading lock.</p>
+<p>Header: <code class="docutils literal notranslate"><span class="pre">#include</span> <span class="pre">&quot;libbno055-linux/controllers/heading_controller.hpp&quot;</span></code></p>
+<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="k">namespace</span><span class="w"> </span><span class="nn">bno055lib</span><span class="w"> </span><span class="p">{</span>
+
+<span class="k">class</span><span class="w"> </span><span class="nc">HeadingController</span><span class="w"> </span><span class="p">{</span>
+<span class="k">public</span><span class="o">:</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">Config</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="kt">double</span><span class="w"> </span><span class="n">kp</span><span class="p">{</span><span class="mf">0.05</span><span class="p">};</span>
+<span class="w">        </span><span class="kt">double</span><span class="w"> </span><span class="n">ki</span><span class="p">{</span><span class="mf">0.001</span><span class="p">};</span>
+<span class="w">        </span><span class="kt">double</span><span class="w"> </span><span class="n">kd</span><span class="p">{</span><span class="mf">0.01</span><span class="p">};</span>
+<span class="w">        </span><span class="kt">double</span><span class="w"> </span><span class="n">min_output</span><span class="p">{</span><span class="mf">-1.0</span><span class="p">};</span>
+<span class="w">        </span><span class="kt">double</span><span class="w"> </span><span class="n">max_output</span><span class="p">{</span><span class="mf">1.0</span><span class="p">};</span>
+<span class="w">        </span><span class="kt">double</span><span class="w"> </span><span class="n">max_i_term</span><span class="p">{</span><span class="mf">0.2</span><span class="p">};</span>
+<span class="w">    </span><span class="p">};</span>
+
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">Output</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="kt">double</span><span class="w"> </span><span class="n">correction</span><span class="p">;</span><span class="w">   </span><span class="c1">// PID output u</span>
+<span class="w">        </span><span class="kt">double</span><span class="w"> </span><span class="n">left_motor</span><span class="p">;</span><span class="w">   </span><span class="c1">// Left wheel speed [0.0, 1.0]</span>
+<span class="w">        </span><span class="kt">double</span><span class="w"> </span><span class="n">right_motor</span><span class="p">;</span><span class="w">  </span><span class="c1">// Right wheel speed [0.0, 1.0]</span>
+<span class="w">        </span><span class="kt">double</span><span class="w"> </span><span class="n">error_deg</span><span class="p">;</span><span class="w">    </span><span class="c1">// Shortest heading error (-180 to +180 deg)</span>
+<span class="w">    </span><span class="p">};</span>
+
+<span class="w">    </span><span class="n">HeadingController</span><span class="p">()</span><span class="w"> </span><span class="k">noexcept</span><span class="p">;</span>
+<span class="w">    </span><span class="k">explicit</span><span class="w"> </span><span class="n">HeadingController</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="n">Config</span><span class="o">&amp;</span><span class="w"> </span><span class="n">config</span><span class="p">)</span><span class="w"> </span><span class="k">noexcept</span><span class="p">;</span>
+
+<span class="w">    </span><span class="kt">void</span><span class="w"> </span><span class="nf">setGains</span><span class="p">(</span><span class="kt">double</span><span class="w"> </span><span class="n">kp</span><span class="p">,</span><span class="w"> </span><span class="kt">double</span><span class="w"> </span><span class="n">ki</span><span class="p">,</span><span class="w"> </span><span class="kt">double</span><span class="w"> </span><span class="n">kd</span><span class="p">)</span><span class="w"> </span><span class="k">noexcept</span><span class="p">;</span>
+<span class="w">    </span><span class="kt">void</span><span class="w"> </span><span class="nf">setConfig</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="n">Config</span><span class="o">&amp;</span><span class="w"> </span><span class="n">config</span><span class="p">)</span><span class="w"> </span><span class="k">noexcept</span><span class="p">;</span>
+<span class="w">    </span><span class="k">const</span><span class="w"> </span><span class="n">Config</span><span class="o">&amp;</span><span class="w"> </span><span class="nf">getConfig</span><span class="p">()</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="k">noexcept</span><span class="p">;</span>
+<span class="w">    </span><span class="kt">void</span><span class="w"> </span><span class="nf">reset</span><span class="p">()</span><span class="w"> </span><span class="k">noexcept</span><span class="p">;</span>
+
+<span class="w">    </span><span class="n">Output</span><span class="w"> </span><span class="nf">update</span><span class="p">(</span><span class="kt">double</span><span class="w"> </span><span class="n">target_heading_deg</span><span class="p">,</span>
+<span class="w">                  </span><span class="kt">double</span><span class="w"> </span><span class="n">current_heading_deg</span><span class="p">,</span>
+<span class="w">                  </span><span class="kt">double</span><span class="w"> </span><span class="n">dt</span><span class="p">,</span>
+<span class="w">                  </span><span class="kt">double</span><span class="w"> </span><span class="n">gyro_z_deg</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mf">0.0</span><span class="p">,</span>
+<span class="w">                  </span><span class="kt">double</span><span class="w"> </span><span class="n">base_velocity</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mf">0.5</span><span class="p">)</span><span class="w"> </span><span class="k">noexcept</span><span class="p">;</span>
+<span class="p">};</span>
+
+<span class="c1">// Utilities</span>
+<span class="kt">double</span><span class="w"> </span><span class="nf">normalizeAngleDeg</span><span class="p">(</span><span class="kt">double</span><span class="w"> </span><span class="n">angle_deg</span><span class="p">)</span><span class="w"> </span><span class="k">noexcept</span><span class="p">;</span>
+<span class="kt">double</span><span class="w"> </span><span class="nf">fastExtractYawDeg</span><span class="p">(</span><span class="kt">double</span><span class="w"> </span><span class="n">qw</span><span class="p">,</span><span class="w"> </span><span class="kt">double</span><span class="w"> </span><span class="n">qx</span><span class="p">,</span><span class="w"> </span><span class="kt">double</span><span class="w"> </span><span class="n">qy</span><span class="p">,</span><span class="w"> </span><span class="kt">double</span><span class="w"> </span><span class="n">qz</span><span class="p">)</span><span class="w"> </span><span class="k">noexcept</span><span class="p">;</span>
+
+<span class="p">}</span><span class="w">  </span><span class="c1">// namespace bno055lib</span>
+</pre></div>
+</div>
+</section>
 </section>
 
         </article>
@@ -1060,6 +1109,7 @@ Reads all 9-axis raw values in a single 18-byte I2C burst transaction (utilizes 
 </li>
 </ul>
 </li>
+<li><a class="reference internal" href="#class-headingcontroller">Class HeadingController</a></li>
 </ul>
 </li>
 </ul>
