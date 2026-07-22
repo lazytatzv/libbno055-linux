@@ -126,7 +126,7 @@ if(rclcpp_FOUND AND sensor_msgs_FOUND AND geometry_msgs_FOUND AND diagnostic_msg
     target_link_libraries(bno055_publisher_node libbno055-linux)
     ament_target_dependencies(bno055_publisher_node rclcpp sensor_msgs diagnostic_msgs std_srvs)
 
-    add_executable(bno055_heading_control_node examples/ros2/ros2_heading_control_node.cpp)
+    add_executable(bno055_heading_control_node src/ros2/ros2_heading_control_node.cpp)
     target_link_libraries(bno055_heading_control_node libbno055-linux)
     ament_target_dependencies(bno055_heading_control_node rclcpp rclcpp_components sensor_msgs geometry_msgs diagnostic_msgs std_srvs)
 
@@ -143,7 +143,7 @@ if(rclcpp_FOUND AND sensor_msgs_FOUND AND geometry_msgs_FOUND AND diagnostic_msg
         ament_target_dependencies(bno055_ros2_components rclcpp rclcpp_components sensor_msgs diagnostic_msgs std_srvs)
         rclcpp_components_register_node(bno055_ros2_components PLUGIN "bno055_ros2::BNO055PublisherNode" EXECUTABLE bno055_publisher_node_container)
 
-        add_library(bno055_heading_control_components SHARED examples/ros2/ros2_heading_control_node.cpp)
+        add_library(bno055_heading_control_components SHARED src/ros2/ros2_heading_control_node.cpp)
         target_link_libraries(bno055_heading_control_components libbno055-linux)
         ament_target_dependencies(bno055_heading_control_components rclcpp rclcpp_components sensor_msgs geometry_msgs diagnostic_msgs std_srvs)
         rclcpp_components_register_node(bno055_heading_control_components PLUGIN "bno055_ros2::BNO055HeadingControlNode" EXECUTABLE bno055_heading_control_container)
