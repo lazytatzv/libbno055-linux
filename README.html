@@ -242,13 +242,12 @@
 <p><a class="reference external" href="https://github.com/lazytatzv/libbno055-linux/actions"><img alt="Build &amp; Test" src="https://github.com/lazytatzv/libbno055-linux/actions/workflows/ci.yml/badge.svg" /></a>
 <a class="reference internal" href="#LICENSE"><span class="xref myst"><img alt="License: MIT" src="https://img.shields.io/badge/License-MIT-blue.svg" /></span></a>
 <a class="reference external" href="https://en.cppreference.com/w/cpp/17"><img alt="C++ Standard" src="https://img.shields.io/badge/C%2B%2B-17-blue.svg" /></a>
-<a class="reference external" href="https://docs.ros.org/"><img alt="ROS 2" src="https://img.shields.io/badge/ROS%202-Humble%20%7C%20Jazzy-orange.svg" /></a>
+<a class="reference external" href="https://docs.ros.org/"><img alt="ROS 2" src="https://img.shields.io/badge/ROS%202-Humble%20%7C%20Jazzy%20%7C%20Kilted%20%7C%20Lyrical-orange.svg" /></a>
 <a class="reference internal" href="#CHANGELOG.md"><span class="xref myst"><img alt="Version" src="https://img.shields.io/badge/version-1.7.1-green.svg" /></span></a></p>
-<p>A C++17 driver for the Bosch BNO055 9-axis IMU on Linux, with first-class ROS 2 integration and multi-language bindings (Python, C, Rust).</p>
+<p>A C++17 driver for the Bosch BNO055 9-axis IMU on Linux, with first-class ROS 2 integration.</p>
 <hr class="docutils" />
-<section id="overview">
-<h2>Overview<a class="headerlink" href="#overview" title="Link to this heading">¶</a></h2>
-<p>The core of this library is the <strong>BNO055 hardware driver</strong> and its <strong>ROS 2 driver nodes</strong>.</p>
+<section id="components">
+<h2>Components<a class="headerlink" href="#components" title="Link to this heading">¶</a></h2>
 <div class="table-wrapper colwidths-auto docutils container">
 <table class="docutils align-default">
 <thead>
@@ -257,17 +256,23 @@
 </tr>
 </thead>
 <tbody>
-<tr class="row-even"><td class="text-left"><p><strong>BNO055 C++17 Driver</strong></p></td>
-<td class="text-left"><p>Low-level I2C/UART driver with auto-recovery, burst reads, async background threads, and calibration management</p></td>
+<tr class="row-even"><td class="text-left"><p><strong>Hardware Driver</strong></p></td>
+<td class="text-left"><p>C++17 I2C/UART driver for the BNO055. Handles initialization, sensor reads, calibration, and transport recovery.</p></td>
 </tr>
-<tr class="row-odd"><td class="text-left"><p><strong>ROS 2 Driver Nodes</strong></p></td>
-<td class="text-left"><p>Composable and Lifecycle publisher nodes for <code class="docutils literal notranslate"><span class="pre">imu/data</span></code>, <code class="docutils literal notranslate"><span class="pre">imu/mag</span></code>, and <code class="docutils literal notranslate"><span class="pre">/diagnostics</span></code></p></td>
+<tr class="row-odd"><td class="text-left"><p><strong>ROS 2 Package</strong></p></td>
+<td class="text-left"><p>Composable and Lifecycle nodes publishing <code class="docutils literal notranslate"><span class="pre">sensor_msgs/Imu</span></code>, <code class="docutils literal notranslate"><span class="pre">sensor_msgs/MagneticField</span></code>, and diagnostics.</p></td>
 </tr>
-<tr class="row-even"><td class="text-left"><p><strong>Multi-language Bindings</strong></p></td>
-<td class="text-left"><p>C99 FFI, Python 3 (<code class="docutils literal notranslate"><span class="pre">pip</span></code>), Rust (<code class="docutils literal notranslate"><span class="pre">crates.io</span></code>)</p></td>
+<tr class="row-even"><td class="text-left"><p><strong>Python Bindings</strong></p></td>
+<td class="text-left"><p><code class="docutils literal notranslate"><span class="pre">pip</span> <span class="pre">install</span> <span class="pre">libbno055-linux</span></code> → <code class="docutils literal notranslate"><span class="pre">import</span> <span class="pre">libbno055</span></code></p></td>
 </tr>
-<tr class="row-odd"><td class="text-left"><p><strong>Heading PID Controller</strong></p></td>
-<td class="text-left"><p>Optional utility for straight-line correction on differential-drive robots</p></td>
+<tr class="row-odd"><td class="text-left"><p><strong>Rust Crate</strong></p></td>
+<td class="text-left"><p><code class="docutils literal notranslate"><span class="pre">cargo</span> <span class="pre">add</span> <span class="pre">libbno055</span></code></p></td>
+</tr>
+<tr class="row-even"><td class="text-left"><p><strong>C API</strong></p></td>
+<td class="text-left"><p>Stable C99 FFI interface (<code class="docutils literal notranslate"><span class="pre">bno055_c.h</span></code>)</p></td>
+</tr>
+<tr class="row-odd"><td class="text-left"><p><strong>Heading Controller</strong></p></td>
+<td class="text-left"><p>Optional PID-based straight-line correction for differential-drive robots. See <a class="reference internal" href="#docs/HEADING_CONTROL.md"><span class="xref myst">docs/HEADING_CONTROL.md</span></a>.</p></td>
 </tr>
 </tbody>
 </table>
@@ -276,24 +281,24 @@
 <hr class="docutils" />
 <section id="quick-start">
 <h2>Quick Start<a class="headerlink" href="#quick-start" title="Link to this heading">¶</a></h2>
-<section id="ros-2-imu-driver-node-one-command">
-<h3>ROS 2 — IMU Driver Node (One Command)<a class="headerlink" href="#ros-2-imu-driver-node-one-command" title="Link to this heading">¶</a></h3>
+<section id="ros-2-imu-driver-node">
+<h3>ROS 2 — IMU Driver Node<a class="headerlink" href="#ros-2-imu-driver-node" title="Link to this heading">¶</a></h3>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>ros2<span class="w"> </span>launch<span class="w"> </span>libbno055_linux<span class="w"> </span>bno055_launch.py
 </pre></div>
 </div>
 <p>Published topics:</p>
 <ul class="simple">
-<li><p><code class="docutils literal notranslate"><span class="pre">/imu/data</span></code> (<code class="docutils literal notranslate"><span class="pre">sensor_msgs/Imu</span></code>) — Quaternion, angular velocity, linear acceleration</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">/imu/mag</span></code> (<code class="docutils literal notranslate"><span class="pre">sensor_msgs/MagneticField</span></code>) — Magnetometer</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">/diagnostics</span></code> (<code class="docutils literal notranslate"><span class="pre">diagnostic_msgs/DiagnosticArray</span></code>) — Hardware health</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">/imu/data</span></code> — <code class="docutils literal notranslate"><span class="pre">sensor_msgs/Imu</span></code> (quaternion, angular velocity, linear acceleration)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">/imu/mag</span></code> — <code class="docutils literal notranslate"><span class="pre">sensor_msgs/MagneticField</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">/diagnostics</span></code> — <code class="docutils literal notranslate"><span class="pre">diagnostic_msgs/DiagnosticArray</span></code></p></li>
 </ul>
 <p>For Nav2 Lifecycle Manager:</p>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>ros2<span class="w"> </span>launch<span class="w"> </span>libbno055_linux<span class="w"> </span>bno055_launch.py<span class="w"> </span>node_type:<span class="o">=</span>lifecycle
 </pre></div>
 </div>
 </section>
-<section id="standalone-c-17">
-<h3>Standalone C++17<a class="headerlink" href="#standalone-c-17" title="Link to this heading">¶</a></h3>
+<section id="c-17">
+<h3>C++17<a class="headerlink" href="#c-17" title="Link to this heading">¶</a></h3>
 <div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="cp">#include</span><span class="w"> </span><span class="cpf">&quot;libbno055-linux/bno055.hpp&quot;</span>
 
 <span class="n">bno055lib</span><span class="o">::</span><span class="n">BNO055</span><span class="w"> </span><span class="n">imu</span><span class="p">(</span><span class="mh">0x28</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;/dev/i2c-1&quot;</span><span class="p">);</span>
@@ -308,6 +313,10 @@
 </section>
 <section id="python">
 <h3>Python<a class="headerlink" href="#python" title="Link to this heading">¶</a></h3>
+<blockquote>
+<div><p><strong>Note</strong>: The pip package name and the Python module name differ.
+Install: <code class="docutils literal notranslate"><span class="pre">pip</span> <span class="pre">install</span> <span class="pre">libbno055-linux</span></code> — Import: <code class="docutils literal notranslate"><span class="pre">import</span> <span class="pre">libbno055</span></code></p>
+</div></blockquote>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pip<span class="w"> </span>install<span class="w"> </span>libbno055-linux
 </pre></div>
 </div>
@@ -328,32 +337,28 @@
 <hr class="docutils" />
 <section id="driver-features">
 <h2>Driver Features<a class="headerlink" href="#driver-features" title="Link to this heading">¶</a></h2>
-<section id="bno055-c-17-hardware-driver">
-<h3>BNO055 C++17 Hardware Driver<a class="headerlink" href="#bno055-c-17-hardware-driver" title="Link to this heading">¶</a></h3>
+<section id="hardware-driver-c-17">
+<h3>Hardware Driver (C++17)<a class="headerlink" href="#hardware-driver-c-17" title="Link to this heading">¶</a></h3>
 <ul class="simple">
 <li><p><strong>I2C and UART</strong> transport backends with POSIX drivers</p></li>
-<li><p><strong>Auto-recovery</strong>: Automatic reconnect on I2C bus lockups, clock-stretching glitches, and UART overrun errors</p></li>
-<li><p><strong>18-byte burst read</strong>: Single sequential read for Accel + Mag + Gyro (<code class="docutils literal notranslate"><span class="pre">~450µs</span></code> at 400kHz I2C)</p></li>
-<li><p><strong>Operating modes</strong>: NDOF, IMU, Compass, AMG, and all BNO055 fusion modes</p></li>
-<li><p><strong>Hardware overclocking</strong>: Accel 1kHz ODR / Gyro 2kHz ODR in AMG mode</p></li>
-<li><p><strong>GPIO interrupt (IRQ)</strong>: Sub-millisecond latency via hardware INT pin using <code class="docutils literal notranslate"><span class="pre">poll()</span></code></p></li>
-<li><p><strong>Async background threads</strong>: Non-blocking continuous data reads at configurable rate</p></li>
-<li><p><strong>Calibration management</strong>: Save/load calibration offsets to/from binary file</p></li>
-<li><p><strong>Axis remapping</strong>: Full axis config and sign remapping support</p></li>
-<li><p><strong>External crystal</strong>: <code class="docutils literal notranslate"><span class="pre">setExtCrystalUse()</span></code> for improved long-term heading accuracy</p></li>
-<li><p><strong>Suspend/Normal power modes</strong>: Low-power sleep and wake control</p></li>
+<li><p><strong>Automatic transport recovery</strong> on bus errors and communication failures</p></li>
+<li><p><strong>18-byte sequential burst read</strong> for Accel + Mag + Gyro in a single transaction
+(measured at ~450 µs on 400 kHz I²C; actual latency depends on hardware and kernel scheduling)</p></li>
+<li><p><strong>Configurable sensor output data rates</strong> in AMG mode (up to Accel 1 kHz / Gyro 2 kHz ODR)</p></li>
+<li><p><strong>Optional background polling thread</strong> for continuous non-blocking reads</p></li>
+<li><p><strong>Calibration management</strong> — save and load sensor offsets to/from file</p></li>
 </ul>
+<p>For the full API including GPIO interrupts, axis remapping, power modes, and operating modes, see <a class="reference internal" href="#docs/API_REFERENCE.md"><span class="xref myst">docs/API_REFERENCE.md</span></a>.</p>
 </section>
-<section id="ros-2-driver-nodes">
-<h3>ROS 2 Driver Nodes<a class="headerlink" href="#ros-2-driver-nodes" title="Link to this heading">¶</a></h3>
+<section id="ros-2-package">
+<h3>ROS 2 Package<a class="headerlink" href="#ros-2-package" title="Link to this heading">¶</a></h3>
 <ul class="simple">
-<li><p><strong>Composable Component</strong> (<code class="docutils literal notranslate"><span class="pre">rclcpp_components</span></code>) — Zero-copy intra-process transport</p></li>
-<li><p><strong>Managed Lifecycle Node</strong> (<code class="docutils literal notranslate"><span class="pre">rclcpp_lifecycle</span></code>) — Full Nav2 Lifecycle Manager integration</p></li>
-<li><p><strong>Isolated CallbackGroups</strong> — High-frequency sensor publishing (100Hz) is isolated from 1Hz diagnostics</p></li>
-<li><p><strong>MultiThreadedExecutor</strong> — Non-blocking parallel execution</p></li>
-<li><p><strong>Linux <code class="docutils literal notranslate"><span class="pre">SCHED_FIFO</span></code></strong> — Optional real-time thread priority elevation</p></li>
-<li><p><strong>NaN/Inf Outlier Rejection</strong> — Corrupted sensor frames are dropped before publishing</p></li>
-<li><p><strong>Dynamic Parameters</strong> — PID and timeout parameters can be changed at runtime via <code class="docutils literal notranslate"><span class="pre">ros2</span> <span class="pre">param</span> <span class="pre">set</span></code></p></li>
+<li><p><strong>Composable Component</strong> (<code class="docutils literal notranslate"><span class="pre">rclcpp_components</span></code>) — zero-copy intra-process transport</p></li>
+<li><p><strong>Managed Lifecycle Node</strong> (<code class="docutils literal notranslate"><span class="pre">rclcpp_lifecycle</span></code>) — Nav2 Lifecycle Manager integration</p></li>
+<li><p><strong>Isolated CallbackGroups</strong> — sensor publishing isolated from diagnostics and services</p></li>
+<li><p><strong>MultiThreadedExecutor</strong> — parallel callback execution</p></li>
+<li><p><strong>Linux <code class="docutils literal notranslate"><span class="pre">SCHED_FIFO</span></code></strong> support — optional real-time thread priority</p></li>
+<li><p><strong>Dynamic Parameters</strong> — update parameters at runtime via <code class="docutils literal notranslate"><span class="pre">ros2</span> <span class="pre">param</span> <span class="pre">set</span></code></p></li>
 </ul>
 </section>
 </section>
@@ -367,11 +372,11 @@ sudo<span class="w"> </span>apt<span class="w"> </span>install<span class="w"> <
 </pre></div>
 </div>
 <blockquote>
-<div><p>The <code class="docutils literal notranslate"><span class="pre">apt</span></code> binary is updated periodically by ROS Buildfarm. For the latest features (v1.7+), build from source.</p>
+<div><p>The <code class="docutils literal notranslate"><span class="pre">apt</span></code> binary is updated periodically by ROS Buildfarm. For the latest release (v1.7.1), build from source.</p>
 </div></blockquote>
 </section>
-<section id="option-b-colcon-ros-2-source-build-recommended">
-<h3>Option B: colcon (ROS 2 source build) — Recommended<a class="headerlink" href="#option-b-colcon-ros-2-source-build-recommended" title="Link to this heading">¶</a></h3>
+<section id="option-b-colcon-ros-2-source-build">
+<h3>Option B: colcon (ROS 2 source build)<a class="headerlink" href="#option-b-colcon-ros-2-source-build" title="Link to this heading">¶</a></h3>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="nb">cd</span><span class="w"> </span>~/ros2_ws/src
 git<span class="w"> </span>clone<span class="w"> </span>https://github.com/lazytatzv/libbno055-linux.git
 <span class="nb">cd</span><span class="w"> </span>~/ros2_ws
@@ -393,37 +398,9 @@ sudo<span class="w"> </span>make<span class="w"> </span>install
 </section>
 </section>
 <hr class="docutils" />
-<section id="ros-2-node-topics-parameters">
-<h2>ROS 2 Node Topics &amp; Parameters<a class="headerlink" href="#ros-2-node-topics-parameters" title="Link to this heading">¶</a></h2>
-<section id="published-topics">
-<h3>Published Topics<a class="headerlink" href="#published-topics" title="Link to this heading">¶</a></h3>
-<div class="table-wrapper colwidths-auto docutils container">
-<table class="docutils align-default">
-<thead>
-<tr class="row-odd"><th class="head text-left"><p>Topic</p></th>
-<th class="head text-left"><p>Type</p></th>
-<th class="head text-left"><p>Description</p></th>
-</tr>
-</thead>
-<tbody>
-<tr class="row-even"><td class="text-left"><p><code class="docutils literal notranslate"><span class="pre">imu/data</span></code></p></td>
-<td class="text-left"><p><code class="docutils literal notranslate"><span class="pre">sensor_msgs/Imu</span></code></p></td>
-<td class="text-left"><p>Quaternion, angular velocity (rad/s), linear acceleration (m/s²)</p></td>
-</tr>
-<tr class="row-odd"><td class="text-left"><p><code class="docutils literal notranslate"><span class="pre">imu/mag</span></code></p></td>
-<td class="text-left"><p><code class="docutils literal notranslate"><span class="pre">sensor_msgs/MagneticField</span></code></p></td>
-<td class="text-left"><p>Magnetometer (Tesla)</p></td>
-</tr>
-<tr class="row-even"><td class="text-left"><p><code class="docutils literal notranslate"><span class="pre">diagnostics</span></code></p></td>
-<td class="text-left"><p><code class="docutils literal notranslate"><span class="pre">diagnostic_msgs/DiagnosticArray</span></code></p></td>
-<td class="text-left"><p>Hardware operational status</p></td>
-</tr>
-</tbody>
-</table>
-</div>
-</section>
-<section id="parameters-config-bno055-params-yaml">
-<h3>Parameters (<code class="docutils literal notranslate"><span class="pre">config/bno055_params.yaml</span></code>)<a class="headerlink" href="#parameters-config-bno055-params-yaml" title="Link to this heading">¶</a></h3>
+<section id="ros-2-parameters">
+<h2>ROS 2 Parameters<a class="headerlink" href="#ros-2-parameters" title="Link to this heading">¶</a></h2>
+<p>Key parameters (see <a class="reference internal" href="#config/bno055_params.yaml"><span class="xref myst"><code class="docutils literal notranslate"><span class="pre">config/bno055_params.yaml</span></code></span></a> for the full list):</p>
 <div class="table-wrapper colwidths-auto docutils container">
 <table class="docutils align-default">
 <thead>
@@ -443,38 +420,30 @@ sudo<span class="w"> </span>make<span class="w"> </span>install
 </tr>
 <tr class="row-even"><td class="text-left"><p><code class="docutils literal notranslate"><span class="pre">publish_rate_hz</span></code></p></td>
 <td class="text-center"><p><code class="docutils literal notranslate"><span class="pre">100</span></code></p></td>
-<td class="text-left"><p>Sensor publish rate</p></td>
+<td class="text-left"><p>Sensor publish rate (Hz)</p></td>
 </tr>
 <tr class="row-odd"><td class="text-left"><p><code class="docutils literal notranslate"><span class="pre">frame_id</span></code></p></td>
 <td class="text-center"><p><code class="docutils literal notranslate"><span class="pre">imu_link</span></code></p></td>
 <td class="text-left"><p>ROS TF frame ID</p></td>
 </tr>
+<tr class="row-even"><td class="text-left"><p>…</p></td>
+<td class="text-center"><p></p></td>
+<td class="text-left"><p></p></td>
+</tr>
 </tbody>
 </table>
 </div>
-</section>
-</section>
-<hr class="docutils" />
-<section id="optional-heading-pid-controller">
-<h2>Optional: Heading PID Controller<a class="headerlink" href="#optional-heading-pid-controller" title="Link to this heading">¶</a></h2>
-<p>A straight-line correction utility for differential-drive robots is included as an optional component.
-It subscribes to <code class="docutils literal notranslate"><span class="pre">imu/data</span></code> and <code class="docutils literal notranslate"><span class="pre">cmd_vel_in</span></code>, and publishes a corrected <code class="docutils literal notranslate"><span class="pre">cmd_vel</span></code>.</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>ros2<span class="w"> </span>launch<span class="w"> </span>libbno055_linux<span class="w"> </span>heading_control_launch.py
-</pre></div>
-</div>
-<p>See <a class="reference internal" href="#docs/HEADING_CONTROL.md"><span class="xref myst">docs/HEADING_CONTROL.md</span></a> for full documentation.</p>
 </section>
 <hr class="docutils" />
 <section id="documentation">
 <h2>Documentation<a class="headerlink" href="#documentation" title="Link to this heading">¶</a></h2>
 <ul class="simple">
 <li><p><a class="reference internal" href="#docs/API_REFERENCE.md"><span class="xref myst">API Reference — C++ / C / Python / Rust</span></a></p></li>
-<li><p><a class="reference internal" href="#src/ros2/README.md"><span class="xref myst">ROS 2 Nodes Architecture</span></a></p></li>
-<li><p><a class="reference internal" href="#docs/HEADING_CONTROL.md"><span class="xref myst">Heading PID Controller Guide</span></a></p></li>
+<li><p><a class="reference internal" href="#src/ros2/README.md"><span class="xref myst">ROS 2 Node Architecture</span></a></p></li>
 <li><p><a class="reference internal" href="#docs/CALIBRATION.md"><span class="xref myst">Hardware Calibration Guide</span></a></p></li>
 <li><p><a class="reference internal" href="#docs/INTEGRATION.md"><span class="xref myst">Integration Guide (EKF, Nav2, robot_localization)</span></a></p></li>
+<li><p><a class="reference internal" href="#docs/HEADING_CONTROL.md"><span class="xref myst">Heading PID Controller (Optional)</span></a></p></li>
 <li><p><a class="reference internal" href="#docs/TROUBLESHOOTING.md"><span class="xref myst">Troubleshooting &amp; FAQ</span></a></p></li>
-<li><p><a class="reference internal" href="#examples/README.md"><span class="xref myst">Examples</span></a></p></li>
 </ul>
 </section>
 <hr class="docutils" />
@@ -540,31 +509,26 @@ It subscribes to <code class="docutils literal notranslate"><span class="pre">im
           <div class="toc-tree">
             <ul>
 <li><a class="reference internal" href="#">libbno055-linux</a><ul>
-<li><a class="reference internal" href="#overview">Overview</a></li>
+<li><a class="reference internal" href="#components">Components</a></li>
 <li><a class="reference internal" href="#quick-start">Quick Start</a><ul>
-<li><a class="reference internal" href="#ros-2-imu-driver-node-one-command">ROS 2 — IMU Driver Node (One Command)</a></li>
-<li><a class="reference internal" href="#standalone-c-17">Standalone C++17</a></li>
+<li><a class="reference internal" href="#ros-2-imu-driver-node">ROS 2 — IMU Driver Node</a></li>
+<li><a class="reference internal" href="#c-17">C++17</a></li>
 <li><a class="reference internal" href="#python">Python</a></li>
 <li><a class="reference internal" href="#rust">Rust</a></li>
 </ul>
 </li>
 <li><a class="reference internal" href="#driver-features">Driver Features</a><ul>
-<li><a class="reference internal" href="#bno055-c-17-hardware-driver">BNO055 C++17 Hardware Driver</a></li>
-<li><a class="reference internal" href="#ros-2-driver-nodes">ROS 2 Driver Nodes</a></li>
+<li><a class="reference internal" href="#hardware-driver-c-17">Hardware Driver (C++17)</a></li>
+<li><a class="reference internal" href="#ros-2-package">ROS 2 Package</a></li>
 </ul>
 </li>
 <li><a class="reference internal" href="#installation">Installation</a><ul>
 <li><a class="reference internal" href="#option-a-apt-ros-2-binary">Option A: apt (ROS 2 binary)</a></li>
-<li><a class="reference internal" href="#option-b-colcon-ros-2-source-build-recommended">Option B: colcon (ROS 2 source build) — Recommended</a></li>
+<li><a class="reference internal" href="#option-b-colcon-ros-2-source-build">Option B: colcon (ROS 2 source build)</a></li>
 <li><a class="reference internal" href="#option-c-cmake-standalone-c-library">Option C: CMake (standalone C++ library)</a></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#ros-2-node-topics-parameters">ROS 2 Node Topics &amp; Parameters</a><ul>
-<li><a class="reference internal" href="#published-topics">Published Topics</a></li>
-<li><a class="reference internal" href="#parameters-config-bno055-params-yaml">Parameters (<code class="docutils literal notranslate"><span class="pre">config/bno055_params.yaml</span></code>)</a></li>
-</ul>
-</li>
-<li><a class="reference internal" href="#optional-heading-pid-controller">Optional: Heading PID Controller</a></li>
+<li><a class="reference internal" href="#ros-2-parameters">ROS 2 Parameters</a></li>
 <li><a class="reference internal" href="#documentation">Documentation</a></li>
 <li><a class="reference internal" href="#license">License</a></li>
 </ul>
