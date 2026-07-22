@@ -504,7 +504,7 @@ fn main() -> Result<(), &'static str> {
 
 ## Class HeadingController
 
-Theoretical Optimal Control Grade PID & Feedforward Controller for robot straight-line driving & heading lock.
+Heading PID & Feedforward Controller for robot straight-line driving & heading lock.
 
 Header: `#include "libbno055-linux/controllers/heading_controller.hpp"`
 

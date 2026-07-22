@@ -15,7 +15,7 @@ examples/
 
 | File | Subdirectory | Language | Purpose & Features |
 | :--- | :--- | :---: | :--- |
-| **`heading_control_demo.cpp`** | `cpp/` | C++17 | **[Recommended]** 100Hz Ultra-Performance Straight-Line PID Heading Controller with zero-allocation ASCII dashboard. |
+| **`heading_control_demo.cpp`** | `cpp/` | C++17 | 100Hz Straight-Line PID Heading Controller with ASCII dashboard demo. |
 | **`read_all_data.cpp`** | `cpp/` | C++17 | Interactive dashboard reading all physical vectors (Accel, Gyro, Mag, Euler, Linear Accel, Gravity, Quaternion, Temp). |
 | **`read_data_noexcept.cpp`** | `cpp/` | C++17 | Non-throwing `noexcept` API usage pattern suitable for hard real-time / safety-critical systems. |
 | **`calibrate.cpp`** | `cpp/` | C++17 | Interactive sensor calibration helper & status logger. |

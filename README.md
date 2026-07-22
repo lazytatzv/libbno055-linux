@@ -181,12 +181,12 @@ ros2 launch libbno055_linux bno055_launch.py
 
 ---
 
-### Robot Straight-Line & Heading PID Control (Beginner Quick Start)
+### Robot Straight-Line & Heading PID Control
 
-Want to prevent your robot from drifting during straight-line driving or maintain target heading? Run the **Zero-Copy Production Pipeline** in a single command:
+Want to prevent your robot from drifting during straight-line driving or maintain target heading? Run the ROS 2 node using:
 
 ```bash
-# One-Command Zero-Copy Launch (Starts IMU Driver + PID Controller with Production YAML Config)
+# Launch IMU Driver + Heading PID Controller
 ros2 launch libbno055_linux heading_control_launch.py
 ```
 

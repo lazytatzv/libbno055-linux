@@ -48,9 +48,9 @@ struct Quat {
 }
 
 /**
- * @brief Theoretical Maximum / Optimal Control Grade Heading Controller.
- * Integrates:
- *  - Feedforward (FF) + Feedback (PID) Optimal Control Architecture
+ * @brief Zero-allocation C++17 Heading PID & Feedforward Controller for Mobile Robots.
+ * Features:
+ *  - Kinematic Feedforward (FF) + Feedback (PID) Control Architecture
  *  - Trapezoidal (Tustin) Rule Integration for Jitter-Free Precision
  *  - 1st-Order Low-Pass Filtered Gyro Derivative to Suppress Mechanical Vibration Noise
  *  - Anti-Windup Saturation Clamping & Deadband Smoothing
@@ -102,7 +102,7 @@ public:
     }
 
     /**
-     * @brief Computes Theoretical Optimal Control Output.
+     * @brief Computes control output given target heading and gyro feedback.
      * @param target_heading_deg Desired target heading in degrees
      * @param current_heading_deg Current IMU heading in degrees
      * @param dt Time delta in seconds

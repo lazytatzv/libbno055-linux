@@ -23,7 +23,7 @@ using CallbackReturn = rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface
 /**
  * @brief Managed Lifecycle Heading Corrector Node.
  * Integrates with ROS 2 Lifecycle State Machines (unconfigured -> inactive -> active -> finalized).
- * Ideal for Nav2 Lifecycle Manager and enterprise safety architectures.
+ * Ideal for Nav2 Lifecycle Manager integration.
  */
 class BNO055LifecycleHeadingControlNode : public rclcpp_lifecycle::LifecycleNode {
 public:
