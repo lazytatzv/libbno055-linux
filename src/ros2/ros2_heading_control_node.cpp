@@ -1,3 +1,6 @@
+#include <pthread.h>
+#include <sched.h>
+
 #include <algorithm>
 #include <chrono>
 #include <diagnostic_msgs/msg/diagnostic_array.hpp>
@@ -18,10 +21,20 @@
 namespace bno055_ros2 {
 
 /**
- * @brief ROS 2 Composable Heading Corrector Node with Watchdog Safety & Multi-threaded Callback Isolation.
- * Features: Zero-Copy Intra-Process transport, Dynamic Parameters, Isolated Callback Groups,
- * Diagnostics, Reset Service, and Safety Watchdog Timer.
+ * @brief Elegantly attempts to set Linux SCHED_FIFO real-time thread priority without hard crashing.
  */
+inline void trySetRealtimePriority(rclcpp::Logger logger, int priority = 80) noexcept {
+#if defined(__linux__)
+    struct sched_param param;
+    param.sched_priority = priority;
+    if (pthread_setschedparam(pthread_self(), SCHED_FIFO, &param) == 0) {
+        RCLCPP_INFO(logger, "Successfully elevated thread priority to SCHED_FIFO (Priority: %d)", priority);
+    } else {
+        RCLCPP_DEBUG(logger, "Running with default OS scheduling (SCHED_FIFO requires CAP_SYS_NICE privileges)");
+    }
+#endif
+}
+
 class BNO055HeadingControlNode : public rclcpp::Node {
 public:
     explicit BNO055HeadingControlNode(const rclcpp::NodeOptions& options = rclcpp::NodeOptions())
@@ -47,6 +60,7 @@ public:
         this->declare_parameter<double>("max_output", 1.0);
         this->declare_parameter<double>("deadband_deg", 0.02);
         this->declare_parameter<double>("cutoff_freq_hz", 20.0);
+        this->declare_parameter<double>("max_slew_rate", 0.0);
         this->declare_parameter<double>("angular_deadband", 0.01);
         this->declare_parameter<double>("cmd_vel_timeout", 0.5);
         this->declare_parameter<double>("imu_timeout", 1.0);
@@ -124,28 +138,35 @@ private:
         cfg.min_output = -cfg.max_output;
         cfg.deadband_deg = this->get_parameter("deadband_deg").as_double();
         cfg.cutoff_freq_hz = this->get_parameter("cutoff_freq_hz").as_double();
+        cfg.max_slew_rate = this->get_parameter("max_slew_rate").as_double();
         controller_.setConfig(cfg);
     }
 
-    rcl_interfaces::msg::SetParametersResult onParameterChange(const std::vector<rclcpp::Parameter>& parameters) {
+    rcl_interfaces::msg::SetParametersResult onParameterChange(
+        const std::vector<rclcpp::Parameter>& parameters) {
+
         rcl_interfaces::msg::SetParametersResult result;
         result.successful = true;
 
         for (const auto& param : parameters) {
-            if (param.get_name() == "kp" || param.get_name() == "ki" || param.get_name() == "kd" ||
-                param.get_name() == "kff" || param.get_name() == "max_i_term" || param.get_name() == "max_output" ||
+            if (param.get_name() == "kp" || param.get_name() == "ki" ||
+                param.get_name() == "kd" || param.get_name() == "kff" ||
+                param.get_name() == "max_i_term" || param.get_name() == "max_output" ||
                 param.get_name() == "deadband_deg" || param.get_name() == "cutoff_freq_hz" ||
-                param.get_name() == "cmd_vel_timeout" || param.get_name() == "imu_timeout") {
-                RCLCPP_INFO(this->get_logger(), "Dynamic parameter updated: %s = %f", param.get_name().c_str(),
-                            param.as_double());
+                param.get_name() == "max_slew_rate" || param.get_name() == "cmd_vel_timeout" ||
+                param.get_name() == "imu_timeout") {
+                RCLCPP_INFO(this->get_logger(), "Dynamic parameter updated: %s = %f",
+                            param.get_name().c_str(), param.as_double());
             }
         }
         updateControllerConfigFromParams();
         return result;
     }
 
-    void handleResetHeadingService(const std::shared_ptr<std_srvs::srv::Trigger::Request> /*req*/,
-                                   std::shared_ptr<std_srvs::srv::Trigger::Response> res) {
+    void handleResetHeadingService(
+        const std::shared_ptr<std_srvs::srv::Trigger::Request> /*req*/,
+        std::shared_ptr<std_srvs::srv::Trigger::Response> res) {
+
         if (has_imu_data_ && !is_imu_timeout_) {
             target_quat_ = current_quat_;
             target_heading_deg_ = current_heading_deg_;
@@ -162,12 +183,18 @@ private:
     }
 
     void imuCallback(const sensor_msgs::msg::Imu::SharedPtr msg) noexcept {
+        bno055lib::Quat q{msg->orientation.w, msg->orientation.x, msg->orientation.y, msg->orientation.z};
+        if (BNO055_UNLIKELY(!bno055lib::isValidQuat(q))) {
+            RCLCPP_WARN_THROTTLE(this->get_logger(), *this->get_clock(), 2000,
+                                 "Corrupted or invalid IMU Quaternion dropped (Outlier Rejection)");
+            return;
+        }
         const rclcpp::Time now = this->now();
         last_imu_time_ = now;
         has_imu_data_ = true;
         is_imu_timeout_ = false;
 
-        current_quat_ = bno055lib::Quat{msg->orientation.w, msg->orientation.x, msg->orientation.y, msg->orientation.z};
+        current_quat_ = q;
         current_heading_deg_ = bno055lib::fastExtractYawDeg(current_quat_);
         gyro_z_deg_ = msg->angular_velocity.z * bno055lib::RAD_TO_DEG;
     }
@@ -327,7 +354,8 @@ int main(int argc, char* argv[]) {
     rclcpp::init(argc, argv);
     auto node = std::make_shared<bno055_ros2::BNO055HeadingControlNode>();
 
-    // MultiThreadedExecutor for standalone execution
+    bno055_ros2::trySetRealtimePriority(node->get_logger(), 80);
+
     rclcpp::executors::MultiThreadedExecutor executor;
     executor.add_node(node);
     executor.spin();

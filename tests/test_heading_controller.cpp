@@ -120,4 +120,33 @@ TEST(HeadingControllerTest, DirectQuaternionUpdate) {
     EXPECT_NEAR(out.error_deg, -90.0, 1e-3);
 }
 
+TEST(HeadingControllerTest, SlewRateLimiting) {
+    HeadingController::Config cfg;
+    cfg.kp = 1.0;
+    cfg.max_slew_rate = 2.0;  // Max change rate 2.0 rad/s^2
+
+    HeadingController controller(cfg);
+
+    // Initial step: raw correction would be P * error = 1.0 * 10.0 = 10.0 (clamped to max_output 1.0)
+    // First step: initialized -> output = 1.0
+    auto out1 = controller.update(10.0, 0.0, 0.1);
+    EXPECT_NEAR(out1.correction, 1.0, 1e-6);
+
+    // Second step: target jumps to -10.0 -> raw output = -1.0 (delta = -2.0)
+    // Max change per 0.1s is max_slew_rate * dt = 2.0 * 0.1 = 0.2
+    // So output should change from 1.0 to 1.0 - 0.2 = 0.8
+    auto out2 = controller.update(-10.0, 0.0, 0.1);
+    EXPECT_NEAR(out2.correction, 0.8, 1e-6);
+}
+
+TEST(HeadingControllerTest, QuaternionValidation) {
+    Quat valid_q{1.0, 0.0, 0.0, 0.0};
+    Quat nan_q{std::numeric_limits<double>::quiet_NaN(), 0.0, 0.0, 0.0};
+    Quat corrupted_q{5.0, 5.0, 5.0, 5.0};  // Norm squared = 100 != 1.0
+
+    EXPECT_TRUE(isValidQuat(valid_q));
+    EXPECT_FALSE(isValidQuat(nan_q));
+    EXPECT_FALSE(isValidQuat(corrupted_q));
+}
+
 }  // namespace bno055lib::test

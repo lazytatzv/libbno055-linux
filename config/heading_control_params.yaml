@@ -22,6 +22,7 @@ bno055_heading_control_node:
     max_output: 1.0                    # Maximum angular velocity correction limit (rad/s)
     deadband_deg: 0.02                 # Micro-deadband (degrees) to eliminate hunting at zero error
     cutoff_freq_hz: 20.0               # 1st-Order Low-Pass Filter cutoff frequency for gyro noise (Hz)
+    max_slew_rate: 2.0                 # Max change rate of output (rad/s^2) to prevent motor/wheel slip shock (0.0 = disabled)
     angular_deadband: 0.01             # Turning threshold (rad/s) to disengage heading lock
 
     # --------------------------------------------------------------------------
