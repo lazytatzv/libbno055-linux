@@ -5,6 +5,19 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.7.0] - 2026-07-22
+
+### Added
+- **Heading PID Controller (`bno055lib::HeadingController`)**: Production-grade, zero-allocation C++17 heading controller for mobile robot straight-line driving and orientation lock.
+- **Theoretical Optimal Control Architecture**: Upgraded with Trapezoidal (Tustin) Rule Integration, 1st-order Low-Pass Filtered Gyro Rate D-term, Kinematic Feedforward (FF) coupling, and Micro-Deadband smoothing.
+- **Production ROS 2 Nodes**:
+  - `bno055_heading_control_node`: Standard Composable Component node with Zero-Copy transport.
+  - `bno055_lifecycle_heading_control_node`: Managed Lifecycle node for Nav2 `lifecycle_manager` integration.
+- **Safety Watchdog Timeout**: Automatic Zero Velocity command generation when input velocity (`cmd_vel_in`) is lost to prevent runaway accidents.
+- **IMU Fail-Safe Passthrough**: Automatic 100% velocity passthrough when IMU data is offline or disconnected, ensuring robot movement never stops.
+- **Direct Quaternion Update**: Overloaded API allowing callers to pass `Quat` directly without manual Euler conversion.
+- **Dedicated Parameter YAML**: Added [`config/heading_control_params.yaml`](config/heading_control_params.yaml) and simplified 1-command startup.
+
 ## [1.6.2] - 2026-07-22
 
 ### Fixed
