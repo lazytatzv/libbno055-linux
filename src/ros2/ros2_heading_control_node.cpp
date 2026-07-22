@@ -17,9 +17,11 @@
 namespace bno055_ros2 {
 
 /**
- * @brief Production-Grade ROS 2 Composable Heading Corrector Node with Watchdog Safety.
- * Features: Zero-Copy Intra-Process transport, Dynamic Parameters, Diagnostics, Reset Service,
- * and a Safety Watchdog Timer to command zero velocity upon command timeout.
+ * @brief Production-Grade ROS 2 Composable Heading Corrector Node with Watchdog & IMU Fail-Safe Passthrough.
+ * Features:
+ *  - Fail-Safe Passthrough: If IMU is missing or disconnected, velocity commands seamlessly pass through.
+ *  - Watchdog Safety Timer: Command-loss safety protection (publishes zero velocity on input timeout).
+ *  - Zero-Copy Intra-Process transport & Dynamic Parameters.
  */
 class BNO055HeadingControlNode : public rclcpp::Node {
 public:
@@ -27,12 +29,14 @@ public:
         : Node("bno055_heading_control_node", options),
           last_time_(this->now()),
           last_cmd_vel_in_time_(this->now()),
+          last_imu_time_(this->now()),
           target_heading_locked_(false),
           current_heading_deg_(0.0),
           gyro_z_deg_(0.0),
           has_imu_data_(false),
           has_cmd_vel_in_(false),
           is_watchdog_triggered_(false),
+          is_imu_timeout_(false),
           last_correction_(0.0),
           last_error_deg_(0.0) {
         // 1. Declare Parameters
@@ -42,7 +46,8 @@ public:
         this->declare_parameter<double>("max_i_term", 0.2);
         this->declare_parameter<double>("max_output", 1.0);
         this->declare_parameter<double>("angular_deadband", 0.01);
-        this->declare_parameter<double>("cmd_vel_timeout", 0.5);  // Safety Watchdog timeout in seconds
+        this->declare_parameter<double>("cmd_vel_timeout", 0.5);  // Command loss Watchdog timeout
+        this->declare_parameter<double>("imu_timeout", 1.0);      // IMU connection loss timeout
         this->declare_parameter<std::string>("imu_topic", "imu/data");
         this->declare_parameter<std::string>("cmd_vel_in_topic", "cmd_vel_in");
         this->declare_parameter<std::string>("cmd_vel_out_topic", "cmd_vel");
@@ -76,9 +81,16 @@ public:
             "~/reset_heading", std::bind(&BNO055HeadingControlNode::handleResetHeadingService, this,
                                          std::placeholders::_1, std::placeholders::_2));
 
+<<<<<<< HEAD
         // 5. Watchdog Safety Timer (Checking at 20Hz / 50ms)
         watchdog_timer_ = this->create_wall_timer(std::chrono::milliseconds(50),
                                                   std::bind(&BNO055HeadingControlNode::checkWatchdogTimeout, this));
+=======
+        // 5. Watchdog & IMU Health Check Timer (Checking at 20Hz / 50ms)
+        watchdog_timer_ = this->create_wall_timer(
+            std::chrono::milliseconds(50),
+            std::bind(&BNO055HeadingControlNode::checkSystemHealth, this));
+>>>>>>> 9b5f61a (feat: add IMU Fail-Safe Passthrough Mode to ensure robot keeps moving smoothly even if IMU is offline)
 
         // 6. Diagnostics Timer (1Hz)
         if (this->get_parameter("enable_diagnostics").as_bool()) {
@@ -86,8 +98,12 @@ public:
                                                   std::bind(&BNO055HeadingControlNode::publishDiagnostics, this));
         }
 
+<<<<<<< HEAD
         RCLCPP_INFO(this->get_logger(),
                     "[Production Composable Node] BNO055 Heading Corrector Node online with Safety Watchdog.");
+=======
+        RCLCPP_INFO(this->get_logger(), "[Production Composable Node] BNO055 Heading Corrector online (With IMU Fail-Safe Passthrough).");
+>>>>>>> 9b5f61a (feat: add IMU Fail-Safe Passthrough Mode to ensure robot keeps moving smoothly even if IMU is offline)
     }
 
 private:
@@ -107,20 +123,31 @@ private:
         result.successful = true;
 
         for (const auto& param : parameters) {
+<<<<<<< HEAD
             if (param.get_name() == "kp" || param.get_name() == "ki" || param.get_name() == "kd" ||
                 param.get_name() == "max_i_term" || param.get_name() == "max_output" ||
                 param.get_name() == "cmd_vel_timeout") {
                 RCLCPP_INFO(this->get_logger(), "Dynamic parameter updated: %s = %f", param.get_name().c_str(),
                             param.as_double());
+=======
+            if (param.get_name() == "kp" || param.get_name() == "ki" ||
+                param.get_name() == "kd" || param.get_name() == "max_i_term" ||
+                param.get_name() == "max_output" || param.get_name() == "cmd_vel_timeout" ||
+                param.get_name() == "imu_timeout") {
+                RCLCPP_INFO(this->get_logger(), "Dynamic parameter updated: %s = %f",
+                            param.get_name().c_str(), param.as_double());
+>>>>>>> 9b5f61a (feat: add IMU Fail-Safe Passthrough Mode to ensure robot keeps moving smoothly even if IMU is offline)
             }
         }
         updateControllerConfigFromParams();
         return result;
     }
 
-    void handleResetHeadingService(const std::shared_ptr<std_srvs::srv::Trigger::Request> /*req*/,
-                                   std::shared_ptr<std_srvs::srv::Trigger::Response> res) {
-        if (has_imu_data_) {
+    void handleResetHeadingService(
+        const std::shared_ptr<std_srvs::srv::Trigger::Request> /*req*/,
+        std::shared_ptr<std_srvs::srv::Trigger::Response> res) {
+
+        if (has_imu_data_ && !is_imu_timeout_) {
             target_quat_ = current_quat_;
             target_heading_deg_ = current_heading_deg_;
             target_heading_locked_ = true;
@@ -132,16 +159,20 @@ private:
             RCLCPP_INFO(this->get_logger(), "%s", res->message.c_str());
         } else {
             res->success = false;
-            res->message = "Cannot reset heading: No valid IMU data received yet.";
+            res->message = "Cannot reset heading: IMU data is not available or timed out.";
             RCLCPP_WARN(this->get_logger(), "%s", res->message.c_str());
         }
     }
 
     void imuCallback(const sensor_msgs::msg::Imu::SharedPtr msg) noexcept {
+        const rclcpp::Time now = this->now();
+        last_imu_time_ = now;
+        has_imu_data_ = true;
+        is_imu_timeout_ = false;
+
         current_quat_ = bno055lib::Quat{msg->orientation.w, msg->orientation.x, msg->orientation.y, msg->orientation.z};
         current_heading_deg_ = bno055lib::fastExtractYawDeg(current_quat_);
         gyro_z_deg_ = msg->angular_velocity.z * bno055lib::RAD_TO_DEG;
-        has_imu_data_ = true;
     }
 
     void cmdVelInCallback(const geometry_msgs::msg::Twist::SharedPtr msg) noexcept {
@@ -152,7 +183,7 @@ private:
         has_cmd_vel_in_ = true;
 
         if (is_watchdog_triggered_) {
-            RCLCPP_INFO(this->get_logger(), "Watchdog disengaged: cmd_vel_in command resumed.");
+            RCLCPP_INFO(this->get_logger(), "Watchdog disengaged: Input command resumed.");
             is_watchdog_triggered_ = false;
         }
 
@@ -164,15 +195,16 @@ private:
         const double deadband = this->get_parameter("angular_deadband").as_double();
         const bool is_commanded_to_turn = std::abs(msg->angular.z) > deadband;
 
-        if (is_commanded_to_turn || !has_imu_data_) {
-            // Passthrough during active turns
+        // FAIL-SAFE PASSTHROUGH: If IMU is missing/timed out or user is actively turning,
+        // pass input velocity directly to output so robot movement NEVER stops!
+        if (is_commanded_to_turn || !has_imu_data_ || is_imu_timeout_) {
             target_heading_locked_ = false;
             controller_.reset();
-            out_twist->angular = msg->angular;
+            out_twist->angular = msg->angular;  // Seamless 100% Passthrough
             last_correction_ = 0.0;
             last_error_deg_ = 0.0;
         } else {
-            // Straight driving -> Lock target heading & apply IMU PID correction
+            // Straight driving with healthy IMU -> Apply active PID correction
             if (!target_heading_locked_) {
                 target_quat_ = current_quat_;
                 target_heading_deg_ = current_heading_deg_;
@@ -189,27 +221,45 @@ private:
     }
 
     /**
-     * @brief Safety Watchdog Timer: Safely publishes zero velocity if cmd_vel_in is lost/timed out.
+     * @brief System Health Check: Monitors Watchdog & IMU timeout statuses.
      */
-    void checkWatchdogTimeout() {
-        if (!has_cmd_vel_in_) return;
+    void checkSystemHealth() {
+        const rclcpp::Time now = this->now();
 
-        const double timeout = this->get_parameter("cmd_vel_timeout").as_double();
-        const double elapsed = (this->now() - last_cmd_vel_in_time_).seconds();
-
-        if (elapsed > timeout) {
-            if (!is_watchdog_triggered_) {
-                RCLCPP_WARN(this->get_logger(),
-                            "Watchdog Timeout Triggered! cmd_vel_in lost for %.2f s. Publishing ZERO VELOCITY.",
-                            elapsed);
-                is_watchdog_triggered_ = true;
-                target_heading_locked_ = false;
-                controller_.reset();
+        // 1. IMU Fail-Safe Timeout Check
+        if (has_imu_data_) {
+            const double imu_timeout = this->get_parameter("imu_timeout").as_double();
+            if ((now - last_imu_time_).seconds() > imu_timeout) {
+                if (!is_imu_timeout_) {
+                    RCLCPP_WARN(this->get_logger(),
+                                "IMU Timeout! No IMU data for %.2f s. Switching to Fail-Safe Passthrough Mode (Robot keeps moving normally).",
+                                (now - last_imu_time_).seconds());
+                    is_imu_timeout_ = true;
+                    target_heading_locked_ = false;
+                    controller_.reset();
+                }
             }
+        }
 
-            // Continuously publish zero velocity to stop motors safely
-            auto stop_twist = std::make_unique<geometry_msgs::msg::Twist>();
-            cmd_vel_pub_->publish(std::move(stop_twist));
+        // 2. Command Loss Watchdog Timeout Check
+        if (has_cmd_vel_in_) {
+            const double cmd_timeout = this->get_parameter("cmd_vel_timeout").as_double();
+            const double elapsed = (now - last_cmd_vel_in_time_).seconds();
+
+            if (elapsed > cmd_timeout) {
+                if (!is_watchdog_triggered_) {
+                    RCLCPP_WARN(this->get_logger(),
+                                "Watchdog Timeout! Input cmd_vel_in lost for %.2f s. Publishing ZERO VELOCITY.",
+                                elapsed);
+                    is_watchdog_triggered_ = true;
+                    target_heading_locked_ = false;
+                    controller_.reset();
+                }
+
+                // Continuously publish zero velocity for safety
+                auto stop_twist = std::make_unique<geometry_msgs::msg::Twist>();
+                cmd_vel_pub_->publish(std::move(stop_twist));
+            }
         }
     }
 
@@ -223,16 +273,16 @@ private:
 
         if (is_watchdog_triggered_) {
             status.level = diagnostic_msgs::msg::DiagnosticStatus::ERROR;
-            status.message = "SAFETY WATCHDOG TRIGGERED: Input cmd_vel_in Timed Out!";
-        } else if (!has_imu_data_) {
+            status.message = "SAFETY WATCHDOG: Input cmd_vel_in Timed Out";
+        } else if (!has_imu_data_ || is_imu_timeout_) {
             status.level = diagnostic_msgs::msg::DiagnosticStatus::WARN;
-            status.message = "Waiting for IMU data...";
+            status.message = "IMU Offline/Timed out: Operating in Fail-Safe Passthrough Mode";
         } else if (target_heading_locked_) {
             status.level = diagnostic_msgs::msg::DiagnosticStatus::OK;
             status.message = "Active Straight Heading Correction";
         } else {
             status.level = diagnostic_msgs::msg::DiagnosticStatus::OK;
-            status.message = "Passthrough (Active Turning Command)";
+            status.message = "Passthrough Mode (Active Turning Command)";
         }
 
         auto add_kv = [&status](const std::string& k, const std::string& v) {
@@ -247,6 +297,7 @@ private:
         add_kv("Heading Error (deg)", std::to_string(last_error_deg_));
         add_kv("PID Correction (rad/s)", std::to_string(last_correction_));
         add_kv("Target Locked", target_heading_locked_ ? "True" : "False");
+        add_kv("IMU Healthy", (has_imu_data_ && !is_imu_timeout_) ? "True" : "False");
         add_kv("Watchdog Triggered", is_watchdog_triggered_ ? "True" : "False");
 
         diag_arr->status.push_back(status);
@@ -266,6 +317,7 @@ private:
 
     rclcpp::Time last_time_;
     rclcpp::Time last_cmd_vel_in_time_;
+    rclcpp::Time last_imu_time_;
     bno055lib::Quat current_quat_;
     bno055lib::Quat target_quat_;
     double current_heading_deg_;
@@ -275,6 +327,7 @@ private:
     bool has_imu_data_;
     bool has_cmd_vel_in_;
     bool is_watchdog_triggered_;
+    bool is_imu_timeout_;
     double last_correction_;
     double last_error_deg_;
 };
