@@ -453,13 +453,18 @@ ros2<span class="w"> </span>launch<span class="w"> </span>libbno055_linux<span c
 </div>
 </section>
 <hr class="docutils" />
-<section id="robot-straight-line-heading-pid-control-demo">
-<h3>Robot Straight-Line &amp; Heading PID Control Demo<a class="headerlink" href="#robot-straight-line-heading-pid-control-demo" title="Link to this heading">¶</a></h3>
-<p>Want to prevent your robot from drifting during straight-line driving or maintain target heading? Try the included ROS 2-style PID heading controller:</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># 1. One-Command ROS 2 Launch (Launches BNO055 Driver + Heading PID Controller -&gt; Publishes /cmd_vel)</span>
-ros2<span class="w"> </span>launch<span class="w"> </span>libbno055_linux<span class="w"> </span>heading_control_launch.py<span class="w"> </span>kp:<span class="o">=</span><span class="m">0</span>.05<span class="w"> </span>base_linear_speed:<span class="o">=</span><span class="m">0</span>.3
-
-<span class="c1"># 2. Standalone C++ Demo (Visual ASCII Motor Output Dashboard)</span>
+<section id="robot-straight-line-heading-pid-control-beginner-quick-start">
+<h3>Robot Straight-Line &amp; Heading PID Control (Beginner Quick Start)<a class="headerlink" href="#robot-straight-line-heading-pid-control-beginner-quick-start" title="Link to this heading">¶</a></h3>
+<p>Want to prevent your robot from drifting during straight-line driving or maintain target heading? Run the <strong>Zero-Copy Production Pipeline</strong> in a single command:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># One-Command Zero-Copy Launch (Starts IMU Driver + PID Controller with Production YAML Config)</span>
+ros2<span class="w"> </span>launch<span class="w"> </span>libbno055_linux<span class="w"> </span>heading_control_launch.py
+</pre></div>
+</div>
+<ul class="simple">
+<li><p><strong>Features Active Out-of-the-Box</strong>: Zero-Copy transport, PID anti-drift, IMU Fail-Safe passthrough, and Watchdog command-loss safety.</p></li>
+<li><p><strong>Custom Configuration</strong>: Edit <a class="reference internal" href="#config/heading_control_params.yaml"><span class="xref myst"><code class="docutils literal notranslate"><span class="pre">config/heading_control_params.yaml</span></code></span></a> to tune PID gains (<code class="docutils literal notranslate"><span class="pre">kp</span></code>, <code class="docutils literal notranslate"><span class="pre">ki</span></code>, <code class="docutils literal notranslate"><span class="pre">kd</span></code>) or timeouts.</p></li>
+</ul>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Standalone C++ Demo (Visual ASCII Motor Output Dashboard for non-ROS users)</span>
 ./build/heading_control_demo<span class="w"> </span>/dev/i2c-1
 </pre></div>
 </div>
@@ -544,7 +549,7 @@ ros2<span class="w"> </span>launch<span class="w"> </span>libbno055_linux<span c
 <li><a class="reference internal" href="#id1">Python (<code class="docutils literal notranslate"><span class="pre">pip</span></code>)</a></li>
 <li><a class="reference internal" href="#c-17-native-cmake">C++17 (Native CMake)</a></li>
 <li><a class="reference internal" href="#ros-2-node-binary-installation">ROS 2 Node (Binary Installation)</a></li>
-<li><a class="reference internal" href="#robot-straight-line-heading-pid-control-demo">Robot Straight-Line &amp; Heading PID Control Demo</a></li>
+<li><a class="reference internal" href="#robot-straight-line-heading-pid-control-beginner-quick-start">Robot Straight-Line &amp; Heading PID Control (Beginner Quick Start)</a></li>
 </ul>
 </li>
 <li><a class="reference internal" href="#license">License</a></li>

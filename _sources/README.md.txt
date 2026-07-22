@@ -181,15 +181,20 @@ ros2 launch libbno055_linux bno055_launch.py
 
 ---
 
-### Robot Straight-Line & Heading PID Control Demo
+### Robot Straight-Line & Heading PID Control (Beginner Quick Start)
 
-Want to prevent your robot from drifting during straight-line driving or maintain target heading? Try the included ROS 2-style PID heading controller:
+Want to prevent your robot from drifting during straight-line driving or maintain target heading? Run the **Zero-Copy Production Pipeline** in a single command:
 
 ```bash
-# 1. One-Command ROS 2 Launch (Launches BNO055 Driver + Heading PID Controller -> Publishes /cmd_vel)
-ros2 launch libbno055_linux heading_control_launch.py kp:=0.05 base_linear_speed:=0.3
+# One-Command Zero-Copy Launch (Starts IMU Driver + PID Controller with Production YAML Config)
+ros2 launch libbno055_linux heading_control_launch.py
+```
 
-# 2. Standalone C++ Demo (Visual ASCII Motor Output Dashboard)
+- **Features Active Out-of-the-Box**: Zero-Copy transport, PID anti-drift, IMU Fail-Safe passthrough, and Watchdog command-loss safety.
+- **Custom Configuration**: Edit [`config/heading_control_params.yaml`](config/heading_control_params.yaml) to tune PID gains (`kp`, `ki`, `kd`) or timeouts.
+
+```bash
+# Standalone C++ Demo (Visual ASCII Motor Output Dashboard for non-ROS users)
 ./build/heading_control_demo /dev/i2c-1
 ```
 
