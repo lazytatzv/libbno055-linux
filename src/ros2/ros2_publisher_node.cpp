@@ -59,7 +59,7 @@ public:
         const std::string device = this->get_parameter("device").as_string();
         const uint8_t address = static_cast<uint8_t>(this->get_parameter("address").as_int());
 
-        imu_driver_ = std::make_unique<bno055lib::BNO055>(device, address);
+        imu_driver_ = std::make_unique<bno055lib::BNO055>(address, device);
         if (imu_driver_->begin(bno055lib::OpMode::NDOF)) {
             initialized_ = true;
             RCLCPP_INFO(this->get_logger(), "BNO055 hardware initialized on %s (0x%02X)", device.c_str(), address);
