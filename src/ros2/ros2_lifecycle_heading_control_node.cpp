@@ -223,7 +223,7 @@ private:
         }
     }
 
-    void imuCallback(const sensor_msgs::msg::Imu::SharedPtr msg) noexcept {
+    void imuCallback(const sensor_msgs::msg::Imu::SharedPtr msg) {
         const rclcpp::Time now = this->now();
         last_imu_time_ = now;
         has_imu_data_ = true;
@@ -234,7 +234,7 @@ private:
         gyro_z_deg_ = msg->angular_velocity.z * bno055lib::RAD_TO_DEG;
     }
 
-    void cmdVelInCallback(const geometry_msgs::msg::Twist::SharedPtr msg) noexcept {
+    void cmdVelInCallback(const geometry_msgs::msg::Twist::SharedPtr msg) {
         if (!cmd_vel_pub_->is_activated()) return;
 
         const rclcpp::Time now = this->now();

@@ -179,7 +179,7 @@ private:
         }
     }
 
-    void imuCallback(const sensor_msgs::msg::Imu::SharedPtr msg) noexcept {
+    void imuCallback(const sensor_msgs::msg::Imu::SharedPtr msg) {
         bno055lib::Quat q{msg->orientation.w, msg->orientation.x, msg->orientation.y, msg->orientation.z};
         if (BNO055_UNLIKELY(!bno055lib::isValidQuat(q))) {
             RCLCPP_WARN_THROTTLE(this->get_logger(), *this->get_clock(), 2000,
@@ -196,7 +196,7 @@ private:
         gyro_z_deg_ = msg->angular_velocity.z * bno055lib::RAD_TO_DEG;
     }
 
-    void cmdVelInCallback(const geometry_msgs::msg::Twist::SharedPtr msg) noexcept {
+    void cmdVelInCallback(const geometry_msgs::msg::Twist::SharedPtr msg) {
         const rclcpp::Time now = this->now();
         double dt = (now - last_time_).seconds();
         last_time_ = now;
