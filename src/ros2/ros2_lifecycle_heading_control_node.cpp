@@ -7,7 +7,9 @@
 #include <memory>
 #include <rclcpp/executors/multi_threaded_executor.hpp>
 #include <rclcpp/rclcpp.hpp>
+#ifdef BNO055_ROS2_BUILDING_COMPONENT
 #include <rclcpp_components/register_node_macro.hpp>
+#endif
 #include <rclcpp_lifecycle/lifecycle_node.hpp>
 #include <rclcpp_lifecycle/lifecycle_publisher.hpp>
 #include <sensor_msgs/msg/imu.hpp>
@@ -387,8 +389,9 @@ private:
 
 }  // namespace bno055_ros2
 
+#ifdef BNO055_ROS2_BUILDING_COMPONENT
 RCLCPP_COMPONENTS_REGISTER_NODE(bno055_ros2::BNO055LifecycleHeadingControlNode)
-
+#else
 int main(int argc, char* argv[]) {
     rclcpp::init(argc, argv);
     auto node = std::make_shared<bno055_ros2::BNO055LifecycleHeadingControlNode>();
@@ -400,3 +403,4 @@ int main(int argc, char* argv[]) {
     rclcpp::shutdown();
     return 0;
 }
+#endif

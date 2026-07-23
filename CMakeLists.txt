@@ -128,7 +128,7 @@ if(rclcpp_FOUND AND sensor_msgs_FOUND AND geometry_msgs_FOUND AND diagnostic_msg
 
     add_executable(bno055_heading_control_node src/ros2/ros2_heading_control_node.cpp)
     target_link_libraries(bno055_heading_control_node libbno055-linux)
-    ament_target_dependencies(bno055_heading_control_node rclcpp rclcpp_components sensor_msgs geometry_msgs diagnostic_msgs std_srvs)
+    ament_target_dependencies(bno055_heading_control_node rclcpp sensor_msgs geometry_msgs diagnostic_msgs std_srvs)
 
     install(TARGETS bno055_publisher_node bno055_heading_control_node
         DESTINATION lib/${PROJECT_NAME}
@@ -144,6 +144,7 @@ if(rclcpp_FOUND AND sensor_msgs_FOUND AND geometry_msgs_FOUND AND diagnostic_msg
         rclcpp_components_register_node(bno055_ros2_components PLUGIN "bno055_ros2::BNO055PublisherNode" EXECUTABLE bno055_publisher_node_container)
 
         add_library(bno055_heading_control_components SHARED src/ros2/ros2_heading_control_node.cpp)
+        target_compile_definitions(bno055_heading_control_components PRIVATE BNO055_ROS2_BUILDING_COMPONENT)
         target_link_libraries(bno055_heading_control_components libbno055-linux)
         ament_target_dependencies(bno055_heading_control_components rclcpp rclcpp_components sensor_msgs geometry_msgs diagnostic_msgs std_srvs)
         rclcpp_components_register_node(bno055_heading_control_components PLUGIN "bno055_ros2::BNO055HeadingControlNode" EXECUTABLE bno055_heading_control_container)
@@ -164,7 +165,7 @@ if(rclcpp_FOUND AND sensor_msgs_FOUND AND geometry_msgs_FOUND AND diagnostic_msg
 
         add_executable(bno055_lifecycle_heading_control_node src/ros2/ros2_lifecycle_heading_control_node.cpp)
         target_link_libraries(bno055_lifecycle_heading_control_node libbno055-linux)
-        ament_target_dependencies(bno055_lifecycle_heading_control_node rclcpp rclcpp_lifecycle rclcpp_components sensor_msgs geometry_msgs diagnostic_msgs std_srvs)
+        ament_target_dependencies(bno055_lifecycle_heading_control_node rclcpp rclcpp_lifecycle sensor_msgs geometry_msgs diagnostic_msgs std_srvs)
 
         install(TARGETS bno055_lifecycle_publisher_node bno055_lifecycle_heading_control_node
             DESTINATION lib/${PROJECT_NAME}
@@ -180,6 +181,7 @@ if(rclcpp_FOUND AND sensor_msgs_FOUND AND geometry_msgs_FOUND AND diagnostic_msg
             rclcpp_components_register_node(bno055_ros2_lifecycle_components PLUGIN "bno055_ros2::BNO055LifecyclePublisherNode" EXECUTABLE bno055_lifecycle_publisher_node_container)
 
             add_library(bno055_lifecycle_heading_control_components SHARED src/ros2/ros2_lifecycle_heading_control_node.cpp)
+            target_compile_definitions(bno055_lifecycle_heading_control_components PRIVATE BNO055_ROS2_BUILDING_COMPONENT)
             target_link_libraries(bno055_lifecycle_heading_control_components libbno055-linux)
             ament_target_dependencies(bno055_lifecycle_heading_control_components rclcpp rclcpp_lifecycle rclcpp_components sensor_msgs geometry_msgs diagnostic_msgs std_srvs)
             rclcpp_components_register_node(bno055_lifecycle_heading_control_components PLUGIN "bno055_ros2::BNO055LifecycleHeadingControlNode" EXECUTABLE bno055_lifecycle_heading_control_container)
