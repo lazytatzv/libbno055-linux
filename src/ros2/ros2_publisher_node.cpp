@@ -18,8 +18,8 @@
 #include <string>
 #include <vector>
 
-#include "libbno055-linux/bno055.hpp"
 #include "bno055_ros2_common.hpp"
+#include "libbno055-linux/bno055.hpp"
 
 namespace bno055_ros2 {
 
