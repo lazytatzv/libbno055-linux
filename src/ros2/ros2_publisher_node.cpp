@@ -76,8 +76,7 @@ public:
                                                                                        rclcpp::SensorDataQoS());
         gravity_pub_ =
             this->create_publisher<geometry_msgs::msg::Vector3Stamped>("imu/gravity", rclcpp::SensorDataQoS());
-        diag_pub_ =
-            this->create_publisher<diagnostic_msgs::msg::DiagnosticArray>("diagnostics", rclcpp::QoS(1));
+        diag_pub_ = this->create_publisher<diagnostic_msgs::msg::DiagnosticArray>("diagnostics", rclcpp::QoS(1));
 
         // 5. Sensor Polling Timer (High-Frequency Sensor Callback Group)
         const int rate_hz = this->get_parameter("publish_rate_hz").as_int();
