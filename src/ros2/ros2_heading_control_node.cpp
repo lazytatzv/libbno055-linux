@@ -222,21 +222,37 @@ private:
 
         if (is_commanded_to_turn || !has_imu_data_ || is_imu_timeout_) {
             target_heading_locked_ = false;
+            target_quat_ = current_quat_;
+            target_heading_deg_ = current_heading_deg_;
             controller_.reset();
             out_twist->angular = msg->angular;  // Fail-Safe Passthrough
             last_correction_ = 0.0;
             last_error_deg_ = 0.0;
         } else {
             if (!target_heading_locked_) {
-                target_quat_ = current_quat_;
-                target_heading_deg_ = current_heading_deg_;
-                target_heading_locked_ = true;
+                // Wait until the physical rotation speed (from gyro) drops below a threshold
+                // to prevent overshoot/snap-back caused by robot inertia and IMU latency.
+                const double stop_threshold_deg = 3.0; // deg/s
+                if (std::abs(gyro_z_deg_) < stop_threshold_deg || !has_imu_data_ || is_imu_timeout_) {
+                    target_quat_ = current_quat_;
+                    target_heading_deg_ = current_heading_deg_;
+                    target_heading_locked_ = true;
+                } else {
+                    target_quat_ = current_quat_;
+                    target_heading_deg_ = current_heading_deg_;
+                }
             }
 
-            auto out = controller_.update(target_quat_, current_quat_, dt, gyro_z_deg_, msg->linear.x);
-            out_twist->angular.z = out.correction;
-            last_correction_ = out.correction;
-            last_error_deg_ = out.error_deg;
+            if (target_heading_locked_) {
+                auto out = controller_.update(target_quat_, current_quat_, dt, gyro_z_deg_, msg->linear.x);
+                out_twist->angular.z = out.correction;
+                last_correction_ = out.correction;
+                last_error_deg_ = out.error_deg;
+            } else {
+                out_twist->angular.z = 0.0;
+                last_correction_ = 0.0;
+                last_error_deg_ = 0.0;
+            }
         }
 
         cmd_vel_pub_->publish(std::move(out_twist));
