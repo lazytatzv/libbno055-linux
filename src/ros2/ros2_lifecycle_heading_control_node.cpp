@@ -225,12 +225,10 @@ private:
                 cfg.max_slew_rate = param.as_double();
             }
 
-            if (name == "kp" || name == "ki" || name == "kd" || name == "kff" ||
-                name == "max_i_term" || name == "max_output" || name == "deadband_deg" ||
-                name == "cutoff_freq_hz" || name == "max_slew_rate" ||
+            if (name == "kp" || name == "ki" || name == "kd" || name == "kff" || name == "max_i_term" ||
+                name == "max_output" || name == "deadband_deg" || name == "cutoff_freq_hz" || name == "max_slew_rate" ||
                 name == "cmd_vel_timeout" || name == "imu_timeout") {
-                RCLCPP_INFO(this->get_logger(), "Dynamic parameter updated: %s = %f", name.c_str(),
-                            param.as_double());
+                RCLCPP_INFO(this->get_logger(), "Dynamic parameter updated: %s = %f", name.c_str(), param.as_double());
             }
         }
         controller_.setConfig(cfg);
