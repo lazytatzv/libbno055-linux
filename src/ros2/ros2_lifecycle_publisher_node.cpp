@@ -60,6 +60,7 @@ public:
         this->declare_parameter<bool>("use_external_crystal", true);
         this->declare_parameter<std::string>("axis_map_config", "p1");
         this->declare_parameter<std::string>("axis_map_sign", "p1");
+        this->declare_parameter<int>("thread_priority", 0);
 
         RCLCPP_INFO(this->get_logger(), "[Lifecycle Node] BNO055 Publisher Node created.");
     }
