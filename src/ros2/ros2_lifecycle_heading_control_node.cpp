@@ -101,7 +101,7 @@ public:
             "~/reset_heading",
             std::bind(&BNO055LifecycleHeadingControlNode::handleResetHeadingService, this, std::placeholders::_1,
                       std::placeholders::_2),
-            rmw_qos_profile_services_default, admin_cb_group_);
+            rclcpp::ServicesQoS(), admin_cb_group_);
 
         RCLCPP_INFO(this->get_logger(), "Node configured successfully with isolated CallbackGroups.");
         return CallbackReturn::SUCCESS;

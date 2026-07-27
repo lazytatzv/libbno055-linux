@@ -110,7 +110,7 @@ public:
             this->create_service<std_srvs::srv::Trigger>("~/reset_heading",
                                                          std::bind(&BNO055HeadingControlNode::handleResetHeadingService,
                                                                    this, std::placeholders::_1, std::placeholders::_2),
-                                                         rmw_qos_profile_services_default, admin_cb_group_);
+                                                         rclcpp::ServicesQoS(), admin_cb_group_);
 
         // 6. Watchdog & IMU Health Check Timer (Checking at 20Hz / 50ms)
         watchdog_timer_ =
