@@ -51,6 +51,7 @@ public:
         this->declare_parameter<int>("address", 0x28);
         this->declare_parameter<int>("publish_rate_hz", 100);
         this->declare_parameter<std::string>("frame_id", "imu_link");
+        this->declare_parameter<std::string>("operation_mode", "imu_plus");
 
         // 2. Callback Groups Isolation
         sensor_cb_group_ = this->create_callback_group(rclcpp::CallbackGroupType::MutuallyExclusive);
@@ -59,11 +60,13 @@ public:
         // 3. Initialize BNO055 Hardware
         const std::string device = this->get_parameter("device").as_string();
         const uint8_t address = static_cast<uint8_t>(this->get_parameter("address").as_int());
+        const std::string op_mode_str = this->get_parameter("operation_mode").as_string();
+        const bno055lib::OpMode op_mode = bno055_ros2::parse_op_mode(op_mode_str);
 
         imu_driver_ = std::make_unique<bno055lib::BNO055>(address, device);
-        if (imu_driver_->begin(bno055lib::OpMode::NDOF)) {
+        if (imu_driver_->begin(op_mode)) {
             initialized_ = true;
-            RCLCPP_INFO(this->get_logger(), "BNO055 hardware initialized on %s (0x%02X)", device.c_str(), address);
+            RCLCPP_INFO(this->get_logger(), "BNO055 hardware initialized on %s (0x%02X) in mode %s", device.c_str(), address, op_mode_str.c_str());
         } else {
             RCLCPP_ERROR(this->get_logger(), "Failed to initialize BNO055 hardware on %s", device.c_str());
         }
