@@ -91,7 +91,8 @@ public:
             const std::string calib_file = this->get_parameter("calibration_file").as_string();
             if (!calib_file.empty()) {
                 if (imu_driver_->loadCalibrationFile(calib_file)) {
-                    RCLCPP_INFO(this->get_logger(), "Successfully loaded calibration offsets from %s", calib_file.c_str());
+                    RCLCPP_INFO(this->get_logger(), "Successfully loaded calibration offsets from %s",
+                                calib_file.c_str());
                 } else {
                     RCLCPP_WARN(this->get_logger(), "Failed to load calibration file %s", calib_file.c_str());
                 }
