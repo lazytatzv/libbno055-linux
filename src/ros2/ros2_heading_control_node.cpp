@@ -232,7 +232,7 @@ private:
             if (!target_heading_locked_) {
                 // Wait until the physical rotation speed (from gyro) drops below a threshold
                 // to prevent overshoot/snap-back caused by robot inertia and IMU latency.
-                const double stop_threshold_deg = 3.0; // deg/s
+                const double stop_threshold_deg = 3.0;  // deg/s
                 if (std::abs(gyro_z_deg_) < stop_threshold_deg || !has_imu_data_ || is_imu_timeout_) {
                     target_quat_ = current_quat_;
                     target_heading_deg_ = current_heading_deg_;
