@@ -225,9 +225,9 @@ private:
         message->angular_velocity.z = gyro->z;
 
         // Fill Linear Acceleration (m/s^2)
-        message->linear_acceleration.x = accel->x;
-        message->linear_acceleration.y = accel->y;
-        message->linear_acceleration.z = accel->z;
+        message->linear_acceleration.x = raw_accel->x;
+        message->linear_acceleration.y = raw_accel->y;
+        message->linear_acceleration.z = raw_accel->z;
 
         // Set covariances from parameters using common helper
         bno055_ros2::fill_imu_covariances(this, *message);

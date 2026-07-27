@@ -13,6 +13,7 @@
 #endif
 #include <sensor_msgs/msg/imu.hpp>
 #include <sensor_msgs/msg/magnetic_field.hpp>
+#include <geometry_msgs/msg/vector3_stamped.hpp>
 #include <sensor_msgs/msg/temperature.hpp>
 #include <std_srvs/srv/trigger.hpp>
 #include <string>
@@ -71,6 +72,8 @@ public:
         imu_pub_ = this->create_publisher<sensor_msgs::msg::Imu>("imu/data", rclcpp::SensorDataQoS());
         mag_pub_ = this->create_publisher<sensor_msgs::msg::MagneticField>("imu/mag", rclcpp::SensorDataQoS());
         temp_pub_ = this->create_publisher<sensor_msgs::msg::Temperature>("imu/temp", rclcpp::SensorDataQoS());
+        linear_accel_pub_ = this->create_publisher<geometry_msgs::msg::Vector3Stamped>("imu/linear_acceleration", rclcpp::SensorDataQoS());
+        gravity_pub_ = this->create_publisher<geometry_msgs::msg::Vector3Stamped>("imu/gravity", rclcpp::SensorDataQoS());
         diag_pub_ =
             this->create_publisher<diagnostic_msgs::msg::DiagnosticArray>("diagnostics", rclcpp::SystemDefaultsQoS());
 
@@ -97,8 +100,11 @@ private:
 
         auto quat = imu_driver_->getQuaternionNoexcept();
         auto gyro = imu_driver_->getGyroscopeNoexcept();
-        auto accel = imu_driver_->getLinearAccelerationNoexcept();
+        auto accel = imu_driver_->getAccelerometerNoexcept();
         auto mag = imu_driver_->getMagnetometerNoexcept();
+        auto linear_accel = imu_driver_->getLinearAccelerationNoexcept();
+        auto gravity = imu_driver_->getGravityNoexcept();
+        auto temp = imu_driver_->getTemperatureNoexcept();
 
         if (quat && gyro && accel) {
             // Outlier check for NaN/Inf
@@ -139,6 +145,35 @@ private:
 
             mag_pub_->publish(std::move(mag_msg));
         }
+
+        if (linear_accel) {
+            auto linear_accel_msg = std::make_unique<geometry_msgs::msg::Vector3Stamped>();
+            linear_accel_msg->header.stamp = now;
+            linear_accel_msg->header.frame_id = frame_id;
+            linear_accel_msg->vector.x = linear_accel->x;
+            linear_accel_msg->vector.y = linear_accel->y;
+            linear_accel_msg->vector.z = linear_accel->z;
+            linear_accel_pub_->publish(std::move(linear_accel_msg));
+        }
+
+        if (gravity) {
+            auto gravity_msg = std::make_unique<geometry_msgs::msg::Vector3Stamped>();
+            gravity_msg->header.stamp = now;
+            gravity_msg->header.frame_id = frame_id;
+            gravity_msg->vector.x = gravity->x;
+            gravity_msg->vector.y = gravity->y;
+            gravity_msg->vector.z = gravity->z;
+            gravity_pub_->publish(std::move(gravity_msg));
+        }
+
+        if (temp) {
+            auto temp_msg = std::make_unique<sensor_msgs::msg::Temperature>();
+            temp_msg->header.stamp = now;
+            temp_msg->header.frame_id = frame_id;
+            temp_msg->temperature = static_cast<double>(*temp);
+            temp_msg->variance = 0.1;
+            temp_pub_->publish(std::move(temp_msg));
+        }
     }
 
     void publishDiagnostics() {
@@ -167,6 +202,8 @@ private:
     rclcpp::Publisher<sensor_msgs::msg::Imu>::SharedPtr imu_pub_;
     rclcpp::Publisher<sensor_msgs::msg::MagneticField>::SharedPtr mag_pub_;
     rclcpp::Publisher<sensor_msgs::msg::Temperature>::SharedPtr temp_pub_;
+    rclcpp::Publisher<geometry_msgs::msg::Vector3Stamped>::SharedPtr linear_accel_pub_;
+    rclcpp::Publisher<geometry_msgs::msg::Vector3Stamped>::SharedPtr gravity_pub_;
     rclcpp::Publisher<diagnostic_msgs::msg::DiagnosticArray>::SharedPtr diag_pub_;
 
     rclcpp::TimerBase::SharedPtr sensor_timer_;
