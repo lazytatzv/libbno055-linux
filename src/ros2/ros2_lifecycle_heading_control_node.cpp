@@ -324,7 +324,7 @@ private:
                 if (!is_watchdog_triggered_) {
                     RCLCPP_WARN(this->get_logger(), "Watchdog Timeout! Publishing ZERO VELOCITY.");
                     is_watchdog_triggered_ = true;
-                    target_heading_locked_ = false;
+                    // Keep target_heading_locked_ to preserve target heading target across stops
                     controller_.reset();
                 }
 
