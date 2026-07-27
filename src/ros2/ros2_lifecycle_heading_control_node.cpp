@@ -86,9 +86,9 @@ public:
         const std::string cmd_vel_out_topic = this->get_parameter("cmd_vel_out_topic").as_string();
 
         cmd_vel_pub_ =
-            this->create_publisher<geometry_msgs::msg::Twist>(cmd_vel_out_topic, rclcpp::SystemDefaultsQoS());
+            this->create_publisher<geometry_msgs::msg::Twist>(cmd_vel_out_topic, rclcpp::QoS(10));
         diag_pub_ =
-            this->create_publisher<diagnostic_msgs::msg::DiagnosticArray>("diagnostics", rclcpp::SystemDefaultsQoS());
+            this->create_publisher<diagnostic_msgs::msg::DiagnosticArray>("diagnostics", rclcpp::QoS(1));
 
         imu_sub_ = this->create_subscription<sensor_msgs::msg::Imu>(
             imu_topic, rclcpp::SensorDataQoS(),
