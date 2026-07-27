@@ -1,4 +1,5 @@
 #include <pthread.h>
+#include <rclcpp/version.h>
 #include <sched.h>
 
 #include <algorithm>
@@ -10,7 +11,6 @@
 #include <memory>
 #include <rclcpp/executors/multi_threaded_executor.hpp>
 #include <rclcpp/rclcpp.hpp>
-#include <rclcpp/version.h>
 #ifdef BNO055_ROS2_BUILDING_COMPONENT
 #include <rclcpp_components/register_node_macro.hpp>
 #endif
