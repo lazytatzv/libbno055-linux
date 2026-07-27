@@ -200,16 +200,40 @@ private:
         rcl_interfaces::msg::SetParametersResult result;
         result.successful = true;
 
+        bno055lib::HeadingController::Config cfg = controller_.getConfig();
+
         for (const auto& param : parameters) {
-            if (param.get_name() == "kp" || param.get_name() == "ki" || param.get_name() == "kd" ||
-                param.get_name() == "kff" || param.get_name() == "max_i_term" || param.get_name() == "max_output" ||
-                param.get_name() == "deadband_deg" || param.get_name() == "cutoff_freq_hz" ||
-                param.get_name() == "cmd_vel_timeout" || param.get_name() == "imu_timeout") {
-                RCLCPP_INFO(this->get_logger(), "Dynamic parameter updated: %s = %f", param.get_name().c_str(),
+            const std::string& name = param.get_name();
+            if (name == "kp") {
+                cfg.kp = param.as_double();
+            } else if (name == "ki") {
+                cfg.ki = param.as_double();
+            } else if (name == "kd") {
+                cfg.kd = param.as_double();
+            } else if (name == "kff") {
+                cfg.kff = param.as_double();
+            } else if (name == "max_i_term") {
+                cfg.max_i_term = param.as_double();
+            } else if (name == "max_output") {
+                cfg.max_output = param.as_double();
+                cfg.min_output = -cfg.max_output;
+            } else if (name == "deadband_deg") {
+                cfg.deadband_deg = param.as_double();
+            } else if (name == "cutoff_freq_hz") {
+                cfg.cutoff_freq_hz = param.as_double();
+            } else if (name == "max_slew_rate") {
+                cfg.max_slew_rate = param.as_double();
+            }
+
+            if (name == "kp" || name == "ki" || name == "kd" || name == "kff" ||
+                name == "max_i_term" || name == "max_output" || name == "deadband_deg" ||
+                name == "cutoff_freq_hz" || name == "max_slew_rate" ||
+                name == "cmd_vel_timeout" || name == "imu_timeout") {
+                RCLCPP_INFO(this->get_logger(), "Dynamic parameter updated: %s = %f", name.c_str(),
                             param.as_double());
             }
         }
-        updateControllerConfigFromParams();
+        controller_.setConfig(cfg);
         return result;
     }
 
