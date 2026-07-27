@@ -10,6 +10,7 @@
 #include <memory>
 #include <rclcpp/executors/multi_threaded_executor.hpp>
 #include <rclcpp/rclcpp.hpp>
+#include <rclcpp/version.hpp>
 #ifdef BNO055_ROS2_BUILDING_COMPONENT
 #include <rclcpp_components/register_node_macro.hpp>
 #endif
@@ -110,7 +111,12 @@ public:
             this->create_service<std_srvs::srv::Trigger>("~/reset_heading",
                                                          std::bind(&BNO055HeadingControlNode::handleResetHeadingService,
                                                                    this, std::placeholders::_1, std::placeholders::_2),
-                                                         rclcpp::ServicesQoS(), admin_cb_group_);
+#if RCLCPP_VERSION_MAJOR >= 28
+                                                         rclcpp::ServicesQoS(),
+#else
+                                                         rmw_qos_profile_services_default,
+#endif
+                                                         admin_cb_group_);
 
         // 6. Watchdog & IMU Health Check Timer (Checking at 20Hz / 50ms)
         watchdog_timer_ =
