@@ -81,7 +81,7 @@ public:
         linear_accel_pub_ = this->create_publisher<geometry_msgs::msg::Vector3Stamped>("imu/linear_acceleration", rclcpp::SensorDataQoS());
         gravity_pub_ = this->create_publisher<geometry_msgs::msg::Vector3Stamped>("imu/gravity", rclcpp::SensorDataQoS());
         diag_pub_ =
-            this->create_publisher<diagnostic_msgs::msg::DiagnosticArray>("diagnostics", rclcpp::SystemDefaultsQoS());
+            this->create_publisher<diagnostic_msgs::msg::DiagnosticArray>("diagnostics", rclcpp::QoS(1));
 
         RCLCPP_INFO(this->get_logger(), "Node configured successfully.");
         return CallbackReturn::SUCCESS;
