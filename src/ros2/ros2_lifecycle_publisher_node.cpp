@@ -55,6 +55,11 @@ public:
         this->declare_parameter<int>("publish_rate_hz", 100);
         this->declare_parameter<std::string>("frame_id", "imu_link");
         this->declare_parameter<std::string>("operation_mode", "imu_plus");
+        this->declare_parameter<std::string>("calibration_file", "");
+        this->declare_parameter<bool>("enable_auto_calibration", false);
+        this->declare_parameter<bool>("use_external_crystal", true);
+        this->declare_parameter<std::string>("axis_map_config", "p1");
+        this->declare_parameter<std::string>("axis_map_sign", "p1");
 
         RCLCPP_INFO(this->get_logger(), "[Lifecycle Node] BNO055 Publisher Node created.");
     }
@@ -75,6 +80,28 @@ public:
             initialized_ = true;
             RCLCPP_INFO(this->get_logger(), "BNO055 hardware initialized on %s (0x%02X) in mode %s", device.c_str(),
                         address, op_mode_str.c_str());
+
+            // Redirect internal library logs to rclcpp logger
+            bno055_ros2::setup_logger_redirection(this, *imu_driver_);
+
+            // Apply advanced features
+            bno055_ros2::apply_advanced_features(this, *imu_driver_);
+
+            // Load pre-existing calibration offsets if provided
+            const std::string calib_file = this->get_parameter("calibration_file").as_string();
+            if (!calib_file.empty()) {
+                if (imu_driver_->loadCalibrationFile(calib_file)) {
+                    RCLCPP_INFO(this->get_logger(), "Successfully loaded calibration offsets from %s", calib_file.c_str());
+                } else {
+                    RCLCPP_WARN(this->get_logger(), "Failed to load calibration file %s", calib_file.c_str());
+                }
+            }
+
+            // Enable auto-calibration file saving
+            const bool enable_auto_calib = this->get_parameter("enable_auto_calibration").as_bool();
+            if (enable_auto_calib && !calib_file.empty()) {
+                imu_driver_->enableAutoCalibration(calib_file);
+            }
         } else {
             RCLCPP_ERROR(this->get_logger(), "Failed to initialize BNO055 hardware on %s", device.c_str());
             return CallbackReturn::FAILURE;
