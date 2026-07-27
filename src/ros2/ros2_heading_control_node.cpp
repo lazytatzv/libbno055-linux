@@ -277,12 +277,11 @@ private:
         }
 
         RCLCPP_INFO_THROTTLE(this->get_logger(), *this->get_clock(), 500,
-            "[HeadingControl] InVel: x=%.2f, z=%.2f | CommandTurn: %s | Locked: %s | Target yaw: %.1f, Curr yaw: %.1f | Gyro Z: %.2f | Correct Out: %.3f",
-            msg->linear.x, msg->angular.z,
-            is_commanded_to_turn ? "YES" : "NO",
-            target_heading_locked_ ? "YES" : "NO",
-            target_heading_deg_, current_heading_deg_,
-            gyro_z_deg_, out_twist->angular.z);
+                             "[HeadingControl] InVel: x=%.2f, z=%.2f | CommandTurn: %s | Locked: %s | Target yaw: "
+                             "%.1f, Curr yaw: %.1f | Gyro Z: %.2f | Correct Out: %.3f",
+                             msg->linear.x, msg->angular.z, is_commanded_to_turn ? "YES" : "NO",
+                             target_heading_locked_ ? "YES" : "NO", target_heading_deg_, current_heading_deg_,
+                             gyro_z_deg_, out_twist->angular.z);
 
         cmd_vel_pub_->publish(std::move(out_twist));
     }
