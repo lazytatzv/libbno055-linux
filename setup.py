@@ -8,8 +8,8 @@ ext_modules = [
         "libbno055",
         [
             "src/python/bindings.cpp",
-            "src/bno055.cpp",
-            "src/bno055_c.cpp",
+            "src/core/bno055.cpp",
+            "src/core/bno055_c.cpp",
         ],
         include_dirs=["include"],
         cxx_std=17,
