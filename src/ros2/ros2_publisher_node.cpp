@@ -56,6 +56,7 @@ public:
         this->declare_parameter<bool>("use_external_crystal", true);
         this->declare_parameter<std::string>("axis_map_config", "p1");
         this->declare_parameter<std::string>("axis_map_sign", "p1");
+        this->declare_parameter<int>("thread_priority", 0);
 
         // 2. Callback Groups Isolation
         sensor_cb_group_ = this->create_callback_group(rclcpp::CallbackGroupType::MutuallyExclusive);
