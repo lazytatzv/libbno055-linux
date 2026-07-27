@@ -15,6 +15,7 @@
 #include <rclcpp_lifecycle/lifecycle_publisher.hpp>
 #include <sensor_msgs/msg/imu.hpp>
 #include <sensor_msgs/msg/magnetic_field.hpp>
+#include <geometry_msgs/msg/vector3_stamped.hpp>
 #include <sensor_msgs/msg/temperature.hpp>
 #include <std_srvs/srv/trigger.hpp>
 #include <string>
@@ -77,6 +78,8 @@ public:
 
         imu_pub_ = this->create_publisher<sensor_msgs::msg::Imu>("imu/data", rclcpp::SensorDataQoS());
         mag_pub_ = this->create_publisher<sensor_msgs::msg::MagneticField>("imu/mag", rclcpp::SensorDataQoS());
+        linear_accel_pub_ = this->create_publisher<geometry_msgs::msg::Vector3Stamped>("imu/linear_acceleration", rclcpp::SensorDataQoS());
+        gravity_pub_ = this->create_publisher<geometry_msgs::msg::Vector3Stamped>("imu/gravity", rclcpp::SensorDataQoS());
         diag_pub_ =
             this->create_publisher<diagnostic_msgs::msg::DiagnosticArray>("diagnostics", rclcpp::SystemDefaultsQoS());
 
@@ -89,6 +92,8 @@ public:
 
         imu_pub_->on_activate();
         mag_pub_->on_activate();
+        linear_accel_pub_->on_activate();
+        gravity_pub_->on_activate();
         diag_pub_->on_activate();
 
         const int rate_hz = this->get_parameter("publish_rate_hz").as_int();
@@ -113,6 +118,8 @@ public:
 
         imu_pub_->on_deactivate();
         mag_pub_->on_deactivate();
+        linear_accel_pub_->on_deactivate();
+        gravity_pub_->on_deactivate();
         diag_pub_->on_deactivate();
 
         RCLCPP_INFO(this->get_logger(), "Node deactivated.");
@@ -124,6 +131,8 @@ public:
 
         imu_pub_.reset();
         mag_pub_.reset();
+        linear_accel_pub_.reset();
+        gravity_pub_.reset();
         diag_pub_.reset();
         imu_driver_.reset();
         sensor_cb_group_.reset();
@@ -148,8 +157,10 @@ private:
 
         auto quat = imu_driver_->getQuaternionNoexcept();
         auto gyro = imu_driver_->getGyroscopeNoexcept();
-        auto accel = imu_driver_->getLinearAccelerationNoexcept();
+        auto accel = imu_driver_->getAccelerometerNoexcept();
         auto mag = imu_driver_->getMagnetometerNoexcept();
+        auto linear_accel = imu_driver_->getLinearAccelerationNoexcept();
+        auto gravity = imu_driver_->getGravityNoexcept();
 
         if (quat && gyro && accel) {
             // Outlier check for NaN/Inf
@@ -190,6 +201,26 @@ private:
 
             mag_pub_->publish(std::move(mag_msg));
         }
+
+        if (linear_accel && linear_accel_pub_->is_activated()) {
+            auto linear_accel_msg = std::make_unique<geometry_msgs::msg::Vector3Stamped>();
+            linear_accel_msg->header.stamp = now;
+            linear_accel_msg->header.frame_id = frame_id;
+            linear_accel_msg->vector.x = linear_accel->x;
+            linear_accel_msg->vector.y = linear_accel->y;
+            linear_accel_msg->vector.z = linear_accel->z;
+            linear_accel_pub_->publish(std::move(linear_accel_msg));
+        }
+
+        if (gravity && gravity_pub_->is_activated()) {
+            auto gravity_msg = std::make_unique<geometry_msgs::msg::Vector3Stamped>();
+            gravity_msg->header.stamp = now;
+            gravity_msg->header.frame_id = frame_id;
+            gravity_msg->vector.x = gravity->x;
+            gravity_msg->vector.y = gravity->y;
+            gravity_msg->vector.z = gravity->z;
+            gravity_pub_->publish(std::move(gravity_msg));
+        }
     }
 
     void publishDiagnostics() {
@@ -219,6 +250,8 @@ private:
 
     std::shared_ptr<rclcpp_lifecycle::LifecyclePublisher<sensor_msgs::msg::Imu>> imu_pub_;
     std::shared_ptr<rclcpp_lifecycle::LifecyclePublisher<sensor_msgs::msg::MagneticField>> mag_pub_;
+    std::shared_ptr<rclcpp_lifecycle::LifecyclePublisher<geometry_msgs::msg::Vector3Stamped>> linear_accel_pub_;
+    std::shared_ptr<rclcpp_lifecycle::LifecyclePublisher<geometry_msgs::msg::Vector3Stamped>> gravity_pub_;
     std::shared_ptr<rclcpp_lifecycle::LifecyclePublisher<diagnostic_msgs::msg::DiagnosticArray>> diag_pub_;
 
     rclcpp::TimerBase::SharedPtr sensor_timer_;
