@@ -282,6 +282,7 @@ private:
 
         const double deadband = this->get_parameter("angular_deadband").as_double();
         const bool is_commanded_to_turn = std::abs(msg->angular.z) > deadband;
+        const bool is_translating = (std::abs(msg->linear.x) > 0.01 || std::abs(msg->linear.y) > 0.01 || std::abs(msg->linear.z) > 0.01);
 
         if (is_commanded_to_turn || !has_imu_data_ || is_imu_timeout_) {
             target_heading_locked_ = false;
@@ -289,6 +290,12 @@ private:
             target_heading_deg_ = current_heading_deg_;
             controller_.reset();
             out_twist->angular = msg->angular;  // Fail-Safe Passthrough
+            last_correction_ = 0.0;
+            last_error_deg_ = 0.0;
+        } else if (!is_translating) {
+            // When not translating, do not apply correction to avoid creeping due to sensor drift
+            controller_.reset();
+            out_twist->angular.z = 0.0;
             last_correction_ = 0.0;
             last_error_deg_ = 0.0;
         } else {
