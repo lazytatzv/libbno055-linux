@@ -73,7 +73,8 @@ public:
         imu_driver_ = std::make_unique<bno055lib::BNO055>(address, device);
         if (imu_driver_->begin(op_mode)) {
             initialized_ = true;
-            RCLCPP_INFO(this->get_logger(), "BNO055 hardware initialized on %s (0x%02X) in mode %s", device.c_str(), address, op_mode_str.c_str());
+            RCLCPP_INFO(this->get_logger(), "BNO055 hardware initialized on %s (0x%02X) in mode %s", device.c_str(),
+                        address, op_mode_str.c_str());
         } else {
             RCLCPP_ERROR(this->get_logger(), "Failed to initialize BNO055 hardware on %s", device.c_str());
             return CallbackReturn::FAILURE;
