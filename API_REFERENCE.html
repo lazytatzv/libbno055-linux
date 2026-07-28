@@ -557,6 +557,13 @@
 <li><p><em>Parameters</em>: None.</p></li>
 <li><p><em>Returns</em>: <code class="docutils literal notranslate"><span class="pre">std::optional&lt;T&gt;</span></code>. Contains the requested struct on success; <code class="docutils literal notranslate"><span class="pre">std::nullopt</span></code> on communication failure.</p></li>
 <li><p><em>Description</em>: Safety-hardened read path that increments I2C diagnostic counters upon failure without generating CPU exceptions.</p></li>
+</ul>
+</li>
+<li><p><strong>std::optional&lt;AllData&gt; getAllDataNoexcept() noexcept</strong></p>
+<ul>
+<li><p><em>Parameters</em>: None.</p></li>
+<li><p><em>Returns</em>: <code class="docutils literal notranslate"><span class="pre">std::optional&lt;AllData&gt;</span></code>. Full snapshot of all 8 sensor outputs (accel, mag, gyro, euler, quaternion, linear accel, gravity, temp).</p></li>
+<li><p><em>Description</em>: Executes a single 45-byte burst I2C transaction covering registers <code class="docutils literal notranslate"><span class="pre">0x08</span></code> through <code class="docutils literal notranslate"><span class="pre">0x34</span></code>. Reduces bus transactions by 87.5% compared to individual queries. Atomic capture across all channels.</p></li>
 <li><p><em>Parameters</em>: None.</p></li>
 <li><p><em>Returns</em>: The requested struct directly (<code class="docutils literal notranslate"><span class="pre">Vector3</span></code>, <code class="docutils literal notranslate"><span class="pre">Quaternion</span></code>, or <code class="docutils literal notranslate"><span class="pre">int8_t</span></code>). On temporary bus drops, returns the last cached valid frame (or zero/identity).</p></li>
 </ul>

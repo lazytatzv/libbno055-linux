@@ -242,55 +242,30 @@
 <p>This document serves as a cheat sheet for the maintainer on how to release a new version of <code class="docutils literal notranslate"><span class="pre">libbno055-linux</span></code> to both ROS 2 (<code class="docutils literal notranslate"><span class="pre">rosdistro</span></code>) and the Ubuntu PPA.</p>
 <section id="bump-the-version">
 <h2>1. Bump the Version<a class="headerlink" href="#bump-the-version" title="Link to this heading">¶</a></h2>
-<p>Before releasing, you must increment the version number in all package managers and documentation.</p>
-<ol class="arabic">
-<li><p><strong>Update <code class="docutils literal notranslate"><span class="pre">CMakeLists.txt</span></code></strong>:</p>
-<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nb">project</span><span class="p">(</span><span class="s">libbno055_linux</span><span class="w"> </span><span class="s">VERSION</span><span class="w"> </span><span class="s">X.Y.Z</span><span class="w"> </span><span class="s">LANGUAGES</span><span class="w"> </span><span class="s">CXX</span><span class="p">)</span>
-</pre></div>
-</div>
-</li>
-<li><p><strong>Update <code class="docutils literal notranslate"><span class="pre">package.xml</span></code></strong>:</p>
-<div class="highlight-xml notranslate"><div class="highlight"><pre><span></span><span class="nt">&lt;version&gt;</span>X.Y.Z<span class="nt">&lt;/version&gt;</span>
-</pre></div>
-</div>
-</li>
-<li><p><strong>Update <code class="docutils literal notranslate"><span class="pre">vcpkg.json</span></code></strong>:</p>
-<div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span class="nt">&quot;version&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;X.Y.Z&quot;</span>
-</pre></div>
-</div>
-</li>
-<li><p><strong>Update <code class="docutils literal notranslate"><span class="pre">conanfile.py</span></code></strong>:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">version</span> <span class="o">=</span> <span class="s2">&quot;X.Y.Z&quot;</span>
-</pre></div>
-</div>
-</li>
-<li><p><strong>Update <code class="docutils literal notranslate"><span class="pre">setup.py</span></code></strong>:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">version</span><span class="o">=</span><span class="s2">&quot;X.Y.Z&quot;</span>
-</pre></div>
-</div>
-</li>
-<li><p><strong>Update <code class="docutils literal notranslate"><span class="pre">rust/Cargo.toml</span></code></strong>:</p>
-<div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="n">version</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;X.Y.Z&quot;</span>
-</pre></div>
-</div>
-</li>
-<li><p><strong>Update <code class="docutils literal notranslate"><span class="pre">CHANGELOG.md</span></code></strong>:
-Add a new section for <code class="docutils literal notranslate"><span class="pre">##</span> <span class="pre">[X.Y.Z]</span> <span class="pre">-</span> <span class="pre">YYYY-MM-DD</span></code> detailing the changes.</p></li>
-<li><p><strong>Update <code class="docutils literal notranslate"><span class="pre">debian/changelog</span></code></strong>:</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>dch<span class="w"> </span>-v<span class="w"> </span>X.Y.Z-1<span class="w"> </span><span class="s2">&quot;Release version X.Y.Z&quot;</span>
-</pre></div>
-</div>
-<p><em>(Or edit manually following the existing format).</em></p>
-</li>
+<p>Updating the version across all 7 configuration files is now fully automated! You have two options:</p>
+<section id="option-a-via-github-ui-recommended">
+<h3>Option A: Via GitHub UI (Recommended)<a class="headerlink" href="#option-a-via-github-ui-recommended" title="Link to this heading">¶</a></h3>
+<ol class="arabic simple">
+<li><p>Go to <strong>Actions ➔ Release ➔ Run workflow</strong>.</p></li>
+<li><p>Input the new version (e.g. <code class="docutils literal notranslate"><span class="pre">1.9.0</span></code>) and click <strong>Run workflow</strong>.</p></li>
+<li><p>Actions will automatically update all configuration files, commit, tag (<code class="docutils literal notranslate"><span class="pre">v1.9.0</span></code>), create a GitHub Release, and publish to PyPI and crates.io.</p></li>
 </ol>
-<p>Commit and push these changes, then cut a new Git tag:</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>git<span class="w"> </span>add<span class="w"> </span>.
-git<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">&quot;chore: bump version to X.Y.Z&quot;</span>
-git<span class="w"> </span>push
-git<span class="w"> </span>tag<span class="w"> </span>-a<span class="w"> </span>vX.Y.Z<span class="w"> </span>-m<span class="w"> </span><span class="s2">&quot;Release vX.Y.Z&quot;</span>
-git<span class="w"> </span>push<span class="w"> </span>origin<span class="w"> </span>vX.Y.Z
+</section>
+<section id="option-b-via-local-script">
+<h3>Option B: Via Local Script<a class="headerlink" href="#option-b-via-local-script" title="Link to this heading">¶</a></h3>
+<p>Run the automated version bump script before committing:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>./scripts/bump_version.sh<span class="w"> </span><span class="m">1</span>.9.0
 </pre></div>
 </div>
+<p>This updates <code class="docutils literal notranslate"><span class="pre">CMakeLists.txt</span></code>, <code class="docutils literal notranslate"><span class="pre">package.xml</span></code>, <code class="docutils literal notranslate"><span class="pre">setup.py</span></code>, <code class="docutils literal notranslate"><span class="pre">Cargo.toml</span></code>, <code class="docutils literal notranslate"><span class="pre">conanfile.py</span></code>, <code class="docutils literal notranslate"><span class="pre">vcpkg.json</span></code>, and <code class="docutils literal notranslate"><span class="pre">README.md</span></code> instantly.</p>
+<p>Then commit and push:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>git<span class="w"> </span>add<span class="w"> </span>-A
+git<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">&quot;chore: bump version to 1.9.0&quot;</span>
+git<span class="w"> </span>tag<span class="w"> </span>-a<span class="w"> </span>v1.9.0<span class="w"> </span>-m<span class="w"> </span><span class="s2">&quot;Release v1.9.0&quot;</span>
+git<span class="w"> </span>push<span class="w"> </span>origin<span class="w"> </span>main<span class="w"> </span>--tags
+</pre></div>
+</div>
+</section>
 </section>
 <hr class="docutils" />
 <section id="ros-2-release-via-bloom">
@@ -412,7 +387,11 @@ dput<span class="w"> </span>ppa:lazytatzv/bno055<span class="w"> </span>libbno05
           <div class="toc-tree">
             <ul>
 <li><a class="reference internal" href="#">Release Guide (Maintainer Only)</a><ul>
-<li><a class="reference internal" href="#bump-the-version">1. Bump the Version</a></li>
+<li><a class="reference internal" href="#bump-the-version">1. Bump the Version</a><ul>
+<li><a class="reference internal" href="#option-a-via-github-ui-recommended">Option A: Via GitHub UI (Recommended)</a></li>
+<li><a class="reference internal" href="#option-b-via-local-script">Option B: Via Local Script</a></li>
+</ul>
+</li>
 <li><a class="reference internal" href="#ros-2-release-via-bloom">2. ROS 2 Release (via Bloom)</a><ul>
 <li><a class="reference internal" href="#releasing-for-humble">Releasing for Humble</a></li>
 <li><a class="reference internal" href="#releasing-for-jazzy">Releasing for Jazzy</a></li>
