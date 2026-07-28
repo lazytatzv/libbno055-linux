@@ -110,6 +110,8 @@ public:
         }
 
         imu_pub_ = this->create_publisher<sensor_msgs::msg::Imu>("imu/data", rclcpp::SensorDataQoS());
+        euler_pub_ =
+            this->create_publisher<geometry_msgs::msg::Vector3Stamped>("imu/euler", rclcpp::SensorDataQoS());
         mag_pub_ = this->create_publisher<sensor_msgs::msg::MagneticField>("imu/mag", rclcpp::SensorDataQoS());
         linear_accel_pub_ = this->create_publisher<geometry_msgs::msg::Vector3Stamped>("imu/linear_acceleration",
                                                                                        rclcpp::SensorDataQoS());
@@ -125,6 +127,7 @@ public:
         RCLCPP_INFO(this->get_logger(), "Activating BNO055 Lifecycle Publisher Node...");
 
         imu_pub_->on_activate();
+        euler_pub_->on_activate();
         mag_pub_->on_activate();
         linear_accel_pub_->on_activate();
         gravity_pub_->on_activate();
@@ -151,6 +154,7 @@ public:
         diag_timer_.reset();
 
         imu_pub_->on_deactivate();
+        euler_pub_->on_deactivate();
         mag_pub_->on_deactivate();
         linear_accel_pub_->on_deactivate();
         gravity_pub_->on_deactivate();
@@ -164,6 +168,7 @@ public:
         RCLCPP_INFO(this->get_logger(), "Cleaning up BNO055 Lifecycle Publisher Node...");
 
         imu_pub_.reset();
+        euler_pub_.reset();
         mag_pub_.reset();
         linear_accel_pub_.reset();
         gravity_pub_.reset();
@@ -190,6 +195,7 @@ private:
         const auto now = this->now();
 
         auto quat = imu_driver_->getQuaternionNoexcept();
+        auto euler = imu_driver_->getEulerAnglesNoexcept();
         auto gyro = imu_driver_->getGyroscopeNoexcept();
         auto accel = imu_driver_->getAccelerometerNoexcept();
         auto mag = imu_driver_->getMagnetometerNoexcept();
@@ -223,6 +229,17 @@ private:
             imu_msg->linear_acceleration.z = accel->z;
 
             imu_pub_->publish(std::move(imu_msg));
+        }
+
+        if (euler && euler_pub_->is_activated()) {
+            auto euler_msg = std::make_unique<geometry_msgs::msg::Vector3Stamped>();
+            euler_msg->header.stamp = now;
+            euler_msg->header.frame_id = frame_id;
+            euler_msg->vector.x = euler->x;  // Roll (rad)
+            euler_msg->vector.y = euler->y;  // Pitch (rad)
+            euler_msg->vector.z = euler->z;  // Yaw / Heading (rad)
+
+            euler_pub_->publish(std::move(euler_msg));
         }
 
         if (mag && mag_pub_->is_activated()) {
@@ -283,6 +300,7 @@ private:
     bool initialized_;
 
     std::shared_ptr<rclcpp_lifecycle::LifecyclePublisher<sensor_msgs::msg::Imu>> imu_pub_;
+    std::shared_ptr<rclcpp_lifecycle::LifecyclePublisher<geometry_msgs::msg::Vector3Stamped>> euler_pub_;
     std::shared_ptr<rclcpp_lifecycle::LifecyclePublisher<sensor_msgs::msg::MagneticField>> mag_pub_;
     std::shared_ptr<rclcpp_lifecycle::LifecyclePublisher<geometry_msgs::msg::Vector3Stamped>> linear_accel_pub_;
     std::shared_ptr<rclcpp_lifecycle::LifecyclePublisher<geometry_msgs::msg::Vector3Stamped>> gravity_pub_;

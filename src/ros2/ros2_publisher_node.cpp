@@ -102,6 +102,8 @@ public:
 
         // 4. Publishers
         imu_pub_ = this->create_publisher<sensor_msgs::msg::Imu>("imu/data", rclcpp::SensorDataQoS());
+        euler_pub_ =
+            this->create_publisher<geometry_msgs::msg::Vector3Stamped>("imu/euler", rclcpp::SensorDataQoS());
         mag_pub_ = this->create_publisher<sensor_msgs::msg::MagneticField>("imu/mag", rclcpp::SensorDataQoS());
         temp_pub_ = this->create_publisher<sensor_msgs::msg::Temperature>("imu/temp", rclcpp::SensorDataQoS());
         linear_accel_pub_ = this->create_publisher<geometry_msgs::msg::Vector3Stamped>("imu/linear_acceleration",
@@ -132,6 +134,7 @@ private:
         const auto now = this->now();
 
         auto quat = imu_driver_->getQuaternionNoexcept();
+        auto euler = imu_driver_->getEulerAnglesNoexcept();
         auto gyro = imu_driver_->getGyroscopeNoexcept();
         auto accel = imu_driver_->getAccelerometerNoexcept();
         auto mag = imu_driver_->getMagnetometerNoexcept();
@@ -166,6 +169,17 @@ private:
             imu_msg->linear_acceleration.z = accel->z;
 
             imu_pub_->publish(std::move(imu_msg));
+        }
+
+        if (euler) {
+            auto euler_msg = std::make_unique<geometry_msgs::msg::Vector3Stamped>();
+            euler_msg->header.stamp = now;
+            euler_msg->header.frame_id = frame_id;
+            euler_msg->vector.x = euler->x;  // Roll (rad)
+            euler_msg->vector.y = euler->y;  // Pitch (rad)
+            euler_msg->vector.z = euler->z;  // Yaw / Heading (rad)
+
+            euler_pub_->publish(std::move(euler_msg));
         }
 
         if (mag) {
@@ -233,6 +247,7 @@ private:
     bool initialized_;
 
     rclcpp::Publisher<sensor_msgs::msg::Imu>::SharedPtr imu_pub_;
+    rclcpp::Publisher<geometry_msgs::msg::Vector3Stamped>::SharedPtr euler_pub_;
     rclcpp::Publisher<sensor_msgs::msg::MagneticField>::SharedPtr mag_pub_;
     rclcpp::Publisher<sensor_msgs::msg::Temperature>::SharedPtr temp_pub_;
     rclcpp::Publisher<geometry_msgs::msg::Vector3Stamped>::SharedPtr linear_accel_pub_;
