@@ -130,8 +130,8 @@ constexpr uint8_t POWER_MODE_SUSPEND = 0x02;
 // Datasheet-specified timing constants (Section 3.6.1 & Section 3.4)
 // -----------------------------------------------------------------------
 // Operating mode switch delays (after writing OPR_MODE register)
-constexpr int kModeToConfigDelayMs = 19;   // Any operation mode  → CONFIGMODE
-constexpr int kConfigToModeDelayMs = 7;    // CONFIGMODE → any operation mode
+constexpr int kModeToConfigDelayMs = 19;  // Any operation mode  → CONFIGMODE
+constexpr int kConfigToModeDelayMs = 7;   // CONFIGMODE → any operation mode
 // Software reset (SYS_TRIGGER bit 5) POR/boot timing
 // The BNO055 datasheet specifies ~650ms for POST completion after SW reset.
 // We sleep 600ms before polling to avoid NACK spam, then poll the rest.
@@ -859,7 +859,7 @@ void BNO055::setAxisRemap(AxisMapConfig config) {
     OpMode prev = impl_->mode_;
     setMode(OpMode::Config);  // waits kModeToConfigDelayMs (19ms)
     impl_->write8(AXIS_MAP_CONFIG, static_cast<uint8_t>(config));
-    setMode(prev);            // waits kConfigToModeDelayMs (7ms)
+    setMode(prev);  // waits kConfigToModeDelayMs (7ms)
 }
 
 void BNO055::setAxisSign(AxisMapSign sign) {
@@ -867,7 +867,7 @@ void BNO055::setAxisSign(AxisMapSign sign) {
     OpMode prev = impl_->mode_;
     setMode(OpMode::Config);  // waits kModeToConfigDelayMs (19ms)
     impl_->write8(AXIS_MAP_SIGN, static_cast<uint8_t>(sign));
-    setMode(prev);            // waits kConfigToModeDelayMs (7ms)
+    setMode(prev);  // waits kConfigToModeDelayMs (7ms)
 }
 
 void BNO055::setExtCrystalUse(bool use_xtal) {
@@ -876,7 +876,7 @@ void BNO055::setExtCrystalUse(bool use_xtal) {
     setMode(OpMode::Config);  // waits kModeToConfigDelayMs (19ms)
     impl_->write8(PAGE_ID, 0);
     impl_->write8(SYS_TRIGGER, use_xtal ? 0x80 : 0x00);
-    setMode(prev);            // waits kConfigToModeDelayMs (7ms)
+    setMode(prev);  // waits kConfigToModeDelayMs (7ms)
 }
 
 Vector3 BNO055::getAccelerometer() {
@@ -1496,15 +1496,15 @@ bool BNO055::startInterruptDrivenReading(int gpio_pin, RawAsyncDataCallback call
         gpiod_line_settings_free(settings);
 
         if (!request) {
-            impl_->log(LogLevel::Error, "libgpiod: Failed to request GPIO line " +
-                                            std::to_string(impl_->irq_gpio_pin_));
+            impl_->log(LogLevel::Error,
+                       "libgpiod: Failed to request GPIO line " + std::to_string(impl_->irq_gpio_pin_));
             gpiod_chip_close(chip);
             impl_->irq_running_ = false;
             return;
         }
 
-        impl_->log(LogLevel::Info, "libgpiod: Monitoring GPIO line " +
-                                       std::to_string(impl_->irq_gpio_pin_) + " for rising-edge interrupts.");
+        impl_->log(LogLevel::Info, "libgpiod: Monitoring GPIO line " + std::to_string(impl_->irq_gpio_pin_) +
+                                       " for rising-edge interrupts.");
 
         constexpr int kBufCapacity = 4;
         gpiod_edge_event_buffer* event_buf = gpiod_edge_event_buffer_new(kBufCapacity);
