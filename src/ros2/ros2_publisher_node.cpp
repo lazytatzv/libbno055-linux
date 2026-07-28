@@ -63,6 +63,9 @@ public:
         this->declare_parameter<bool>("publish_tf", false);
         this->declare_parameter<std::string>("parent_frame_id", "odom");
         this->declare_parameter<std::string>("child_frame_id", "base_link");
+        this->declare_parameter<double>("imu_offset_x", 0.0);
+        this->declare_parameter<double>("imu_offset_y", 0.0);
+        this->declare_parameter<double>("imu_offset_z", 0.0);
 
         // 2. Callback Groups Isolation
         sensor_cb_group_ = this->create_callback_group(rclcpp::CallbackGroupType::MutuallyExclusive);
@@ -182,9 +185,9 @@ private:
                 tf_msg.header.stamp = now;
                 tf_msg.header.frame_id = this->get_parameter("parent_frame_id").as_string();
                 tf_msg.child_frame_id = this->get_parameter("child_frame_id").as_string();
-                tf_msg.transform.translation.x = 0.0;
-                tf_msg.transform.translation.y = 0.0;
-                tf_msg.transform.translation.z = 0.0;
+                tf_msg.transform.translation.x = this->get_parameter("imu_offset_x").as_double();
+                tf_msg.transform.translation.y = this->get_parameter("imu_offset_y").as_double();
+                tf_msg.transform.translation.z = this->get_parameter("imu_offset_z").as_double();
                 tf_msg.transform.rotation.w = quat->w;
                 tf_msg.transform.rotation.x = quat->x;
                 tf_msg.transform.rotation.y = quat->y;
