@@ -26,6 +26,31 @@ set_target_properties(libbno055-linux PROPERTIES
     VERSION ${PROJECT_VERSION}
     SOVERSION ${PROJECT_VERSION_MAJOR}
 )
+
+# Automatically sync rust/cpp/ bundled C++ sources with the main source tree.
+# This prevents source drift between the Rust crate's embedded copy and the canonical source.
+add_custom_command(TARGET libbno055-linux POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/core/bno055.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/rust/cpp/src/bno055.cpp
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/core/bno055_c.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/rust/cpp/src/bno055_c.cpp
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        ${CMAKE_CURRENT_SOURCE_DIR}/include/libbno055-linux/bno055.hpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/rust/cpp/include/libbno055-linux/bno055.hpp
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        ${CMAKE_CURRENT_SOURCE_DIR}/include/libbno055-linux/bno055_c.h
+        ${CMAKE_CURRENT_SOURCE_DIR}/rust/cpp/include/libbno055-linux/bno055_c.h
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        ${CMAKE_CURRENT_SOURCE_DIR}/include/libbno055-linux/transport.hpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/rust/cpp/include/libbno055-linux/transport.hpp
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        ${CMAKE_CURRENT_SOURCE_DIR}/include/libbno055-linux/mock_transport.hpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/rust/cpp/include/libbno055-linux/mock_transport.hpp
+    COMMENT "Syncing rust/cpp/ bundled sources with main source tree"
+    VERBATIM
+)
 if(ENABLE_CLANG_TIDY AND CLANG_TIDY_EXE)
     set_target_properties(libbno055-linux PROPERTIES
         CXX_CLANG_TIDY "${CLANG_TIDY_EXE}"
@@ -58,6 +83,24 @@ endif()
 # Dependencies
 find_package(Threads REQUIRED)
 target_link_libraries(libbno055-linux PRIVATE Threads::Threads)
+
+# Optional: libgpiod for modern GPIO IRQ support (replaces deprecated sysfs /sys/class/gpio)
+# Required: libgpiod >= 2.0 (gpiod_chip_open / gpiod_line_request API)
+# Ubuntu/Debian: sudo apt install libgpiod-dev
+# Arch Linux:    sudo pacman -S libgpiod
+find_package(PkgConfig QUIET)
+if(PkgConfig_FOUND)
+    pkg_check_modules(LIBGPIOD QUIET libgpiod>=2.0)
+endif()
+if(LIBGPIOD_FOUND)
+    message(STATUS "libgpiod ${LIBGPIOD_VERSION} found -- enabling modern character device GPIO IRQ support.")
+    target_compile_definitions(libbno055-linux PRIVATE HAVE_LIBGPIOD)
+    target_include_directories(libbno055-linux PRIVATE ${LIBGPIOD_INCLUDE_DIRS})
+    target_link_libraries(libbno055-linux PRIVATE ${LIBGPIOD_LIBRARIES})
+else()
+    message(STATUS "libgpiod not found -- falling back to legacy sysfs GPIO (deprecated since Linux 5.10).")
+    message(STATUS "Install libgpiod >= 2.0 to enable the modern GPIO character device IRQ path.")
+endif()
 
 # Example executables
 option(BUILD_EXAMPLES "Build example executables" ON)
