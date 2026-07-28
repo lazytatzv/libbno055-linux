@@ -153,8 +153,11 @@ find_package(sensor_msgs QUIET)
 find_package(geometry_msgs QUIET)
 find_package(diagnostic_msgs QUIET)
 find_package(std_srvs QUIET)
+find_package(tf2 QUIET)
+find_package(tf2_ros QUIET)
+find_package(tf2_geometry_msgs QUIET)
 
-if(rclcpp_FOUND AND sensor_msgs_FOUND AND geometry_msgs_FOUND AND diagnostic_msgs_FOUND AND std_srvs_FOUND)
+if(rclcpp_FOUND AND sensor_msgs_FOUND AND geometry_msgs_FOUND AND diagnostic_msgs_FOUND AND std_srvs_FOUND AND tf2_ros_FOUND)
     find_package(ament_cmake REQUIRED)
     set(ament_cmake_copyright_FOUND TRUE)
     set(ament_cmake_cpplint_FOUND TRUE)
@@ -170,8 +173,11 @@ if(rclcpp_FOUND AND sensor_msgs_FOUND AND geometry_msgs_FOUND AND diagnostic_msg
         libbno055-linux
         rclcpp::rclcpp
         ${sensor_msgs_TARGETS}
+        ${geometry_msgs_TARGETS}
         ${diagnostic_msgs_TARGETS}
         ${std_srvs_TARGETS}
+        ${tf2_ros_TARGETS}
+        ${tf2_geometry_msgs_TARGETS}
     )
 
     add_executable(bno055_heading_control_node src/ros2/ros2_heading_control_node.cpp)
@@ -198,8 +204,11 @@ if(rclcpp_FOUND AND sensor_msgs_FOUND AND geometry_msgs_FOUND AND diagnostic_msg
             rclcpp::rclcpp
             rclcpp_components::component
             ${sensor_msgs_TARGETS}
+            ${geometry_msgs_TARGETS}
             ${diagnostic_msgs_TARGETS}
             ${std_srvs_TARGETS}
+            ${tf2_ros_TARGETS}
+            ${tf2_geometry_msgs_TARGETS}
         )
         rclcpp_components_register_node(bno055_ros2_components PLUGIN "bno055_ros2::BNO055PublisherNode" EXECUTABLE bno055_publisher_node_container)
 
@@ -232,8 +241,11 @@ if(rclcpp_FOUND AND sensor_msgs_FOUND AND geometry_msgs_FOUND AND diagnostic_msg
             rclcpp::rclcpp
             rclcpp_lifecycle::rclcpp_lifecycle
             ${sensor_msgs_TARGETS}
+            ${geometry_msgs_TARGETS}
             ${diagnostic_msgs_TARGETS}
             ${std_srvs_TARGETS}
+            ${tf2_ros_TARGETS}
+            ${tf2_geometry_msgs_TARGETS}
         )
 
         add_executable(bno055_lifecycle_heading_control_node src/ros2/ros2_lifecycle_heading_control_node.cpp)

@@ -11,11 +11,13 @@
 #ifdef BNO055_ROS2_BUILDING_COMPONENT
 #include <rclcpp_components/register_node_macro.hpp>
 #endif
+#include <geometry_msgs/msg/transform_stamped.hpp>
 #include <geometry_msgs/msg/vector3_stamped.hpp>
 #include <sensor_msgs/msg/imu.hpp>
 #include <sensor_msgs/msg/magnetic_field.hpp>
 #include <sensor_msgs/msg/temperature.hpp>
 #include <std_srvs/srv/trigger.hpp>
+#include <tf2_ros/transform_broadcaster.h>
 #include <string>
 #include <vector>
 
@@ -57,6 +59,9 @@ public:
         this->declare_parameter<std::string>("axis_map_config", "p1");
         this->declare_parameter<std::string>("axis_map_sign", "p1");
         this->declare_parameter<int>("thread_priority", 0);
+        this->declare_parameter<bool>("publish_tf", false);
+        this->declare_parameter<std::string>("parent_frame_id", "odom");
+        this->declare_parameter<std::string>("child_frame_id", "base_link");
 
         // 2. Callback Groups Isolation
         sensor_cb_group_ = this->create_callback_group(rclcpp::CallbackGroupType::MutuallyExclusive);
@@ -110,6 +115,8 @@ public:
         gravity_pub_ =
             this->create_publisher<geometry_msgs::msg::Vector3Stamped>("imu/gravity", rclcpp::SensorDataQoS());
         diag_pub_ = this->create_publisher<diagnostic_msgs::msg::DiagnosticArray>("diagnostics", rclcpp::QoS(1));
+
+        tf_broadcaster_ = std::make_unique<tf2_ros::TransformBroadcaster>(*this);
 
         // 5. Sensor Polling Timer (High-Frequency Sensor Callback Group)
         const int rate_hz = this->get_parameter("publish_rate_hz").as_int();
@@ -168,6 +175,21 @@ private:
             imu_msg->linear_acceleration.z = accel->z;
 
             imu_pub_->publish(std::move(imu_msg));
+
+            if (this->get_parameter("publish_tf").as_bool()) {
+                geometry_msgs::msg::TransformStamped tf_msg;
+                tf_msg.header.stamp = now;
+                tf_msg.header.frame_id = this->get_parameter("parent_frame_id").as_string();
+                tf_msg.child_frame_id = this->get_parameter("child_frame_id").as_string();
+                tf_msg.transform.translation.x = 0.0;
+                tf_msg.transform.translation.y = 0.0;
+                tf_msg.transform.translation.z = 0.0;
+                tf_msg.transform.rotation.w = quat->w;
+                tf_msg.transform.rotation.x = quat->x;
+                tf_msg.transform.rotation.y = quat->y;
+                tf_msg.transform.rotation.z = quat->z;
+                tf_broadcaster_->sendTransform(tf_msg);
+            }
         }
 
         if (euler) {
@@ -252,6 +274,7 @@ private:
     rclcpp::Publisher<geometry_msgs::msg::Vector3Stamped>::SharedPtr linear_accel_pub_;
     rclcpp::Publisher<geometry_msgs::msg::Vector3Stamped>::SharedPtr gravity_pub_;
     rclcpp::Publisher<diagnostic_msgs::msg::DiagnosticArray>::SharedPtr diag_pub_;
+    std::unique_ptr<tf2_ros::TransformBroadcaster> tf_broadcaster_;
 
     rclcpp::TimerBase::SharedPtr sensor_timer_;
     rclcpp::TimerBase::SharedPtr diag_timer_;
