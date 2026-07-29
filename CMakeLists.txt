@@ -274,8 +274,11 @@ if(rclcpp_FOUND AND sensor_msgs_FOUND AND geometry_msgs_FOUND AND diagnostic_msg
                 rclcpp_lifecycle::rclcpp_lifecycle
                 rclcpp_components::component
                 ${sensor_msgs_TARGETS}
+                ${geometry_msgs_TARGETS}
                 ${diagnostic_msgs_TARGETS}
                 ${std_srvs_TARGETS}
+                ${tf2_ros_TARGETS}
+                ${tf2_geometry_msgs_TARGETS}
             )
             rclcpp_components_register_node(bno055_ros2_lifecycle_components PLUGIN "bno055_ros2::BNO055LifecyclePublisherNode" EXECUTABLE bno055_lifecycle_publisher_node_container)
 
