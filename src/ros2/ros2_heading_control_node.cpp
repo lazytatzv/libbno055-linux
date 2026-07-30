@@ -187,11 +187,10 @@ private:
                 max_translation_speed_ = param.as_double();
             }
 
-            if (name == "kp" || name == "ki" || name == "kd" || name == "kff" ||
-                name == "max_i_term" || name == "max_output" || name == "deadband_deg" ||
-                name == "cutoff_freq_hz" || name == "max_slew_rate" ||
-                name == "cmd_vel_timeout" || name == "imu_timeout" ||
-                name == "yaw_axis" || name == "max_translation_speed") {
+            if (name == "kp" || name == "ki" || name == "kd" || name == "kff" || name == "max_i_term" ||
+                name == "max_output" || name == "deadband_deg" || name == "cutoff_freq_hz" || name == "max_slew_rate" ||
+                name == "cmd_vel_timeout" || name == "imu_timeout" || name == "yaw_axis" ||
+                name == "max_translation_speed") {
                 RCLCPP_INFO(this->get_logger(), "Dynamic parameter updated: %s = %f", name.c_str(), param.as_double());
             }
         }
@@ -278,7 +277,8 @@ private:
 
         const double deadband = this->get_parameter("angular_deadband").as_double();
         const bool is_commanded_to_turn = std::abs(msg->angular.z) > deadband;
-        const bool is_translating = (std::abs(msg->linear.x) > 0.01 || std::abs(msg->linear.y) > 0.01 || std::abs(msg->linear.z) > 0.01);
+        const bool is_translating =
+            (std::abs(msg->linear.x) > 0.01 || std::abs(msg->linear.y) > 0.01 || std::abs(msg->linear.z) > 0.01);
 
         if (is_commanded_to_turn || !has_imu_data_ || is_imu_timeout_) {
             target_heading_locked_ = false;
@@ -311,11 +311,12 @@ private:
 
             if (target_heading_locked_) {
                 auto out = controller_.update(target_quat_, current_quat_, dt, gyro_z_deg_, msg->linear.x);
-                
+
                 // Scale the PID correction output by the velocity factor to match JoyDriverNode logic
-                const double velocity_magnitude = std::sqrt(msg->linear.x * msg->linear.x + msg->linear.y * msg->linear.y);
+                const double velocity_magnitude =
+                    std::sqrt(msg->linear.x * msg->linear.x + msg->linear.y * msg->linear.y);
                 const double velocity_factor = std::clamp(velocity_magnitude / max_translation_speed_, 0.3, 1.0);
-                
+
                 out_twist->angular.z = out.correction * velocity_factor;
                 last_correction_ = out_twist->angular.z;
                 last_error_deg_ = out.error_deg;
