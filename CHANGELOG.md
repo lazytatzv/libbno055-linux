@@ -5,6 +5,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.9.0] - 2026-07-30
+
+### Added
+- **Stale Data Deduplication Filter in ROS 2**: Added raw 18-byte sequential burst read comparison (`std::memcmp`) to `BNO055PublisherNode` and `BNO055LifecyclePublisherNode`. Eliminates duplicate frame publishing when polling rate exceeds sensor output data rate.
+- **Empirical Hardware Benchmarks in README**: Documented out-of-the-box performance metrics on **RDK X5 (Sunrise RDK)** (82.57 Hz sampling rate, 1.99 ms I/O latency, 0.73 ms stddev jitter).
+
+### Changed
+- **`benchmark_imu` Utility Improvements**: Added support for selecting `NDOF`, `IMUPlus`, or `AMG` modes via command line arguments, and added automatic polling fallback when GPIO interrupt sysfs pin is unavailable.
+
 ## [1.8.1] - 2026-07-29
 
 ### Fixed
