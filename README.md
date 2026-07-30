@@ -95,13 +95,13 @@ cargo add libbno055
 
 ### Empirical Benchmark (RDK X5 Hardware Validation)
 
-Tested on **RDK X5 (Sunrise RDK)** via standard Linux `/dev/i2c-5` interface:
+Tested out-of-the-box on **RDK X5 (Sunrise RDK)** via standard Linux `/dev/i2c-5` interface with **zero tuning or custom OS setup**:
 
 | Metric | Measured Value | Target / Hardware Limit | Note |
 | :--- | :---: | :---: | :--- |
 | **NDOF Sampling Rate** | **82.57 Hz** | 100 Hz (Hardware Limit) | ~83% of physical Cortex-M0 fusion limit |
-| **I/O Burst Read Latency** | **1.99 ms** | < 5.0 ms | 18-byte sequential burst read over I2C |
-| **Timing Jitter (StdDev)** | **0.73 ms** | < 1.0 ms | Sub-millisecond interval jitter on Linux |
+| **I/O Burst Read Latency** | **1.99 ms** | < 5.0 ms | 18-byte sequential burst read over default I2C |
+| **Timing Jitter (StdDev)** | **0.73 ms** | < 1.0 ms | Sub-millisecond interval jitter out-of-the-box |
 
 For the full API including GPIO interrupts, axis remapping, power modes, and operating modes, see [docs/API_REFERENCE.md](docs/API_REFERENCE.md).
 
