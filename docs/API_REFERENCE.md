@@ -236,6 +236,10 @@ These companion APIs perform the exact same register queries and conversions but
     *   *Parameters*: None.
     *   *Returns*: `std::optional<T>`. Contains the requested struct on success; `std::nullopt` on communication failure.
     *   *Description*: Safety-hardened read path that increments I2C diagnostic counters upon failure without generating CPU exceptions.
+*   **std::optional\<AllData\> getAllDataNoexcept() noexcept**
+    *   *Parameters*: None.
+    *   *Returns*: `std::optional<AllData>`. Full snapshot of all 8 sensor outputs (accel, mag, gyro, euler, quaternion, linear accel, gravity, temp).
+    *   *Description*: Executes a single 45-byte burst I2C transaction covering registers `0x08` through `0x34`. Reduces bus transactions by 87.5% compared to individual queries. Atomic capture across all channels.
 
     *   *Parameters*: None.
     *   *Returns*: The requested struct directly (`Vector3`, `Quaternion`, or `int8_t`). On temporary bus drops, returns the last cached valid frame (or zero/identity).
