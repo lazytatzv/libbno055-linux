@@ -174,6 +174,9 @@ Key parameters (see [`config/bno055_params.yaml`](config/bno055_params.yaml) for
 | `address` | `0x28` | I2C slave address |
 | `publish_rate_hz` | `100` | Sensor publish rate (Hz) |
 | `frame_id` | `imu_link` | ROS TF frame ID |
+| `imu_offset_x` | `0.0` | Forward physical offset from robot center of mass (m) for Lever Arm / TF |
+| `imu_offset_y` | `0.0` | Leftward physical offset from robot center of mass (m) for Lever Arm / TF |
+| `imu_offset_z` | `0.0` | Upward physical offset from robot center of mass (m) for Lever Arm / TF |
 | ... | | |
 
 ---
