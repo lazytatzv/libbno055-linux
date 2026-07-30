@@ -4,6 +4,7 @@
 /.rosdep/
 /.venv/
 /target/
+rust/target/
 /.conan/
 /.pytest_cache/
 
