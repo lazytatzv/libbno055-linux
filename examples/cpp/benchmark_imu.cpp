@@ -13,7 +13,7 @@
 
 int main(int argc, char** argv) {
     std::string device = "/dev/i2c-1";
-    int pin = 24;
+    int pin = -1;
 
     if (argc > 1) {
         device = argv[1];

@@ -1563,16 +1563,16 @@ bool BNO055::startInterruptDrivenReading(int gpio_pin, RawAsyncDataCallback call
             edge_file.close();
         }
 
-        std::string val_path = "/sys/class/gpio/gpio" + pin_str + "/value";
-        int val_fd = ::open(val_path.c_str(), O_RDONLY | O_NONBLOCK);
-        if (val_fd < 0) {
+        std::string gpio_val_path = "/sys/class/gpio/gpio" + std::to_string(impl_->irq_gpio_pin_) + "/value";
+        int gpio_fd = open(gpio_val_path.c_str(), O_RDONLY);
+        if (gpio_fd < 0) {
             impl_->log(LogLevel::Error, "Failed to open GPIO value sysfs file for interrupt monitoring");
             impl_->irq_running_ = false;
             return;
         }
 
         char dummy;
-        if (::read(val_fd, &dummy, 1) < 0) {  // NOLINT(readability-magic-numbers)
+        if (::read(gpio_fd, &dummy, 1) < 0) {  // NOLINT(readability-magic-numbers)
             // Ignore error
         }
 
