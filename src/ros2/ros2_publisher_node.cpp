@@ -11,6 +11,9 @@
 #ifdef BNO055_ROS2_BUILDING_COMPONENT
 #include <rclcpp_components/register_node_macro.hpp>
 #endif
+#include <tf2_ros/transform_broadcaster.h>
+
+#include <geometry_msgs/msg/transform_stamped.hpp>
 #include <geometry_msgs/msg/vector3_stamped.hpp>
 #include <sensor_msgs/msg/imu.hpp>
 #include <sensor_msgs/msg/magnetic_field.hpp>
@@ -57,6 +60,12 @@ public:
         this->declare_parameter<std::string>("axis_map_config", "p1");
         this->declare_parameter<std::string>("axis_map_sign", "p1");
         this->declare_parameter<int>("thread_priority", 0);
+        this->declare_parameter<bool>("publish_tf", false);
+        this->declare_parameter<std::string>("parent_frame_id", "odom");
+        this->declare_parameter<std::string>("child_frame_id", "base_link");
+        this->declare_parameter<double>("imu_offset_x", 0.0);
+        this->declare_parameter<double>("imu_offset_y", 0.0);
+        this->declare_parameter<double>("imu_offset_z", 0.0);
 
         // 2. Callback Groups Isolation
         sensor_cb_group_ = this->create_callback_group(rclcpp::CallbackGroupType::MutuallyExclusive);
@@ -102,6 +111,7 @@ public:
 
         // 4. Publishers
         imu_pub_ = this->create_publisher<sensor_msgs::msg::Imu>("imu/data", rclcpp::SensorDataQoS());
+        euler_pub_ = this->create_publisher<geometry_msgs::msg::Vector3Stamped>("imu/euler", rclcpp::SensorDataQoS());
         mag_pub_ = this->create_publisher<sensor_msgs::msg::MagneticField>("imu/mag", rclcpp::SensorDataQoS());
         temp_pub_ = this->create_publisher<sensor_msgs::msg::Temperature>("imu/temp", rclcpp::SensorDataQoS());
         linear_accel_pub_ = this->create_publisher<geometry_msgs::msg::Vector3Stamped>("imu/linear_acceleration",
@@ -109,6 +119,8 @@ public:
         gravity_pub_ =
             this->create_publisher<geometry_msgs::msg::Vector3Stamped>("imu/gravity", rclcpp::SensorDataQoS());
         diag_pub_ = this->create_publisher<diagnostic_msgs::msg::DiagnosticArray>("diagnostics", rclcpp::QoS(1));
+
+        tf_broadcaster_ = std::make_unique<tf2_ros::TransformBroadcaster>(*this);
 
         // 5. Sensor Polling Timer (High-Frequency Sensor Callback Group)
         const int rate_hz = this->get_parameter("publish_rate_hz").as_int();
@@ -132,6 +144,7 @@ private:
         const auto now = this->now();
 
         auto quat = imu_driver_->getQuaternionNoexcept();
+        auto euler = imu_driver_->getEulerAnglesNoexcept();
         auto gyro = imu_driver_->getGyroscopeNoexcept();
         auto accel = imu_driver_->getAccelerometerNoexcept();
         auto mag = imu_driver_->getMagnetometerNoexcept();
@@ -166,6 +179,32 @@ private:
             imu_msg->linear_acceleration.z = accel->z;
 
             imu_pub_->publish(std::move(imu_msg));
+
+            if (this->get_parameter("publish_tf").as_bool()) {
+                geometry_msgs::msg::TransformStamped tf_msg;
+                tf_msg.header.stamp = now;
+                tf_msg.header.frame_id = this->get_parameter("parent_frame_id").as_string();
+                tf_msg.child_frame_id = this->get_parameter("child_frame_id").as_string();
+                tf_msg.transform.translation.x = this->get_parameter("imu_offset_x").as_double();
+                tf_msg.transform.translation.y = this->get_parameter("imu_offset_y").as_double();
+                tf_msg.transform.translation.z = this->get_parameter("imu_offset_z").as_double();
+                tf_msg.transform.rotation.w = quat->w;
+                tf_msg.transform.rotation.x = quat->x;
+                tf_msg.transform.rotation.y = quat->y;
+                tf_msg.transform.rotation.z = quat->z;
+                tf_broadcaster_->sendTransform(tf_msg);
+            }
+        }
+
+        if (euler) {
+            auto euler_msg = std::make_unique<geometry_msgs::msg::Vector3Stamped>();
+            euler_msg->header.stamp = now;
+            euler_msg->header.frame_id = frame_id;
+            euler_msg->vector.x = euler->x;  // Roll (rad)
+            euler_msg->vector.y = euler->y;  // Pitch (rad)
+            euler_msg->vector.z = euler->z;  // Yaw / Heading (rad)
+
+            euler_pub_->publish(std::move(euler_msg));
         }
 
         if (mag) {
@@ -233,11 +272,13 @@ private:
     bool initialized_;
 
     rclcpp::Publisher<sensor_msgs::msg::Imu>::SharedPtr imu_pub_;
+    rclcpp::Publisher<geometry_msgs::msg::Vector3Stamped>::SharedPtr euler_pub_;
     rclcpp::Publisher<sensor_msgs::msg::MagneticField>::SharedPtr mag_pub_;
     rclcpp::Publisher<sensor_msgs::msg::Temperature>::SharedPtr temp_pub_;
     rclcpp::Publisher<geometry_msgs::msg::Vector3Stamped>::SharedPtr linear_accel_pub_;
     rclcpp::Publisher<geometry_msgs::msg::Vector3Stamped>::SharedPtr gravity_pub_;
     rclcpp::Publisher<diagnostic_msgs::msg::DiagnosticArray>::SharedPtr diag_pub_;
+    std::unique_ptr<tf2_ros::TransformBroadcaster> tf_broadcaster_;
 
     rclcpp::TimerBase::SharedPtr sensor_timer_;
     rclcpp::TimerBase::SharedPtr diag_timer_;

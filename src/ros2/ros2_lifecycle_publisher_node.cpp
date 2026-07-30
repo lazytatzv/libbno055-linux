@@ -11,7 +11,11 @@
 #ifdef BNO055_ROS2_BUILDING_COMPONENT
 #include <rclcpp_components/register_node_macro.hpp>
 #endif
+#include <tf2_ros/transform_broadcaster.h>
+
+#include <geometry_msgs/msg/transform_stamped.hpp>
 #include <geometry_msgs/msg/vector3_stamped.hpp>
+#include <rclcpp/rclcpp.hpp>
 #include <rclcpp_lifecycle/lifecycle_node.hpp>
 #include <rclcpp_lifecycle/lifecycle_publisher.hpp>
 #include <sensor_msgs/msg/imu.hpp>
@@ -61,6 +65,12 @@ public:
         this->declare_parameter<std::string>("axis_map_config", "p1");
         this->declare_parameter<std::string>("axis_map_sign", "p1");
         this->declare_parameter<int>("thread_priority", 0);
+        this->declare_parameter<bool>("publish_tf", false);
+        this->declare_parameter<std::string>("parent_frame_id", "odom");
+        this->declare_parameter<std::string>("child_frame_id", "base_link");
+        this->declare_parameter<double>("imu_offset_x", 0.0);
+        this->declare_parameter<double>("imu_offset_y", 0.0);
+        this->declare_parameter<double>("imu_offset_z", 0.0);
 
         RCLCPP_INFO(this->get_logger(), "[Lifecycle Node] BNO055 Publisher Node created.");
     }
@@ -110,12 +120,15 @@ public:
         }
 
         imu_pub_ = this->create_publisher<sensor_msgs::msg::Imu>("imu/data", rclcpp::SensorDataQoS());
+        euler_pub_ = this->create_publisher<geometry_msgs::msg::Vector3Stamped>("imu/euler", rclcpp::SensorDataQoS());
         mag_pub_ = this->create_publisher<sensor_msgs::msg::MagneticField>("imu/mag", rclcpp::SensorDataQoS());
         linear_accel_pub_ = this->create_publisher<geometry_msgs::msg::Vector3Stamped>("imu/linear_acceleration",
                                                                                        rclcpp::SensorDataQoS());
         gravity_pub_ =
             this->create_publisher<geometry_msgs::msg::Vector3Stamped>("imu/gravity", rclcpp::SensorDataQoS());
         diag_pub_ = this->create_publisher<diagnostic_msgs::msg::DiagnosticArray>("diagnostics", rclcpp::QoS(1));
+
+        tf_broadcaster_ = std::make_unique<tf2_ros::TransformBroadcaster>(*this);
 
         RCLCPP_INFO(this->get_logger(), "Node configured successfully.");
         return CallbackReturn::SUCCESS;
@@ -125,6 +138,7 @@ public:
         RCLCPP_INFO(this->get_logger(), "Activating BNO055 Lifecycle Publisher Node...");
 
         imu_pub_->on_activate();
+        euler_pub_->on_activate();
         mag_pub_->on_activate();
         linear_accel_pub_->on_activate();
         gravity_pub_->on_activate();
@@ -151,6 +165,7 @@ public:
         diag_timer_.reset();
 
         imu_pub_->on_deactivate();
+        euler_pub_->on_deactivate();
         mag_pub_->on_deactivate();
         linear_accel_pub_->on_deactivate();
         gravity_pub_->on_deactivate();
@@ -164,6 +179,7 @@ public:
         RCLCPP_INFO(this->get_logger(), "Cleaning up BNO055 Lifecycle Publisher Node...");
 
         imu_pub_.reset();
+        euler_pub_.reset();
         mag_pub_.reset();
         linear_accel_pub_.reset();
         gravity_pub_.reset();
@@ -190,6 +206,7 @@ private:
         const auto now = this->now();
 
         auto quat = imu_driver_->getQuaternionNoexcept();
+        auto euler = imu_driver_->getEulerAnglesNoexcept();
         auto gyro = imu_driver_->getGyroscopeNoexcept();
         auto accel = imu_driver_->getAccelerometerNoexcept();
         auto mag = imu_driver_->getMagnetometerNoexcept();
@@ -223,6 +240,32 @@ private:
             imu_msg->linear_acceleration.z = accel->z;
 
             imu_pub_->publish(std::move(imu_msg));
+
+            if (this->get_parameter("publish_tf").as_bool()) {
+                geometry_msgs::msg::TransformStamped tf_msg;
+                tf_msg.header.stamp = now;
+                tf_msg.header.frame_id = this->get_parameter("parent_frame_id").as_string();
+                tf_msg.child_frame_id = this->get_parameter("child_frame_id").as_string();
+                tf_msg.transform.translation.x = this->get_parameter("imu_offset_x").as_double();
+                tf_msg.transform.translation.y = this->get_parameter("imu_offset_y").as_double();
+                tf_msg.transform.translation.z = this->get_parameter("imu_offset_z").as_double();
+                tf_msg.transform.rotation.w = quat->w;
+                tf_msg.transform.rotation.x = quat->x;
+                tf_msg.transform.rotation.y = quat->y;
+                tf_msg.transform.rotation.z = quat->z;
+                tf_broadcaster_->sendTransform(tf_msg);
+            }
+        }
+
+        if (euler && euler_pub_->is_activated()) {
+            auto euler_msg = std::make_unique<geometry_msgs::msg::Vector3Stamped>();
+            euler_msg->header.stamp = now;
+            euler_msg->header.frame_id = frame_id;
+            euler_msg->vector.x = euler->x;  // Roll (rad)
+            euler_msg->vector.y = euler->y;  // Pitch (rad)
+            euler_msg->vector.z = euler->z;  // Yaw / Heading (rad)
+
+            euler_pub_->publish(std::move(euler_msg));
         }
 
         if (mag && mag_pub_->is_activated()) {
@@ -283,10 +326,12 @@ private:
     bool initialized_;
 
     std::shared_ptr<rclcpp_lifecycle::LifecyclePublisher<sensor_msgs::msg::Imu>> imu_pub_;
+    std::shared_ptr<rclcpp_lifecycle::LifecyclePublisher<geometry_msgs::msg::Vector3Stamped>> euler_pub_;
     std::shared_ptr<rclcpp_lifecycle::LifecyclePublisher<sensor_msgs::msg::MagneticField>> mag_pub_;
     std::shared_ptr<rclcpp_lifecycle::LifecyclePublisher<geometry_msgs::msg::Vector3Stamped>> linear_accel_pub_;
     std::shared_ptr<rclcpp_lifecycle::LifecyclePublisher<geometry_msgs::msg::Vector3Stamped>> gravity_pub_;
     std::shared_ptr<rclcpp_lifecycle::LifecyclePublisher<diagnostic_msgs::msg::DiagnosticArray>> diag_pub_;
+    std::unique_ptr<tf2_ros::TransformBroadcaster> tf_broadcaster_;
 
     rclcpp::TimerBase::SharedPtr sensor_timer_;
     rclcpp::TimerBase::SharedPtr diag_timer_;
