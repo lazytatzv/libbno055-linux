@@ -342,12 +342,45 @@ Install: <code class="docutils literal notranslate"><span class="pre">pip</span>
 <ul class="simple">
 <li><p><strong>I2C and UART</strong> transport backends with POSIX drivers</p></li>
 <li><p><strong>Automatic transport recovery</strong> on bus errors and communication failures</p></li>
-<li><p><strong>18-byte sequential burst read</strong> for Accel + Mag + Gyro in a single transaction
-(measured at ~450 µs on 400 kHz I²C; actual latency depends on hardware and kernel scheduling)</p></li>
+<li><p><strong>18-byte sequential burst read</strong> for Accel + Mag + Gyro in a single transaction</p></li>
+<li><p><strong>Stale Data Deduplication Filter</strong> — eliminates duplicate frame publishing in ROS 2</p></li>
 <li><p><strong>Configurable sensor output data rates</strong> in AMG mode (up to Accel 1 kHz / Gyro 2 kHz ODR)</p></li>
 <li><p><strong>Optional background polling thread</strong> for continuous non-blocking reads</p></li>
 <li><p><strong>Calibration management</strong> — save and load sensor offsets to/from file</p></li>
 </ul>
+</section>
+<hr class="docutils" />
+<section id="empirical-benchmark-rdk-x5-hardware-validation">
+<h3>Empirical Benchmark (RDK X5 Hardware Validation)<a class="headerlink" href="#empirical-benchmark-rdk-x5-hardware-validation" title="Link to this heading">¶</a></h3>
+<p>Tested on <strong>RDK X5 (Sunrise RDK)</strong> via standard Linux <code class="docutils literal notranslate"><span class="pre">/dev/i2c-5</span></code> interface:</p>
+<div class="table-wrapper colwidths-auto docutils container">
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head text-left"><p>Metric</p></th>
+<th class="head text-center"><p>Measured Value</p></th>
+<th class="head text-center"><p>Target / Hardware Limit</p></th>
+<th class="head text-left"><p>Note</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td class="text-left"><p><strong>NDOF Sampling Rate</strong></p></td>
+<td class="text-center"><p><strong>82.57 Hz</strong></p></td>
+<td class="text-center"><p>100 Hz (Hardware Limit)</p></td>
+<td class="text-left"><p>~83% of physical Cortex-M0 fusion limit</p></td>
+</tr>
+<tr class="row-odd"><td class="text-left"><p><strong>I/O Burst Read Latency</strong></p></td>
+<td class="text-center"><p><strong>1.99 ms</strong></p></td>
+<td class="text-center"><p>&lt; 5.0 ms</p></td>
+<td class="text-left"><p>18-byte sequential burst read over I2C</p></td>
+</tr>
+<tr class="row-even"><td class="text-left"><p><strong>Timing Jitter (StdDev)</strong></p></td>
+<td class="text-center"><p><strong>0.73 ms</strong></p></td>
+<td class="text-center"><p>&lt; 1.0 ms</p></td>
+<td class="text-left"><p>Sub-millisecond interval jitter on Linux</p></td>
+</tr>
+</tbody>
+</table>
+</div>
 <p>For the full API including GPIO interrupts, axis remapping, power modes, and operating modes, see <a class="reference internal" href="#docs/API_REFERENCE.md"><span class="xref myst">docs/API_REFERENCE.md</span></a>.</p>
 </section>
 <section id="ros-2-package">
@@ -553,6 +586,7 @@ sudo<span class="w"> </span>make<span class="w"> </span>install
 </li>
 <li><a class="reference internal" href="#driver-features">Driver Features</a><ul>
 <li><a class="reference internal" href="#hardware-driver-c-17">Hardware Driver (C++17)</a></li>
+<li><a class="reference internal" href="#empirical-benchmark-rdk-x5-hardware-validation">Empirical Benchmark (RDK X5 Hardware Validation)</a></li>
 <li><a class="reference internal" href="#ros-2-package">ROS 2 Package</a></li>
 </ul>
 </li>
