@@ -140,6 +140,17 @@ private:
     void publishSensorData() {
         if (!initialized_) return;
 
+        // Fetch raw sequential burst read to inspect for hardware data update
+        auto raw_opt = imu_driver_->getRawSensorDataNoexcept();
+        if (raw_opt) {
+            // Deduplication check: if raw sensor bytes haven't changed from last read, skip publishing
+            if (has_last_raw_ && std::memcmp(&last_raw_, &(*raw_opt), sizeof(bno055lib::BNO055::RawSensorData)) == 0) {
+                return;
+            }
+            last_raw_ = *raw_opt;
+            has_last_raw_ = true;
+        }
+
         const std::string frame_id = this->get_parameter("frame_id").as_string();
         const auto now = this->now();
 
@@ -270,6 +281,9 @@ private:
 
     std::unique_ptr<bno055lib::BNO055> imu_driver_;
     bool initialized_;
+
+    bno055lib::BNO055::RawSensorData last_raw_{};
+    bool has_last_raw_{false};
 
     rclcpp::Publisher<sensor_msgs::msg::Imu>::SharedPtr imu_pub_;
     rclcpp::Publisher<geometry_msgs::msg::Vector3Stamped>::SharedPtr euler_pub_;
