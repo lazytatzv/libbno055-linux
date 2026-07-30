@@ -89,8 +89,11 @@ int main(int argc, char** argv) {
 
     auto start_bench = std::chrono::high_resolution_clock::now();
     
-    // Attempt GPIO interrupt mode, or fallback to polling loop
-    bool is_interrupt_started = imu.startInterruptDrivenReading(pin, callback);
+    // Attempt GPIO interrupt mode if pin >= 0, or fallback to polling loop
+    bool is_interrupt_started = false;
+    if (pin >= 0) {
+        is_interrupt_started = imu.startInterruptDrivenReading(pin, callback);
+    }
     if (!is_interrupt_started) {
         std::cout << "[!] GPIO interrupt pin not available or failed. Falling back to software polling mode...\n";
         
