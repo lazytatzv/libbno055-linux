@@ -352,7 +352,7 @@ Install: <code class="docutils literal notranslate"><span class="pre">pip</span>
 <hr class="docutils" />
 <section id="empirical-benchmark-rdk-x5-hardware-validation">
 <h3>Empirical Benchmark (RDK X5 Hardware Validation)<a class="headerlink" href="#empirical-benchmark-rdk-x5-hardware-validation" title="Link to this heading">¶</a></h3>
-<p>Tested on <strong>RDK X5 (Sunrise RDK)</strong> via standard Linux <code class="docutils literal notranslate"><span class="pre">/dev/i2c-5</span></code> interface:</p>
+<p>Tested out-of-the-box on <strong>RDK X5 (Sunrise RDK)</strong> via standard Linux <code class="docutils literal notranslate"><span class="pre">/dev/i2c-5</span></code> interface with <strong>zero tuning or custom OS setup</strong>:</p>
 <div class="table-wrapper colwidths-auto docutils container">
 <table class="docutils align-default">
 <thead>
@@ -371,12 +371,12 @@ Install: <code class="docutils literal notranslate"><span class="pre">pip</span>
 <tr class="row-odd"><td class="text-left"><p><strong>I/O Burst Read Latency</strong></p></td>
 <td class="text-center"><p><strong>1.99 ms</strong></p></td>
 <td class="text-center"><p>&lt; 5.0 ms</p></td>
-<td class="text-left"><p>18-byte sequential burst read over I2C</p></td>
+<td class="text-left"><p>18-byte sequential burst read over default I2C</p></td>
 </tr>
 <tr class="row-even"><td class="text-left"><p><strong>Timing Jitter (StdDev)</strong></p></td>
 <td class="text-center"><p><strong>0.73 ms</strong></p></td>
 <td class="text-center"><p>&lt; 1.0 ms</p></td>
-<td class="text-left"><p>Sub-millisecond interval jitter on Linux</p></td>
+<td class="text-left"><p>Sub-millisecond interval jitter out-of-the-box</p></td>
 </tr>
 </tbody>
 </table>
