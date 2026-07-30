@@ -1577,15 +1577,15 @@ bool BNO055::startInterruptDrivenReading(int gpio_pin, RawAsyncDataCallback call
         }
 
         struct pollfd pfd;
-        pfd.fd = val_fd;
+        pfd.fd = gpio_fd;
         pfd.events = POLLPRI | POLLERR;
 
         while (impl_->irq_running_) {
             int num_events = ::poll(&pfd, 1, 100);  // NOLINT(readability-magic-numbers)
             if (num_events > 0) {
                 if (pfd.revents & POLLPRI) {
-                    ::lseek(val_fd, 0, SEEK_SET);
-                    if (::read(val_fd, &dummy, 1) < 0) {  // NOLINT(readability-magic-numbers)
+                    ::lseek(gpio_fd, 0, SEEK_SET);
+                    if (::read(gpio_fd, &dummy, 1) < 0) {  // NOLINT(readability-magic-numbers)
                         // Ignore error
                     }
                     auto raw_opt = getRawSensorDataNoexcept();
@@ -1596,7 +1596,7 @@ bool BNO055::startInterruptDrivenReading(int gpio_pin, RawAsyncDataCallback call
             }
         }
 
-        ::close(val_fd);
+        ::close(gpio_fd);
 
         std::ofstream unexport_file("/sys/class/gpio/unexport");
         if (unexport_file.is_open()) {
