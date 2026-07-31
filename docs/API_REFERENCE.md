@@ -1,5 +1,9 @@
 # libbno055-linux API Reference
 
+> **Note on C++ Standard & Compatibility**:
+> - **C++ API (`bno055.hpp`)**: Requires **C++17** or newer (`std::optional`, `std::string_view`).
+> - **Legacy / Older Environments (C99, C++11, C++14)**: Use the C API (`bno055_c.h`) which wraps the C++ implementation behind a C99 FFI handle (`bno055_handle_t`).
+
 <details>
 <summary><strong>Table of Contents</strong></summary>
 
