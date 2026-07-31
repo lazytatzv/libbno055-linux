@@ -239,6 +239,13 @@
         <article role="main" id="furo-main-content">
           <section id="libbno055-linux-api-reference">
 <h1>libbno055-linux API Reference<a class="headerlink" href="#libbno055-linux-api-reference" title="Link to this heading">¶</a></h1>
+<blockquote>
+<div><p><strong>Note on C++ Standard &amp; Compatibility</strong>:</p>
+<ul class="simple">
+<li><p><strong>C++ API (<code class="docutils literal notranslate"><span class="pre">bno055.hpp</span></code>)</strong>: Requires <strong>C++17</strong> or newer (<code class="docutils literal notranslate"><span class="pre">std::optional</span></code>, <code class="docutils literal notranslate"><span class="pre">std::string_view</span></code>).</p></li>
+<li><p><strong>Legacy / Older Environments (C99, C++11, C++14)</strong>: Use the C API (<code class="docutils literal notranslate"><span class="pre">bno055_c.h</span></code>) which wraps the C++ implementation behind a C99 FFI handle (<code class="docutils literal notranslate"><span class="pre">bno055_handle_t</span></code>).</p></li>
+</ul>
+</div></blockquote>
 <details>
 <summary><strong>Table of Contents</strong></summary>
 <ul class="simple">
