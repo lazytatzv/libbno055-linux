@@ -129,7 +129,7 @@ sudo apt update
 sudo apt install ros-$ROS_DISTRO-libbno055-linux
 ```
 
-> The `apt` binary is updated periodically by ROS Buildfarm. For the latest release (v1.8.1), build from source.
+> The `apt` binary is updated periodically by ROS Buildfarm. For the latest release (v1.9.0), build from source.
 
 ### Option B: vcstool (recommended for team/production workspaces)
 
