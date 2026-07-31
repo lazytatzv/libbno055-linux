@@ -8,6 +8,8 @@
 
 A C++17 driver for the Bosch BNO055 9-axis IMU on Linux, with first-class ROS 2 integration.
 
+![BNO055 Visual Dashboard](docs/images/dashboard.png)
+
 ---
 
 ## Components
@@ -96,6 +98,8 @@ cargo add libbno055
 ### Empirical Benchmark (RDK X5 Hardware Validation)
 
 Tested out-of-the-box on **RDK X5 (Sunrise RDK)** via standard Linux `/dev/i2c-5` interface with **zero tuning or custom OS setup**:
+
+![RDK X5 Hardware Benchmark Results](docs/images/benchmark.png)
 
 | Metric | Measured Value | Target / Hardware Limit | Note |
 | :--- | :---: | :---: | :--- |
