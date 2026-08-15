@@ -120,14 +120,12 @@ public:
 
         // 6. Diagnostics Timer (1Hz - Admin Callback Group)
         if (this->get_parameter("enable_diagnostics").as_bool()) {
-            diag_timer_ = this->create_wall_timer(
-                std::chrono::seconds(1), [this]() { publish_diagnostics(); }, admin_cb_group_);
+            diag_timer_ =
+                this->create_wall_timer(std::chrono::seconds(1), [this]() { publish_diagnostics(); }, admin_cb_group_);
         }
 
-        RCLCPP_INFO(this->get_logger(),
-                    "BNO055 Heading Control online: input=%s output=%s imu=%s (Kp=%.2f, Kd=%.3f)",
-                    raw_cmd_vel_topic_.c_str(), corrected_cmd_vel_topic_.c_str(), imu_topic_.c_str(),
-                    kp_, kd_);
+        RCLCPP_INFO(this->get_logger(), "BNO055 Heading Control online: input=%s output=%s imu=%s (Kp=%.2f, Kd=%.3f)",
+                    raw_cmd_vel_topic_.c_str(), corrected_cmd_vel_topic_.c_str(), imu_topic_.c_str(), kp_, kd_);
     }
 
 private:
@@ -136,10 +134,10 @@ private:
         ki_ = this->declare_parameter("ki", 0.0);
         kd_ = this->declare_parameter("kd", 0.05);
         integral_limit_rad_s_ = this->declare_parameter("max_i_term", 0.5);
-        
+
         double deadband_deg = this->declare_parameter("deadband_deg", 0.02);
         heading_deadband_rad_ = deadband_deg * M_PI / 180.0;
-        
+
         rotation_input_deadband_rad_s_ = this->declare_parameter("angular_deadband", 0.02);
         max_correction_rad_s_ = this->declare_parameter("max_output", 1.5);
         control_period_ms_ = 10;
@@ -273,9 +271,8 @@ private:
         if (!imu_is_fresh) {
             corrected_command_pub_->publish(latest_command_);
             reset_heading_hold();
-            RCLCPP_WARN_THROTTLE(
-                this->get_logger(), *this->get_clock(), 2000,
-                "IMU data is unavailable; passing through the upstream cmd_vel without correction");
+            RCLCPP_WARN_THROTTLE(this->get_logger(), *this->get_clock(), 2000,
+                                 "IMU data is unavailable; passing through the upstream cmd_vel without correction");
             return;
         }
 
@@ -295,21 +292,18 @@ private:
             integral_error_rad_s_ = 0.0;
         }
 
-        const double safe_dt_s =
-            dt_s > 0.0 && dt_s < 0.5 ? dt_s : static_cast<double>(control_period_ms_) / 1000.0;
+        const double safe_dt_s = dt_s > 0.0 && dt_s < 0.5 ? dt_s : static_cast<double>(control_period_ms_) / 1000.0;
         double heading_error_rad = normalize_angle(target_yaw_rad_ - current_yaw_rad_);
         if (std::abs(heading_error_rad) < heading_deadband_rad_) {
             heading_error_rad = 0.0;
         }
 
-        integral_error_rad_s_ = std::clamp(
-            integral_error_rad_s_ + heading_error_rad * safe_dt_s,
-            -integral_limit_rad_s_, integral_limit_rad_s_);
+        integral_error_rad_s_ = std::clamp(integral_error_rad_s_ + heading_error_rad * safe_dt_s,
+                                           -integral_limit_rad_s_, integral_limit_rad_s_);
 
-        const double correction_rad_s = std::clamp(
-            kp_ * heading_error_rad + ki_ * integral_error_rad_s_ -
-            kd_ * current_angular_velocity_z_rad_s_,
-            -max_correction_rad_s_, max_correction_rad_s_);
+        const double correction_rad_s =
+            std::clamp(kp_ * heading_error_rad + ki_ * integral_error_rad_s_ - kd_ * current_angular_velocity_z_rad_s_,
+                       -max_correction_rad_s_, max_correction_rad_s_);
 
         auto corrected_command = latest_command_;
         corrected_command.angular.z = correction_rad_s;
