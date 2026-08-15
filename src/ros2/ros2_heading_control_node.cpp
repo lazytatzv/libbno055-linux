@@ -91,7 +91,9 @@ public:
         if (!imu_secondary_topic_.empty() && imu_secondary_topic_ != imu_primary_topic_) {
             imu_secondary_sub_ = this->create_subscription<sensor_msgs::msg::Imu>(
                 imu_secondary_topic_, rclcpp::SensorDataQoS(),
-                [this](const sensor_msgs::msg::Imu::SharedPtr message) { receive_imu(*message, "Secondary (STM32 CAN)"); },
+                [this](const sensor_msgs::msg::Imu::SharedPtr message) {
+                    receive_imu(*message, "Secondary (STM32 CAN)");
+                },
                 control_sub_options);
         }
 
@@ -152,10 +154,11 @@ public:
                 this->create_wall_timer(std::chrono::seconds(1), [this]() { publish_diagnostics(); }, admin_cb_group_);
         }
 
-        RCLCPP_INFO(this->get_logger(),
-                    "BNO055 Heading Control online: input=%s output=%s (Primary IMU=%s, Secondary IMU=%s) (Kp=%.2f, Kd=%.3f)",
-                    raw_cmd_vel_topic_.c_str(), corrected_cmd_vel_topic_.c_str(), imu_primary_topic_.c_str(),
-                    imu_secondary_topic_.c_str(), kp_, kd_);
+        RCLCPP_INFO(
+            this->get_logger(),
+            "BNO055 Heading Control online: input=%s output=%s (Primary IMU=%s, Secondary IMU=%s) (Kp=%.2f, Kd=%.3f)",
+            raw_cmd_vel_topic_.c_str(), corrected_cmd_vel_topic_.c_str(), imu_primary_topic_.c_str(),
+            imu_secondary_topic_.c_str(), kp_, kd_);
     }
 
 private:
@@ -260,7 +263,8 @@ private:
         tf2::fromMsg(orientation, quaternion);
         const double norm_squared = quaternion.length2();
         if (norm_squared < 1e-12) {
-            RCLCPP_WARN_THROTTLE(this->get_logger(), *this->get_clock(), 2000, "Ignored an invalid IMU quaternion from %s", source_name.c_str());
+            RCLCPP_WARN_THROTTLE(this->get_logger(), *this->get_clock(), 2000,
+                                 "Ignored an invalid IMU quaternion from %s", source_name.c_str());
             return;
         }
         quaternion.normalize();
@@ -269,8 +273,9 @@ private:
 
         // Priority Arbitration: Primary takes precedence if fresh
         if (source_name.rfind("Secondary", 0) == 0) {
-            const bool primary_is_fresh = last_primary_imu_time_.nanoseconds() != 0 &&
-                                          (now_time - last_primary_imu_time_).nanoseconds() <= imu_timeout_ms_ * 1000000LL;
+            const bool primary_is_fresh =
+                last_primary_imu_time_.nanoseconds() != 0 &&
+                (now_time - last_primary_imu_time_).nanoseconds() <= imu_timeout_ms_ * 1000000LL;
             if (primary_is_fresh) {
                 // Primary is healthy; drop secondary to avoid conflict
                 return;
@@ -280,7 +285,8 @@ private:
         }
 
         if (active_imu_source_ != source_name) {
-            RCLCPP_INFO(this->get_logger(), "[HeadingControl] Auto-switched active IMU source -> %s", source_name.c_str());
+            RCLCPP_INFO(this->get_logger(), "[HeadingControl] Auto-switched active IMU source -> %s",
+                        source_name.c_str());
             active_imu_source_ = source_name;
             // Re-lock target on source transition to prevent jumps
             reset_heading_hold();
