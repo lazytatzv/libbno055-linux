@@ -188,6 +188,9 @@ if(rclcpp_FOUND AND sensor_msgs_FOUND AND geometry_msgs_FOUND AND diagnostic_msg
         ${geometry_msgs_TARGETS}
         ${diagnostic_msgs_TARGETS}
         ${std_srvs_TARGETS}
+        ${tf2_TARGETS}
+        ${tf2_ros_TARGETS}
+        ${tf2_geometry_msgs_TARGETS}
     )
 
     install(TARGETS bno055_publisher_node bno055_heading_control_node
@@ -222,6 +225,9 @@ if(rclcpp_FOUND AND sensor_msgs_FOUND AND geometry_msgs_FOUND AND diagnostic_msg
             ${geometry_msgs_TARGETS}
             ${diagnostic_msgs_TARGETS}
             ${std_srvs_TARGETS}
+            ${tf2_TARGETS}
+            ${tf2_ros_TARGETS}
+            ${tf2_geometry_msgs_TARGETS}
         )
         rclcpp_components_register_node(bno055_heading_control_components PLUGIN "bno055_ros2::BNO055HeadingControlNode" EXECUTABLE bno055_heading_control_container)
 
