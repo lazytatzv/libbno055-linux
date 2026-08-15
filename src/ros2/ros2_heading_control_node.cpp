@@ -356,6 +356,10 @@ private:
     }
 
     void publish_diagnostics() {
+        if (diag_pub_->get_subscription_count() == 0) {
+            return;
+        }
+
         auto diag_arr = std::make_unique<diagnostic_msgs::msg::DiagnosticArray>();
         diag_arr->header.stamp = this->now();
 

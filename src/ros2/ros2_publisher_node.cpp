@@ -199,48 +199,54 @@ private:
             tf_broadcaster_->sendTransform(tf_msg);
         }
 
-        // Euler Angles (rad)
-        auto euler_msg = std::make_unique<geometry_msgs::msg::Vector3Stamped>();
-        euler_msg->header.stamp = now;
-        euler_msg->header.frame_id = frame_id;
-        euler_msg->vector.x = all_data.euler.x;
-        euler_msg->vector.y = all_data.euler.y;
-        euler_msg->vector.z = all_data.euler.z;
-        euler_pub_->publish(std::move(euler_msg));
+        // Low-overhead on-demand publishing: skip creation/serialization if nobody is listening
+        if (euler_pub_->get_subscription_count() > 0) {
+            auto euler_msg = std::make_unique<geometry_msgs::msg::Vector3Stamped>();
+            euler_msg->header.stamp = now;
+            euler_msg->header.frame_id = frame_id;
+            euler_msg->vector.x = all_data.euler.x;
+            euler_msg->vector.y = all_data.euler.y;
+            euler_msg->vector.z = all_data.euler.z;
+            euler_pub_->publish(std::move(euler_msg));
+        }
 
-        // Magnetometer (Tesla)
-        auto mag_msg = std::make_unique<sensor_msgs::msg::MagneticField>();
-        mag_msg->header.stamp = now;
-        mag_msg->header.frame_id = frame_id;
-        mag_msg->magnetic_field.x = all_data.mag.x * 1e-6;
-        mag_msg->magnetic_field.y = all_data.mag.y * 1e-6;
-        mag_msg->magnetic_field.z = all_data.mag.z * 1e-6;
-        mag_pub_->publish(std::move(mag_msg));
+        if (mag_pub_->get_subscription_count() > 0) {
+            auto mag_msg = std::make_unique<sensor_msgs::msg::MagneticField>();
+            mag_msg->header.stamp = now;
+            mag_msg->header.frame_id = frame_id;
+            mag_msg->magnetic_field.x = all_data.mag.x * 1e-6;
+            mag_msg->magnetic_field.y = all_data.mag.y * 1e-6;
+            mag_msg->magnetic_field.z = all_data.mag.z * 1e-6;
+            mag_pub_->publish(std::move(mag_msg));
+        }
 
-        // Linear Acceleration (m/s^2)
-        auto linear_accel_msg = std::make_unique<geometry_msgs::msg::Vector3Stamped>();
-        linear_accel_msg->header.stamp = now;
-        linear_accel_msg->header.frame_id = frame_id;
-        linear_accel_msg->vector.x = all_data.linear_accel.x;
-        linear_accel_msg->vector.y = all_data.linear_accel.y;
-        linear_accel_msg->vector.z = all_data.linear_accel.z;
-        linear_accel_pub_->publish(std::move(linear_accel_msg));
+        if (linear_accel_pub_->get_subscription_count() > 0) {
+            auto linear_accel_msg = std::make_unique<geometry_msgs::msg::Vector3Stamped>();
+            linear_accel_msg->header.stamp = now;
+            linear_accel_msg->header.frame_id = frame_id;
+            linear_accel_msg->vector.x = all_data.linear_accel.x;
+            linear_accel_msg->vector.y = all_data.linear_accel.y;
+            linear_accel_msg->vector.z = all_data.linear_accel.z;
+            linear_accel_pub_->publish(std::move(linear_accel_msg));
+        }
 
-        // Gravity (m/s^2)
-        auto gravity_msg = std::make_unique<geometry_msgs::msg::Vector3Stamped>();
-        gravity_msg->header.stamp = now;
-        gravity_msg->header.frame_id = frame_id;
-        gravity_msg->vector.x = all_data.gravity.x;
-        gravity_msg->vector.y = all_data.gravity.y;
-        gravity_msg->vector.z = all_data.gravity.z;
-        gravity_pub_->publish(std::move(gravity_msg));
+        if (gravity_pub_->get_subscription_count() > 0) {
+            auto gravity_msg = std::make_unique<geometry_msgs::msg::Vector3Stamped>();
+            gravity_msg->header.stamp = now;
+            gravity_msg->header.frame_id = frame_id;
+            gravity_msg->vector.x = all_data.gravity.x;
+            gravity_msg->vector.y = all_data.gravity.y;
+            gravity_msg->vector.z = all_data.gravity.z;
+            gravity_pub_->publish(std::move(gravity_msg));
+        }
 
-        // Temperature (deg C)
-        auto temp_msg = std::make_unique<sensor_msgs::msg::Temperature>();
-        temp_msg->header.stamp = now;
-        temp_msg->header.frame_id = frame_id;
-        temp_msg->temperature = static_cast<double>(all_data.temp);
-        temp_pub_->publish(std::move(temp_msg));
+        if (temp_pub_->get_subscription_count() > 0) {
+            auto temp_msg = std::make_unique<sensor_msgs::msg::Temperature>();
+            temp_msg->header.stamp = now;
+            temp_msg->header.frame_id = frame_id;
+            temp_msg->temperature = static_cast<double>(all_data.temp);
+            temp_pub_->publish(std::move(temp_msg));
+        }
     }
 
     void publishDiagnostics() {
