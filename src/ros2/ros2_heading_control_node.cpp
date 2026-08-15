@@ -283,6 +283,11 @@ private:
             corrected_command_pub_->publish(latest_command_);
             last_correction_ = latest_command_.angular.z;
             last_error_deg_ = 0.0;
+
+            RCLCPP_INFO_THROTTLE(
+                this->get_logger(), *this->get_clock(), 500,
+                "[HeadingControl] MANUAL_TURN | In(Wz=%+.2f rad/s) | New Target Yaw: %+.1f°",
+                latest_command_.angular.z, current_yaw_rad_ * 180.0 / M_PI);
             return;
         }
 
@@ -311,6 +316,16 @@ private:
 
         last_correction_ = correction_rad_s;
         last_error_deg_ = heading_error_rad * 180.0 / M_PI;
+
+        const double curr_yaw_deg = current_yaw_rad_ * 180.0 / M_PI;
+        const double target_yaw_deg = target_yaw_rad_ * 180.0 / M_PI;
+
+        RCLCPP_INFO_THROTTLE(
+            this->get_logger(), *this->get_clock(), 200,
+            "[HeadingControl] LOCKED | In(Vx=%.2f, Vy=%.2f) | Yaw: curr=%+.1f° -> target=%+.1f° (err=%+.2f°) | GyroZ=%+.2f | Out: Wz=%+.3f rad/s",
+            latest_command_.linear.x, latest_command_.linear.y,
+            curr_yaw_deg, target_yaw_deg, last_error_deg_,
+            current_angular_velocity_z_rad_s_, correction_rad_s);
     }
 
     void publish_diagnostics() {
