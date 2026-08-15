@@ -84,8 +84,7 @@ public:
 
         imu_sub_ = this->create_subscription<sensor_msgs::msg::Imu>(
             imu_topic_, rclcpp::SensorDataQoS(),
-            [this](const sensor_msgs::msg::Imu::SharedPtr message) { receive_imu(*message); },
-            control_sub_options);
+            [this](const sensor_msgs::msg::Imu::SharedPtr message) { receive_imu(*message); }, control_sub_options);
 
         auto admin_sub_options = rclcpp::SubscriptionOptions();
         admin_sub_options.callback_group = admin_cb_group_;
@@ -132,8 +131,7 @@ public:
                 this->create_wall_timer(std::chrono::seconds(1), [this]() { publish_diagnostics(); }, admin_cb_group_);
         }
 
-        RCLCPP_INFO(this->get_logger(),
-                    "BNO055 Heading Control online: input=%s output=%s imu=%s (Kp=%.2f, Kd=%.3f)",
+        RCLCPP_INFO(this->get_logger(), "BNO055 Heading Control online: input=%s output=%s imu=%s (Kp=%.2f, Kd=%.3f)",
                     raw_cmd_vel_topic_.c_str(), corrected_cmd_vel_topic_.c_str(), imu_topic_.c_str(), kp_, kd_);
     }
 
