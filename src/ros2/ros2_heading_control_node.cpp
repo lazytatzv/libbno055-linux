@@ -135,10 +135,10 @@ private:
         kd_ = this->declare_parameter("kd", 0.05);
         integral_limit_rad_s_ = this->declare_parameter("max_i_term", 0.5);
 
-        double deadband_deg = this->declare_parameter("deadband_deg", 0.02);
+        double deadband_deg = this->declare_parameter("deadband_deg", 0.5);
         heading_deadband_rad_ = deadband_deg * M_PI / 180.0;
 
-        rotation_input_deadband_rad_s_ = this->declare_parameter("angular_deadband", 0.05);
+        rotation_input_deadband_rad_s_ = this->declare_parameter("angular_deadband", 0.08);
         max_correction_rad_s_ = this->declare_parameter("max_output", 1.5);
         control_period_ms_ = 10;
         command_timeout_ms_ = static_cast<int>(this->declare_parameter("cmd_vel_timeout", 0.5) * 1000.0);
