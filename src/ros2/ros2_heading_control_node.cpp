@@ -32,10 +32,9 @@ inline double normalize_angle(const double angle_rad) {
     return std::remainder(angle_rad, 2.0 * M_PI);
 }
 
-inline bool is_finite_twist(const geometry_msgs::msg::Twist & twist) {
-    return std::isfinite(twist.linear.x) && std::isfinite(twist.linear.y) &&
-           std::isfinite(twist.linear.z) && std::isfinite(twist.angular.x) &&
-           std::isfinite(twist.angular.y) && std::isfinite(twist.angular.z);
+inline bool is_finite_twist(const geometry_msgs::msg::Twist& twist) {
+    return std::isfinite(twist.linear.x) && std::isfinite(twist.linear.y) && std::isfinite(twist.linear.z) &&
+           std::isfinite(twist.angular.x) && std::isfinite(twist.angular.y) && std::isfinite(twist.angular.z);
 }
 
 inline void trySetRealtimePriority(rclcpp::Logger logger, int priority = 80) noexcept {
@@ -84,11 +83,10 @@ public:
 
         imu_sub_ = this->create_subscription<sensor_msgs::msg::Imu>(
             imu_topic_, rclcpp::SensorDataQoS(),
-            [this](const sensor_msgs::msg::Imu::SharedPtr message) { receive_imu(*message); },
-            control_sub_options);
+            [this](const sensor_msgs::msg::Imu::SharedPtr message) { receive_imu(*message); }, control_sub_options);
 
-        corrected_command_pub_ = this->create_publisher<geometry_msgs::msg::Twist>(
-            corrected_cmd_vel_topic_, rclcpp::QoS(command_qos_depth_));
+        corrected_command_pub_ = this->create_publisher<geometry_msgs::msg::Twist>(corrected_cmd_vel_topic_,
+                                                                                   rclcpp::QoS(command_qos_depth_));
 
         diag_pub_ = this->create_publisher<diagnostic_msgs::msg::DiagnosticArray>("diagnostics", rclcpp::QoS(1));
 
@@ -113,7 +111,7 @@ public:
 
         // 4. Dynamic Parameter Callback
         parameter_callback_ = this->add_on_set_parameters_callback(
-            [this](const std::vector<rclcpp::Parameter> & parameters) { return update_parameters(parameters); });
+            [this](const std::vector<rclcpp::Parameter>& parameters) { return update_parameters(parameters); });
 
         // 5. Control Timer (50Hz / 100Hz - Control Callback Group)
         last_control_time_ = this->now();
@@ -122,8 +120,8 @@ public:
 
         // 6. Diagnostics Timer (1Hz - Admin Callback Group)
         if (this->get_parameter("enable_diagnostics").as_bool()) {
-            diag_timer_ = this->create_wall_timer(
-                std::chrono::seconds(1), [this]() { publish_diagnostics(); }, admin_cb_group_);
+            diag_timer_ =
+                this->create_wall_timer(std::chrono::seconds(1), [this]() { publish_diagnostics(); }, admin_cb_group_);
         }
 
         RCLCPP_INFO(this->get_logger(),
@@ -152,7 +150,7 @@ private:
         this->declare_parameter<bool>("enable_diagnostics", true);
     }
 
-    rcl_interfaces::msg::SetParametersResult update_parameters(const std::vector<rclcpp::Parameter> & parameters) {
+    rcl_interfaces::msg::SetParametersResult update_parameters(const std::vector<rclcpp::Parameter>& parameters) {
         auto result = rcl_interfaces::msg::SetParametersResult();
         result.successful = false;
         result.reason = "Only PID and heading-hold limits can be changed while running";
@@ -165,8 +163,8 @@ private:
         double next_rotation_deadband = rotation_input_deadband_rad_s_;
         double next_max_correction = max_correction_rad_s_;
 
-        for (const auto & parameter : parameters) {
-            const auto & name = parameter.get_name();
+        for (const auto& parameter : parameters) {
+            const auto& name = parameter.get_name();
             if (name == "kp") {
                 next_kp = parameter.as_double();
             } else if (name == "ki") {
@@ -210,7 +208,7 @@ private:
         return result;
     }
 
-    void receive_command(const geometry_msgs::msg::Twist & message) {
+    void receive_command(const geometry_msgs::msg::Twist& message) {
         if (!is_finite_twist(message)) {
             RCLCPP_WARN_THROTTLE(this->get_logger(), *this->get_clock(), 2000, "Ignored a non-finite cmd_vel message");
             return;
@@ -220,8 +218,8 @@ private:
         cmd_vel_timeout_logged_ = false;
     }
 
-    void receive_imu(const sensor_msgs::msg::Imu & message) {
-        const auto & orientation = message.orientation;
+    void receive_imu(const sensor_msgs::msg::Imu& message) {
+        const auto& orientation = message.orientation;
         if (!std::isfinite(orientation.x) || !std::isfinite(orientation.y) || !std::isfinite(orientation.z) ||
             !std::isfinite(orientation.w) || !std::isfinite(message.angular_velocity.z)) {
             RCLCPP_WARN_THROTTLE(this->get_logger(), *this->get_clock(), 2000,
@@ -272,9 +270,8 @@ private:
         if (!imu_is_fresh) {
             corrected_command_pub_->publish(latest_command_);
             reset_heading_hold();
-            RCLCPP_WARN_THROTTLE(
-                this->get_logger(), *this->get_clock(), 2000,
-                "IMU data is unavailable; passing through the upstream cmd_vel without correction");
+            RCLCPP_WARN_THROTTLE(this->get_logger(), *this->get_clock(), 2000,
+                                 "IMU data is unavailable; passing through the upstream cmd_vel without correction");
             return;
         }
 
@@ -294,8 +291,7 @@ private:
             integral_error_rad_s_ = 0.0;
         }
 
-        const double safe_dt_s =
-            dt_s > 0.0 && dt_s < 0.5 ? dt_s : static_cast<double>(control_period_ms_) / 1000.0;
+        const double safe_dt_s = dt_s > 0.0 && dt_s < 0.5 ? dt_s : static_cast<double>(control_period_ms_) / 1000.0;
         double heading_error_rad = normalize_angle(target_yaw_rad_ - current_yaw_rad_);
         last_error_deg_ = heading_error_rad * 180.0 / M_PI;
 
@@ -402,7 +398,7 @@ private:
 #ifdef BNO055_ROS2_BUILDING_COMPONENT
 RCLCPP_COMPONENTS_REGISTER_NODE(bno055_ros2::BNO055HeadingControlNode)
 #else
-int main(int argc, char ** argv) {
+int main(int argc, char** argv) {
     rclcpp::init(argc, argv);
     auto node = std::make_shared<bno055_ros2::BNO055HeadingControlNode>();
     rclcpp::executors::MultiThreadedExecutor executor(rclcpp::ExecutorOptions(), 2);
