@@ -151,7 +151,7 @@ private:
         const std::string frame_id = this->get_parameter("frame_id").as_string();
         const auto now = this->now();
 
-        const auto& quat = all_data.quaternion;
+        const auto& quat = all_data.quat;
         const auto& gyro = all_data.gyro;
         const auto& accel = all_data.accel;
 
@@ -237,7 +237,7 @@ private:
         auto temp_msg = std::make_unique<sensor_msgs::msg::Temperature>();
         temp_msg->header.stamp = now;
         temp_msg->header.frame_id = frame_id;
-        temp_msg->temperature = static_cast<double>(all_data.temperature);
+        temp_msg->temperature = static_cast<double>(all_data.temp);
         temp_pub_->publish(std::move(temp_msg));
     }
 

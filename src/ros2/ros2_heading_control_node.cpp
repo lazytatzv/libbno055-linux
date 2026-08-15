@@ -17,6 +17,7 @@
 #include <rclcpp_components/register_node_macro.hpp>
 #endif
 #include <sensor_msgs/msg/imu.hpp>
+#include <std_msgs/msg/bool.hpp>
 #include <std_srvs/srv/trigger.hpp>
 #include <string>
 #include <vector>
@@ -396,6 +397,8 @@ private:
     rclcpp::Service<std_srvs::srv::Trigger>::SharedPtr reset_heading_srv_;
     rclcpp::TimerBase::SharedPtr control_timer_;
     rclcpp::TimerBase::SharedPtr diag_timer_;
+    rclcpp::CallbackGroup::SharedPtr control_cb_group_;
+    rclcpp::CallbackGroup::SharedPtr admin_cb_group_;
 
     rclcpp::node_interfaces::OnSetParametersCallbackHandle::SharedPtr parameter_callback_;
 
