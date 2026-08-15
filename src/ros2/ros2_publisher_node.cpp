@@ -114,9 +114,10 @@ public:
         euler_pub_ = this->create_publisher<geometry_msgs::msg::Vector3Stamped>("/imu/euler", rclcpp::SensorDataQoS());
         mag_pub_ = this->create_publisher<sensor_msgs::msg::MagneticField>("/imu/mag", rclcpp::SensorDataQoS());
         temp_pub_ = this->create_publisher<sensor_msgs::msg::Temperature>("/imu/temp", rclcpp::SensorDataQoS());
-        linear_accel_pub_ =
-            this->create_publisher<geometry_msgs::msg::Vector3Stamped>("/imu/linear_acceleration", rclcpp::SensorDataQoS());
-        gravity_pub_ = this->create_publisher<geometry_msgs::msg::Vector3Stamped>("/imu/gravity", rclcpp::SensorDataQoS());
+        linear_accel_pub_ = this->create_publisher<geometry_msgs::msg::Vector3Stamped>("/imu/linear_acceleration",
+                                                                                       rclcpp::SensorDataQoS());
+        gravity_pub_ =
+            this->create_publisher<geometry_msgs::msg::Vector3Stamped>("/imu/gravity", rclcpp::SensorDataQoS());
         diag_pub_ = this->create_publisher<diagnostic_msgs::msg::DiagnosticArray>("/diagnostics", rclcpp::QoS(1));
 
         tf_broadcaster_ = std::make_unique<tf2_ros::TransformBroadcaster>(*this);
