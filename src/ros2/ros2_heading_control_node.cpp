@@ -86,6 +86,9 @@ public:
             imu_topic_, rclcpp::SensorDataQoS(),
             [this](const sensor_msgs::msg::Imu::SharedPtr message) { receive_imu(*message); }, control_sub_options);
 
+        auto admin_sub_options = rclcpp::SubscriptionOptions();
+        admin_sub_options.callback_group = admin_cb_group_;
+
         enable_sub_ = this->create_subscription<std_msgs::msg::Bool>(
             "/heading_control/enable", rclcpp::QoS(1).reliable().transient_local(),
             [this](const std_msgs::msg::Bool::SharedPtr message) {
@@ -99,7 +102,7 @@ public:
                     }
                 }
             },
-            admin_cb_group_);
+            admin_sub_options);
 
         corrected_command_pub_ = this->create_publisher<geometry_msgs::msg::Twist>(corrected_cmd_vel_topic_,
                                                                                    rclcpp::QoS(command_qos_depth_));
