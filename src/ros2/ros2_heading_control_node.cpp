@@ -239,8 +239,8 @@ private:
         double yaw_rad = 0.0;
         tf2::Matrix3x3(quaternion).getRPY(roll_rad, pitch_rad, yaw_rad);
 
-        // Correct Standard Yaw (Positive CCW, Negative CW)
-        current_yaw_rad_ = yaw_rad;
+        // 100% exactly matching heading_hold_node.cpp line 209
+        current_yaw_rad_ = -yaw_rad;
         current_angular_velocity_z_rad_s_ = message.angular_velocity.z;
         last_imu_time_ = this->now();
     }
@@ -305,8 +305,10 @@ private:
         integral_error_rad_s_ = std::clamp(integral_error_rad_s_ + heading_error_rad * safe_dt_s,
                                            -integral_limit_rad_s_, integral_limit_rad_s_);
 
+        // 100% exactly matching heading_hold_node.cpp line 274
         const double correction_rad_s =
-            std::clamp(-(kp_ * heading_error_rad + ki_ * integral_error_rad_s_ - kd_ * current_angular_velocity_z_rad_s_),
+            std::clamp(kp_ * heading_error_rad + ki_ * integral_error_rad_s_ -
+                       kd_ * current_angular_velocity_z_rad_s_,
                        -max_correction_rad_s_, max_correction_rad_s_);
 
         auto corrected_command = latest_command_;
