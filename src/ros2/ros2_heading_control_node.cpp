@@ -82,9 +82,18 @@ public:
             [this](const geometry_msgs::msg::Twist::SharedPtr message) { receive_command(*message); },
             control_sub_options);
 
-        imu_sub_ = this->create_subscription<sensor_msgs::msg::Imu>(
-            imu_topic_, rclcpp::SensorDataQoS(),
-            [this](const sensor_msgs::msg::Imu::SharedPtr message) { receive_imu(*message); }, control_sub_options);
+        // Dual-IMU Architecture: Primary (e.g. Linux BNO055) + Secondary (e.g. STM32 IMU)
+        imu_primary_sub_ = this->create_subscription<sensor_msgs::msg::Imu>(
+            imu_primary_topic_, rclcpp::SensorDataQoS(),
+            [this](const sensor_msgs::msg::Imu::SharedPtr message) { receive_imu(*message, "Primary (BNO055 Linux)"); },
+            control_sub_options);
+
+        if (!imu_secondary_topic_.empty() && imu_secondary_topic_ != imu_primary_topic_) {
+            imu_secondary_sub_ = this->create_subscription<sensor_msgs::msg::Imu>(
+                imu_secondary_topic_, rclcpp::SensorDataQoS(),
+                [this](const sensor_msgs::msg::Imu::SharedPtr message) { receive_imu(*message, "Secondary (STM32 CAN)"); },
+                control_sub_options);
+        }
 
         auto admin_sub_options = rclcpp::SubscriptionOptions();
         admin_sub_options.callback_group = admin_cb_group_;
@@ -143,8 +152,10 @@ public:
                 this->create_wall_timer(std::chrono::seconds(1), [this]() { publish_diagnostics(); }, admin_cb_group_);
         }
 
-        RCLCPP_INFO(this->get_logger(), "BNO055 Heading Control online: input=%s output=%s imu=%s (Kp=%.2f, Kd=%.3f)",
-                    raw_cmd_vel_topic_.c_str(), corrected_cmd_vel_topic_.c_str(), imu_topic_.c_str(), kp_, kd_);
+        RCLCPP_INFO(this->get_logger(),
+                    "BNO055 Heading Control online: input=%s output=%s (Primary IMU=%s, Secondary IMU=%s) (Kp=%.2f, Kd=%.3f)",
+                    raw_cmd_vel_topic_.c_str(), corrected_cmd_vel_topic_.c_str(), imu_primary_topic_.c_str(),
+                    imu_secondary_topic_.c_str(), kp_, kd_);
     }
 
 private:
@@ -161,10 +172,11 @@ private:
         max_correction_rad_s_ = this->declare_parameter("max_output", 1.5);
         control_period_ms_ = 10;
         command_timeout_ms_ = static_cast<int>(this->declare_parameter("cmd_vel_timeout", 0.5) * 1000.0);
-        imu_timeout_ms_ = static_cast<int>(this->declare_parameter("imu_timeout", 1.0) * 1000.0);
+        imu_timeout_ms_ = static_cast<int>(this->declare_parameter("imu_timeout", 0.05) * 1000.0);
         command_qos_depth_ = 10;
         raw_cmd_vel_topic_ = this->declare_parameter<std::string>("cmd_vel_in_topic", "/drive/cmd_vel");
-        imu_topic_ = this->declare_parameter<std::string>("imu_topic", "imu/data");
+        imu_primary_topic_ = this->declare_parameter<std::string>("imu_topic", "/imu/data");
+        imu_secondary_topic_ = this->declare_parameter<std::string>("imu_secondary_topic", "/stm32/imu");
         corrected_cmd_vel_topic_ =
             this->declare_parameter<std::string>("cmd_vel_out_topic", "/mecanum/cmd_vel_heading");
         this->declare_parameter<bool>("enable_diagnostics", true);
@@ -235,12 +247,12 @@ private:
         cmd_vel_timeout_logged_ = false;
     }
 
-    void receive_imu(const sensor_msgs::msg::Imu& message) {
+    void receive_imu(const sensor_msgs::msg::Imu& message, const std::string& source_name) {
         const auto& orientation = message.orientation;
         if (!std::isfinite(orientation.x) || !std::isfinite(orientation.y) || !std::isfinite(orientation.z) ||
             !std::isfinite(orientation.w) || !std::isfinite(message.angular_velocity.z)) {
             RCLCPP_WARN_THROTTLE(this->get_logger(), *this->get_clock(), 2000,
-                                 "Ignored IMU data containing non-finite values");
+                                 "Ignored IMU data containing non-finite values from %s", source_name.c_str());
             return;
         }
 
@@ -248,10 +260,31 @@ private:
         tf2::fromMsg(orientation, quaternion);
         const double norm_squared = quaternion.length2();
         if (norm_squared < 1e-12) {
-            RCLCPP_WARN_THROTTLE(this->get_logger(), *this->get_clock(), 2000, "Ignored an invalid IMU quaternion");
+            RCLCPP_WARN_THROTTLE(this->get_logger(), *this->get_clock(), 2000, "Ignored an invalid IMU quaternion from %s", source_name.c_str());
             return;
         }
         quaternion.normalize();
+
+        const auto now_time = this->now();
+
+        // Priority Arbitration: Primary takes precedence if fresh
+        if (source_name.rfind("Secondary", 0) == 0) {
+            const bool primary_is_fresh = last_primary_imu_time_.nanoseconds() != 0 &&
+                                          (now_time - last_primary_imu_time_).nanoseconds() <= imu_timeout_ms_ * 1000000LL;
+            if (primary_is_fresh) {
+                // Primary is healthy; drop secondary to avoid conflict
+                return;
+            }
+        } else {
+            last_primary_imu_time_ = now_time;
+        }
+
+        if (active_imu_source_ != source_name) {
+            RCLCPP_INFO(this->get_logger(), "[HeadingControl] Auto-switched active IMU source -> %s", source_name.c_str());
+            active_imu_source_ = source_name;
+            // Re-lock target on source transition to prevent jumps
+            reset_heading_hold();
+        }
 
         double roll_rad = 0.0;
         double pitch_rad = 0.0;
@@ -261,7 +294,7 @@ private:
         // Proven Coordinate Alignment (matching heading_hold_node)
         current_yaw_rad_ = -yaw_rad;
         current_angular_velocity_z_rad_s_ = -message.angular_velocity.z;
-        last_imu_time_ = this->now();
+        last_imu_time_ = now_time;
     }
 
     void reset_heading_hold() {
@@ -400,7 +433,8 @@ private:
     }
 
     rclcpp::Subscription<geometry_msgs::msg::Twist>::SharedPtr command_sub_;
-    rclcpp::Subscription<sensor_msgs::msg::Imu>::SharedPtr imu_sub_;
+    rclcpp::Subscription<sensor_msgs::msg::Imu>::SharedPtr imu_primary_sub_;
+    rclcpp::Subscription<sensor_msgs::msg::Imu>::SharedPtr imu_secondary_sub_;
     rclcpp::Subscription<std_msgs::msg::Bool>::SharedPtr enable_sub_;
     rclcpp::Publisher<geometry_msgs::msg::Twist>::SharedPtr corrected_command_pub_;
     rclcpp::Publisher<diagnostic_msgs::msg::DiagnosticArray>::SharedPtr diag_pub_;
@@ -415,7 +449,9 @@ private:
     geometry_msgs::msg::Twist latest_command_;
     rclcpp::Time last_command_time_;
     rclcpp::Time last_imu_time_;
+    rclcpp::Time last_primary_imu_time_;
     rclcpp::Time last_control_time_;
+    std::string active_imu_source_{"None"};
     double current_yaw_rad_;
     double current_angular_velocity_z_rad_s_;
     double target_yaw_rad_;
@@ -438,7 +474,8 @@ private:
     int imu_timeout_ms_{50};
     int command_qos_depth_{10};
     std::string raw_cmd_vel_topic_;
-    std::string imu_topic_;
+    std::string imu_primary_topic_;
+    std::string imu_secondary_topic_;
     std::string corrected_cmd_vel_topic_;
     std::string yaw_axis_;
 };

@@ -7,7 +7,8 @@ bno055_heading_control_node:
     # --------------------------------------------------------------------------
     # 1. Topic Configuration & Passthrough Pipeline
     # --------------------------------------------------------------------------
-    imu_topic: "/imu/data"                         # Input IMU topic from BNO055 driver
+    imu_topic: "/imu/data"                         # Primary IMU topic (Linux BNO055 driver)
+    imu_secondary_topic: "/stm32/imu"              # Secondary IMU topic (STM32 CAN backup)
     cmd_vel_in_topic: "/drive/cmd_vel"             # Raw input velocity command from joy_controller
     cmd_vel_out_topic: "/mecanum/cmd_vel_heading"  # Corrected output velocity command for mecanum
 
