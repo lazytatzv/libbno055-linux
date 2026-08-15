@@ -140,123 +140,105 @@ private:
     void publishSensorData() {
         if (!initialized_) return;
 
-        // Fetch raw sequential burst read to inspect for hardware data update
-        auto raw_opt = imu_driver_->getRawSensorDataNoexcept();
-        if (raw_opt) {
-            // Deduplication check: if raw sensor bytes haven't changed from last read, skip publishing
-            if (has_last_raw_ && std::memcmp(&last_raw_, &(*raw_opt), sizeof(bno055lib::BNO055::RawSensorData)) == 0) {
-                return;
-            }
-            last_raw_ = *raw_opt;
-            has_last_raw_ = true;
+        // Single 45-byte burst read covering all sensor output registers (0x08–0x34).
+        // 9x fewer I2C transactions! Eliminates I2C bus collision/timeouts.
+        auto all_data_opt = imu_driver_->getAllDataNoexcept();
+        if (!all_data_opt) {
+            return;
         }
 
+        const auto& all_data = *all_data_opt;
         const std::string frame_id = this->get_parameter("frame_id").as_string();
         const auto now = this->now();
 
-        auto quat = imu_driver_->getQuaternionNoexcept();
-        auto euler = imu_driver_->getEulerAnglesNoexcept();
-        auto gyro = imu_driver_->getGyroscopeNoexcept();
-        auto accel = imu_driver_->getAccelerometerNoexcept();
-        auto mag = imu_driver_->getMagnetometerNoexcept();
-        auto linear_accel = imu_driver_->getLinearAccelerationNoexcept();
-        auto gravity = imu_driver_->getGravityNoexcept();
-        auto temp = imu_driver_->getTemperatureNoexcept();
+        const auto& quat = all_data.quaternion;
+        const auto& gyro = all_data.gyro;
+        const auto& accel = all_data.accel;
 
-        if (quat && gyro && accel) {
-            // Outlier check for NaN/Inf
-            if (BNO055_UNLIKELY(std::isnan(quat->w) || std::isnan(quat->x) || std::isnan(quat->y) ||
-                                std::isnan(quat->z))) {
-                RCLCPP_WARN_THROTTLE(this->get_logger(), *this->get_clock(), 2000,
-                                     "Corrupted IMU data from I2C/UART dropped.");
-                return;
-            }
-
-            auto imu_msg = std::make_unique<sensor_msgs::msg::Imu>();
-            imu_msg->header.stamp = now;
-            imu_msg->header.frame_id = frame_id;
-
-            imu_msg->orientation.w = quat->w;
-            imu_msg->orientation.x = quat->x;
-            imu_msg->orientation.y = quat->y;
-            imu_msg->orientation.z = quat->z;
-
-            imu_msg->angular_velocity.x = gyro->x * (M_PI / 180.0);
-            imu_msg->angular_velocity.y = gyro->y * (M_PI / 180.0);
-            imu_msg->angular_velocity.z = gyro->z * (M_PI / 180.0);
-
-            imu_msg->linear_acceleration.x = accel->x;
-            imu_msg->linear_acceleration.y = accel->y;
-            imu_msg->linear_acceleration.z = accel->z;
-
-            imu_pub_->publish(std::move(imu_msg));
-
-            if (this->get_parameter("publish_tf").as_bool()) {
-                geometry_msgs::msg::TransformStamped tf_msg;
-                tf_msg.header.stamp = now;
-                tf_msg.header.frame_id = this->get_parameter("parent_frame_id").as_string();
-                tf_msg.child_frame_id = this->get_parameter("child_frame_id").as_string();
-                tf_msg.transform.translation.x = this->get_parameter("imu_offset_x").as_double();
-                tf_msg.transform.translation.y = this->get_parameter("imu_offset_y").as_double();
-                tf_msg.transform.translation.z = this->get_parameter("imu_offset_z").as_double();
-                tf_msg.transform.rotation.w = quat->w;
-                tf_msg.transform.rotation.x = quat->x;
-                tf_msg.transform.rotation.y = quat->y;
-                tf_msg.transform.rotation.z = quat->z;
-                tf_broadcaster_->sendTransform(tf_msg);
-            }
+        // Outlier check for NaN/Inf
+        if (BNO055_UNLIKELY(std::isnan(quat.w) || std::isnan(quat.x) || std::isnan(quat.y) ||
+                            std::isnan(quat.z))) {
+            RCLCPP_WARN_THROTTLE(this->get_logger(), *this->get_clock(), 2000,
+                                 "Corrupted IMU data from I2C/UART dropped.");
+            return;
         }
 
-        if (euler) {
-            auto euler_msg = std::make_unique<geometry_msgs::msg::Vector3Stamped>();
-            euler_msg->header.stamp = now;
-            euler_msg->header.frame_id = frame_id;
-            euler_msg->vector.x = euler->x;  // Roll (rad)
-            euler_msg->vector.y = euler->y;  // Pitch (rad)
-            euler_msg->vector.z = euler->z;  // Yaw / Heading (rad)
+        auto imu_msg = std::make_unique<sensor_msgs::msg::Imu>();
+        imu_msg->header.stamp = now;
+        imu_msg->header.frame_id = frame_id;
 
-            euler_pub_->publish(std::move(euler_msg));
+        imu_msg->orientation.w = quat.w;
+        imu_msg->orientation.x = quat.x;
+        imu_msg->orientation.y = quat.y;
+        imu_msg->orientation.z = quat.z;
+
+        imu_msg->angular_velocity.x = gyro.x;
+        imu_msg->angular_velocity.y = gyro.y;
+        imu_msg->angular_velocity.z = gyro.z;
+
+        imu_msg->linear_acceleration.x = accel.x;
+        imu_msg->linear_acceleration.y = accel.y;
+        imu_msg->linear_acceleration.z = accel.z;
+
+        imu_pub_->publish(std::move(imu_msg));
+
+        if (this->get_parameter("publish_tf").as_bool()) {
+            geometry_msgs::msg::TransformStamped tf_msg;
+            tf_msg.header.stamp = now;
+            tf_msg.header.frame_id = this->get_parameter("parent_frame_id").as_string();
+            tf_msg.child_frame_id = this->get_parameter("child_frame_id").as_string();
+            tf_msg.transform.translation.x = this->get_parameter("imu_offset_x").as_double();
+            tf_msg.transform.translation.y = this->get_parameter("imu_offset_y").as_double();
+            tf_msg.transform.translation.z = this->get_parameter("imu_offset_z").as_double();
+            tf_msg.transform.rotation.w = quat.w;
+            tf_msg.transform.rotation.x = quat.x;
+            tf_msg.transform.rotation.y = quat.y;
+            tf_msg.transform.rotation.z = quat.z;
+            tf_broadcaster_->sendTransform(tf_msg);
         }
 
-        if (mag) {
-            auto mag_msg = std::make_unique<sensor_msgs::msg::MagneticField>();
-            mag_msg->header.stamp = now;
-            mag_msg->header.frame_id = frame_id;
-            mag_msg->magnetic_field.x = mag->x * 1e-6;
-            mag_msg->magnetic_field.y = mag->y * 1e-6;
-            mag_msg->magnetic_field.z = mag->z * 1e-6;
+        // Euler Angles (rad)
+        auto euler_msg = std::make_unique<geometry_msgs::msg::Vector3Stamped>();
+        euler_msg->header.stamp = now;
+        euler_msg->header.frame_id = frame_id;
+        euler_msg->vector.x = all_data.euler.x;
+        euler_msg->vector.y = all_data.euler.y;
+        euler_msg->vector.z = all_data.euler.z;
+        euler_pub_->publish(std::move(euler_msg));
 
-            mag_pub_->publish(std::move(mag_msg));
-        }
+        // Magnetometer (Tesla)
+        auto mag_msg = std::make_unique<sensor_msgs::msg::MagneticField>();
+        mag_msg->header.stamp = now;
+        mag_msg->header.frame_id = frame_id;
+        mag_msg->magnetic_field.x = all_data.mag.x * 1e-6;
+        mag_msg->magnetic_field.y = all_data.mag.y * 1e-6;
+        mag_msg->magnetic_field.z = all_data.mag.z * 1e-6;
+        mag_pub_->publish(std::move(mag_msg));
 
-        if (linear_accel) {
-            auto linear_accel_msg = std::make_unique<geometry_msgs::msg::Vector3Stamped>();
-            linear_accel_msg->header.stamp = now;
-            linear_accel_msg->header.frame_id = frame_id;
-            linear_accel_msg->vector.x = linear_accel->x;
-            linear_accel_msg->vector.y = linear_accel->y;
-            linear_accel_msg->vector.z = linear_accel->z;
-            linear_accel_pub_->publish(std::move(linear_accel_msg));
-        }
+        // Linear Acceleration (m/s^2)
+        auto linear_accel_msg = std::make_unique<geometry_msgs::msg::Vector3Stamped>();
+        linear_accel_msg->header.stamp = now;
+        linear_accel_msg->header.frame_id = frame_id;
+        linear_accel_msg->vector.x = all_data.linear_accel.x;
+        linear_accel_msg->vector.y = all_data.linear_accel.y;
+        linear_accel_msg->vector.z = all_data.linear_accel.z;
+        linear_accel_pub_->publish(std::move(linear_accel_msg));
 
-        if (gravity) {
-            auto gravity_msg = std::make_unique<geometry_msgs::msg::Vector3Stamped>();
-            gravity_msg->header.stamp = now;
-            gravity_msg->header.frame_id = frame_id;
-            gravity_msg->vector.x = gravity->x;
-            gravity_msg->vector.y = gravity->y;
-            gravity_msg->vector.z = gravity->z;
-            gravity_pub_->publish(std::move(gravity_msg));
-        }
+        // Gravity (m/s^2)
+        auto gravity_msg = std::make_unique<geometry_msgs::msg::Vector3Stamped>();
+        gravity_msg->header.stamp = now;
+        gravity_msg->header.frame_id = frame_id;
+        gravity_msg->vector.x = all_data.gravity.x;
+        gravity_msg->vector.y = all_data.gravity.y;
+        gravity_msg->vector.z = all_data.gravity.z;
+        gravity_pub_->publish(std::move(gravity_msg));
 
-        if (temp) {
-            auto temp_msg = std::make_unique<sensor_msgs::msg::Temperature>();
-            temp_msg->header.stamp = now;
-            temp_msg->header.frame_id = frame_id;
-            temp_msg->temperature = static_cast<double>(*temp);
-            temp_msg->variance = 0.1;
-            temp_pub_->publish(std::move(temp_msg));
-        }
+        // Temperature (deg C)
+        auto temp_msg = std::make_unique<sensor_msgs::msg::Temperature>();
+        temp_msg->header.stamp = now;
+        temp_msg->header.frame_id = frame_id;
+        temp_msg->temperature = static_cast<double>(all_data.temperature);
+        temp_pub_->publish(std::move(temp_msg));
     }
 
     void publishDiagnostics() {
