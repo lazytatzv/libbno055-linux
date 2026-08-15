@@ -85,6 +85,21 @@ public:
             imu_topic_, rclcpp::SensorDataQoS(),
             [this](const sensor_msgs::msg::Imu::SharedPtr message) { receive_imu(*message); }, control_sub_options);
 
+        enable_sub_ = this->create_subscription<std_msgs::msg::Bool>(
+            "/heading_control/enable", rclcpp::QoS(1).reliable().transient_local(),
+            [this](const std_msgs::msg::Bool::SharedPtr message) {
+                if (heading_hold_enabled_ != message->data) {
+                    heading_hold_enabled_ = message->data;
+                    reset_heading_hold();
+                    if (heading_hold_enabled_) {
+                        RCLCPP_INFO(this->get_logger(), "[HeadingControl] ENABLED via topic /heading_control/enable");
+                    } else {
+                        RCLCPP_WARN(this->get_logger(), "[HeadingControl] DISABLED (Pure Passthrough Manual Mode)");
+                    }
+                }
+            },
+            admin_cb_group_);
+
         corrected_command_pub_ = this->create_publisher<geometry_msgs::msg::Twist>(corrected_cmd_vel_topic_,
                                                                                    rclcpp::QoS(command_qos_depth_));
 
@@ -266,6 +281,12 @@ private:
             return;
         }
 
+        if (!heading_hold_enabled_) {
+            corrected_command_pub_->publish(latest_command_);
+            reset_heading_hold();
+            return;
+        }
+
         const bool imu_is_fresh = last_imu_time_.nanoseconds() != 0 &&
                                   (current_time - last_imu_time_).nanoseconds() <= imu_timeout_ms_ * 1000000LL;
         if (!imu_is_fresh) {
@@ -369,14 +390,12 @@ private:
 
     rclcpp::Subscription<geometry_msgs::msg::Twist>::SharedPtr command_sub_;
     rclcpp::Subscription<sensor_msgs::msg::Imu>::SharedPtr imu_sub_;
+    rclcpp::Subscription<std_msgs::msg::Bool>::SharedPtr enable_sub_;
     rclcpp::Publisher<geometry_msgs::msg::Twist>::SharedPtr corrected_command_pub_;
     rclcpp::Publisher<diagnostic_msgs::msg::DiagnosticArray>::SharedPtr diag_pub_;
     rclcpp::Service<std_srvs::srv::Trigger>::SharedPtr reset_heading_srv_;
     rclcpp::TimerBase::SharedPtr control_timer_;
     rclcpp::TimerBase::SharedPtr diag_timer_;
-
-    rclcpp::CallbackGroup::SharedPtr control_cb_group_;
-    rclcpp::CallbackGroup::SharedPtr admin_cb_group_;
 
     rclcpp::node_interfaces::OnSetParametersCallbackHandle::SharedPtr parameter_callback_;
 
@@ -390,6 +409,7 @@ private:
     double integral_error_rad_s_;
     bool target_yaw_initialized_;
     bool cmd_vel_timeout_logged_;
+    bool heading_hold_enabled_{true};
     double last_correction_;
     double last_error_deg_;
 
