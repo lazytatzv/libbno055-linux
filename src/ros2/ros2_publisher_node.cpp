@@ -143,11 +143,14 @@ private:
         // Single 45-byte burst read covering all sensor output registers (0x08–0x34).
         // 9x fewer I2C transactions! Eliminates I2C bus collision/timeouts.
         auto all_data_opt = imu_driver_->getAllDataNoexcept();
-        if (!all_data_opt) {
+        if (all_data_opt) {
+            last_all_data_ = *all_data_opt;
+            has_last_all_data_ = true;
+        } else if (!has_last_all_data_) {
             return;
         }
 
-        const auto& all_data = *all_data_opt;
+        const auto& all_data = last_all_data_;
         const std::string frame_id = this->get_parameter("frame_id").as_string();
         const auto now = this->now();
 
@@ -263,8 +266,8 @@ private:
     std::unique_ptr<bno055lib::BNO055> imu_driver_;
     bool initialized_;
 
-    bno055lib::BNO055::RawSensorData last_raw_{};
-    bool has_last_raw_{false};
+    bno055lib::BNO055::AllData last_all_data_{};
+    bool has_last_all_data_{false};
 
     rclcpp::Publisher<sensor_msgs::msg::Imu>::SharedPtr imu_pub_;
     rclcpp::Publisher<geometry_msgs::msg::Vector3Stamped>::SharedPtr euler_pub_;
