@@ -135,7 +135,7 @@ private:
         kd_ = this->declare_parameter("kd", 0.05);
         integral_limit_rad_s_ = this->declare_parameter("max_i_term", 0.5);
 
-        double deadband_deg = this->declare_parameter("deadband_deg", 0.02);
+        double deadband_deg = this->declare_parameter("deadband_deg", 0.01);
         heading_deadband_rad_ = deadband_deg * M_PI / 180.0;
 
         rotation_input_deadband_rad_s_ = this->declare_parameter("angular_deadband", 0.02);
@@ -239,9 +239,9 @@ private:
         double yaw_rad = 0.0;
         tf2::Matrix3x3(quaternion).getRPY(roll_rad, pitch_rad, yaw_rad);
 
-        // 100% exactly matching heading_hold_node.cpp line 209
+        // Proven Coordinate Alignment (matching heading_hold_node)
         current_yaw_rad_ = -yaw_rad;
-        current_angular_velocity_z_rad_s_ = message.angular_velocity.z;
+        current_angular_velocity_z_rad_s_ = -message.angular_velocity.z;
         last_imu_time_ = this->now();
     }
 
