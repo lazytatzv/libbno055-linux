@@ -294,10 +294,11 @@ private:
         const bool imu_is_fresh = last_imu_time_.nanoseconds() != 0 &&
                                   (current_time - last_imu_time_).nanoseconds() <= imu_timeout_ms_ * 1000000LL;
         if (!imu_is_fresh) {
+            // Immediate failsafe: stop spinning, pass through raw joystick input
             corrected_command_pub_->publish(latest_command_);
             reset_heading_hold();
-            RCLCPP_WARN_THROTTLE(this->get_logger(), *this->get_clock(), 2000,
-                                 "IMU data is unavailable; passing through the upstream cmd_vel without correction");
+            RCLCPP_WARN_THROTTLE(this->get_logger(), *this->get_clock(), 1000,
+                                 "IMU data is unavailable; passing through upstream cmd_vel without correction");
             return;
         }
 
@@ -319,6 +320,8 @@ private:
             target_yaw_rad_ = current_yaw_rad_;
             target_yaw_initialized_ = true;
             integral_error_rad_s_ = 0.0;
+            RCLCPP_INFO(this->get_logger(), "[HeadingControl] Re-locked heading target to %+.1f°",
+                        target_yaw_rad_ * 180.0 / M_PI);
         }
 
         const double safe_dt_s = dt_s > 0.0 && dt_s < 0.5 ? dt_s : static_cast<double>(control_period_ms_) / 1000.0;
@@ -428,7 +431,7 @@ private:
     double max_correction_rad_s_{1.5};
     int control_period_ms_{10};
     int command_timeout_ms_{500};
-    int imu_timeout_ms_{250};
+    int imu_timeout_ms_{50};
     int command_qos_depth_{10};
     std::string raw_cmd_vel_topic_;
     std::string imu_topic_;
