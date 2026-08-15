@@ -307,8 +307,7 @@ private:
 
         // 100% exactly matching heading_hold_node.cpp line 274
         const double correction_rad_s =
-            std::clamp(kp_ * heading_error_rad + ki_ * integral_error_rad_s_ -
-                       kd_ * current_angular_velocity_z_rad_s_,
+            std::clamp(kp_ * heading_error_rad + ki_ * integral_error_rad_s_ - kd_ * current_angular_velocity_z_rad_s_,
                        -max_correction_rad_s_, max_correction_rad_s_);
 
         auto corrected_command = latest_command_;
