@@ -255,7 +255,8 @@ private:
             const double yaw_step = std::abs(normalize_angle(new_yaw_rad - current_yaw_rad_));
             if (yaw_step > (15.0 * M_PI / 180.0)) {
                 RCLCPP_INFO(this->get_logger(),
-                            "[HeadingControl] Detected IMU source transition / angle jump (%.1f°). Shockless re-locking target.",
+                            "[HeadingControl] Detected IMU source transition / angle jump (%.1f°). Shockless "
+                            "re-locking target.",
                             yaw_step * 180.0 / M_PI);
                 reset_heading_hold();
             }
