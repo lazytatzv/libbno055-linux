@@ -239,7 +239,8 @@ private:
         double yaw_rad = 0.0;
         tf2::Matrix3x3(quaternion).getRPY(roll_rad, pitch_rad, yaw_rad);
 
-        current_yaw_rad_ = yaw_rad;
+        // Proven Yaw Negation (matching heading_hold_node)
+        current_yaw_rad_ = -yaw_rad;
         current_angular_velocity_z_rad_s_ = message.angular_velocity.z;
         last_imu_time_ = this->now();
     }
