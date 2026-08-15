@@ -15,15 +15,15 @@ bno055_heading_control_node:
     # 2. Control Gains (Proven PID Architecture matching heading_hold_node)
     # --------------------------------------------------------------------------
     kp: 4.0                            # Proportional Gain (Restoring force)
-    ki: 0.0                            # Integral Gain
+    ki: 0.0                            # Integral Gain (Set to 0.0 to eliminate overshoot drift)
     kd: 0.05                           # Derivative Gain (Direct Gyro-Z braking)
     kff: 0.0                           # Feedforward Gain
     max_i_term: 0.5                    # Anti-windup integral saturation limit (+-0.5)
     max_output: 1.5                    # Maximum angular velocity correction limit (rad/s)
-    deadband_deg: 0.02                 # Micro-deadband (degrees) to eliminate hunting
+    deadband_deg: 0.02                 # Micro-deadband (degrees)
     cutoff_freq_hz: 20.0               # 1st-Order Low-Pass Filter cutoff frequency (Hz)
     max_slew_rate: 0.0                 # Max change rate of output (rad/s^2)
-    angular_deadband: 0.02             # Turning threshold (rad/s) to disengage heading lock
+    angular_deadband: 0.05             # Turning threshold (rad/s) to disengage heading lock (ignores analog stick drift)
 
     # --------------------------------------------------------------------------
     # 3. IMU Coordinate Alignment & Adaptive Scaling
