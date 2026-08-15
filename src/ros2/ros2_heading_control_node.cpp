@@ -247,9 +247,23 @@ private:
         tf2::Matrix3x3(quaternion).getRPY(roll_rad, pitch_rad, yaw_rad);
 
         // Proven Coordinate Alignment (matching heading_hold_node)
-        current_yaw_rad_ = -yaw_rad;
+        const double new_yaw_rad = -yaw_rad;
+        const auto now_time = this->now();
+
+        // Discontinuity / Source-switch detection (e.g. step jump > 15 deg within 50ms)
+        if (target_yaw_initialized_ && (now_time - last_imu_time_).nanoseconds() <= 50000000LL) {
+            const double yaw_step = std::abs(normalize_angle(new_yaw_rad - current_yaw_rad_));
+            if (yaw_step > (15.0 * M_PI / 180.0)) {
+                RCLCPP_INFO(this->get_logger(),
+                            "[HeadingControl] Detected IMU source transition / angle jump (%.1f°). Shockless re-locking target.",
+                            yaw_step * 180.0 / M_PI);
+                reset_heading_hold();
+            }
+        }
+
+        current_yaw_rad_ = new_yaw_rad;
         current_angular_velocity_z_rad_s_ = -message.angular_velocity.z;
-        last_imu_time_ = this->now();
+        last_imu_time_ = now_time;
     }
 
     void reset_heading_hold() {
