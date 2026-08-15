@@ -226,36 +226,43 @@ private:
         last_imu_time_ = now;
         has_imu_data_ = true;
         is_imu_timeout_ = false;
-
         current_quat_ = q;
 
+        double roll_rad = 0.0;
+        double pitch_rad = 0.0;
         double yaw_rad = 0.0;
-        double gyro_rate_rad = 0.0;
 
         if (yaw_axis_ == "x") {
-            // Roll as Yaw
             const double sinr_cosp = 2.0 * (q.w * q.x + q.y * q.z);
             const double cosr_cosp = 1.0 - 2.0 * (q.x * q.x + q.y * q.y);
             yaw_rad = std::atan2(sinr_cosp, cosr_cosp);
-            gyro_rate_rad = msg->angular_velocity.x;
+            gyro_z_rad_s_ = msg->angular_velocity.x;
         } else if (yaw_axis_ == "y") {
-            // Pitch as Yaw
             const double sinp = 2.0 * (q.w * q.y - q.z * q.x);
             if (std::abs(sinp) >= 1.0)
                 yaw_rad = std::copysign(M_PI / 2.0, sinp);
             else
                 yaw_rad = std::asin(sinp);
-            gyro_rate_rad = msg->angular_velocity.y;
+            gyro_z_rad_s_ = msg->angular_velocity.y;
         } else {
-            // Z as Yaw (default)
+            // Z as Yaw (default) - exactly matching proven heading_hold_node
             const double siny_cosp = 2.0 * (q.w * q.z + q.x * q.y);
             const double cosy_cosp = 1.0 - 2.0 * (q.y * q.y + q.z * q.z);
             yaw_rad = std::atan2(siny_cosp, cosy_cosp);
-            gyro_rate_rad = msg->angular_velocity.z;
+            gyro_z_rad_s_ = msg->angular_velocity.z;
         }
 
-        current_heading_deg_ = yaw_rad * bno055lib::RAD_TO_DEG;
-        gyro_z_deg_ = gyro_rate_rad * bno055lib::RAD_TO_DEG;
+        // Apply proven Yaw negation for robot frame alignment
+        current_yaw_rad_ = -yaw_rad;
+        current_heading_deg_ = current_yaw_rad_ * bno055lib::RAD_TO_DEG;
+        gyro_z_deg_ = gyro_z_rad_s_ * bno055lib::RAD_TO_DEG;
+
+        if (!target_heading_initialized_) {
+            target_yaw_rad_ = current_yaw_rad_;
+            target_heading_deg_ = current_heading_deg_;
+            target_heading_initialized_ = true;
+            target_heading_locked_ = true;
+        }
     }
 
     void cmdVelInCallback(const geometry_msgs::msg::Twist::SharedPtr msg) {
@@ -277,54 +284,45 @@ private:
 
         const double deadband = this->get_parameter("angular_deadband").as_double();
         const bool is_commanded_to_turn = std::abs(msg->angular.z) > deadband;
-        const bool is_translating =
-            (std::abs(msg->linear.x) > 0.01 || std::abs(msg->linear.y) > 0.01 || std::abs(msg->linear.z) > 0.01);
 
         if (is_commanded_to_turn || !has_imu_data_ || is_imu_timeout_) {
             target_heading_locked_ = false;
-            target_quat_ = current_quat_;
+            target_yaw_rad_ = current_yaw_rad_;
             target_heading_deg_ = current_heading_deg_;
-            controller_.reset();
+            integral_error_rad_s_ = 0.0;
             out_twist->angular = msg->angular;  // Fail-Safe Passthrough
-            last_correction_ = 0.0;
-            last_error_deg_ = 0.0;
-        } else if (!is_translating) {
-            // When not translating, do not apply correction to avoid creeping due to sensor drift
-            controller_.reset();
-            out_twist->angular.z = 0.0;
             last_correction_ = 0.0;
             last_error_deg_ = 0.0;
         } else {
             if (!target_heading_locked_) {
-                // Wait until the physical rotation speed (from gyro) drops below a threshold
-                // to prevent overshoot/snap-back caused by robot inertia and IMU latency.
-                const double stop_threshold_deg = 5.0;  // deg/s
-                if (std::abs(gyro_z_deg_) < stop_threshold_deg || !has_imu_data_ || is_imu_timeout_) {
-                    target_quat_ = current_quat_;
-                    target_heading_deg_ = current_heading_deg_;
-                    target_heading_locked_ = true;
-                } else {
-                    target_quat_ = current_quat_;
-                    target_heading_deg_ = current_heading_deg_;
-                }
+                target_yaw_rad_ = current_yaw_rad_;
+                target_heading_deg_ = current_heading_deg_;
+                target_heading_locked_ = true;
+                integral_error_rad_s_ = 0.0;
             }
 
-            if (target_heading_locked_) {
-                auto out = controller_.update(target_quat_, current_quat_, dt, gyro_z_deg_, msg->linear.x);
-
-                // Scale the PID correction output by the velocity factor to match JoyDriverNode logic
-                const double velocity_magnitude =
-                    std::sqrt(msg->linear.x * msg->linear.x + msg->linear.y * msg->linear.y);
-                const double velocity_factor = std::clamp(velocity_magnitude / max_translation_speed_, 0.3, 1.0);
-
-                out_twist->angular.z = out.correction * velocity_factor;
-                last_correction_ = out_twist->angular.z;
-                last_error_deg_ = out.error_deg;
-            } else {
-                out_twist->angular.z = 0.0;
-                last_correction_ = 0.0;
-                last_error_deg_ = 0.0;
+            // Proven PID Calculation (matching heading_hold_node)
+            const double deadband_rad = this->get_parameter("deadband_deg").as_double() * bno055lib::DEG_TO_RAD;
+            double heading_error_rad = std::remainder(target_yaw_rad_ - current_yaw_rad_, 2.0 * M_PI);
+            if (std::abs(heading_error_rad) < deadband_rad) {
+                heading_error_rad = 0.0;
             }
+
+            const double max_i = this->get_parameter("max_i_term").as_double();
+            const double ki = this->get_parameter("ki").as_double();
+            const double kp = this->get_parameter("kp").as_double();
+            const double kd = this->get_parameter("kd").as_double();
+            const double max_out = this->get_parameter("max_output").as_double();
+
+            integral_error_rad_s_ = std::clamp(integral_error_rad_s_ + heading_error_rad * dt, -max_i, max_i);
+
+            const double correction_rad_s = std::clamp(
+                kp * heading_error_rad + ki * integral_error_rad_s_ - kd * gyro_z_rad_s_,
+                -max_out, max_out);
+
+            out_twist->angular.z = correction_rad_s;
+            last_correction_ = correction_rad_s;
+            last_error_deg_ = heading_error_rad * bno055lib::RAD_TO_DEG;
         }
 
         RCLCPP_INFO_THROTTLE(this->get_logger(), *this->get_clock(), 500,
@@ -430,18 +428,23 @@ private:
     rclcpp::Time last_imu_time_;
     bno055lib::Quat current_quat_;
     bno055lib::Quat target_quat_;
-    double current_heading_deg_;
-    double gyro_z_deg_;
-    double target_heading_deg_;
-    bool target_heading_locked_;
-    bool has_imu_data_;
-    bool has_cmd_vel_in_;
-    bool is_watchdog_triggered_;
-    bool is_imu_timeout_;
-    double last_correction_;
-    double last_error_deg_;
-    std::string yaw_axis_;
-    double max_translation_speed_;
+    double current_yaw_rad_{0.0};
+    double target_yaw_rad_{0.0};
+    double gyro_z_rad_s_{0.0};
+    double integral_error_rad_s_{0.0};
+    double current_heading_deg_{0.0};
+    double gyro_z_deg_{0.0};
+    double target_heading_deg_{0.0};
+    bool target_heading_initialized_{false};
+    bool target_heading_locked_{false};
+    bool has_imu_data_{false};
+    bool has_cmd_vel_in_{false};
+    bool is_watchdog_triggered_{false};
+    bool is_imu_timeout_{false};
+    double last_correction_{0.0};
+    double last_error_deg_{0.0};
+    std::string yaw_axis_{"z"};
+    double max_translation_speed_{1.0};
 };
 
 }  // namespace bno055_ros2

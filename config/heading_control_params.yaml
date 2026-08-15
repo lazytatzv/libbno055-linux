@@ -7,28 +7,28 @@ bno055_heading_control_node:
     # --------------------------------------------------------------------------
     # 1. Topic Configuration & Passthrough Pipeline
     # --------------------------------------------------------------------------
-    imu_topic: "imu/data"             # Input IMU topic from BNO055 driver
-    cmd_vel_in_topic: "cmd_vel_in"     # Raw input velocity command (Teleop / Nav2)
-    cmd_vel_out_topic: "cmd_vel"       # Corrected output velocity command for motors
+    imu_topic: "imu/data"                          # Input IMU topic from BNO055 driver
+    cmd_vel_in_topic: "/drive/cmd_vel"             # Raw input velocity command from joy_controller
+    cmd_vel_out_topic: "/mecanum/cmd_vel_heading"  # Corrected output velocity command for mecanum
 
     # --------------------------------------------------------------------------
-    # 2. Control Gains (FF + PID + Filter Architecture)
+    # 2. Control Gains (Proven PID Architecture matching heading_hold_node)
     # --------------------------------------------------------------------------
-    kp: 0.05                           # Proportional Gain (Initial correction force)
-    ki: 0.001                          # Integral Gain (Long-term friction bias compensation - Trapezoidal Rule)
-    kd: 0.01                           # Derivative Gain (Direct Gyro-based anti-slip braking)
-    kff: 0.0                           # Feedforward Gain (Direct command velocity coupling)
-    max_i_term: 0.2                    # Anti-windup integral saturation limit (+-0.2)
-    max_output: 1.0                    # Maximum angular velocity correction limit (rad/s)
-    deadband_deg: 0.02                 # Micro-deadband (degrees) to eliminate hunting at zero error
-    cutoff_freq_hz: 20.0               # 1st-Order Low-Pass Filter cutoff frequency for gyro noise (Hz)
-    max_slew_rate: 2.0                 # Max change rate of output (rad/s^2) to prevent motor/wheel slip shock (0.0 = disabled)
-    angular_deadband: 0.01             # Turning threshold (rad/s) to disengage heading lock
+    kp: 4.0                            # Proportional Gain (Restoring force)
+    ki: 0.0                            # Integral Gain
+    kd: 0.05                           # Derivative Gain (Direct Gyro-Z braking)
+    kff: 0.0                           # Feedforward Gain
+    max_i_term: 0.5                    # Anti-windup integral saturation limit (+-0.5)
+    max_output: 1.5                    # Maximum angular velocity correction limit (rad/s)
+    deadband_deg: 0.02                 # Micro-deadband (degrees) to eliminate hunting
+    cutoff_freq_hz: 20.0               # 1st-Order Low-Pass Filter cutoff frequency (Hz)
+    max_slew_rate: 0.0                 # Max change rate of output (rad/s^2)
+    angular_deadband: 0.02             # Turning threshold (rad/s) to disengage heading lock
 
     # --------------------------------------------------------------------------
     # 3. IMU Coordinate Alignment & Adaptive Scaling
     # --------------------------------------------------------------------------
-    yaw_axis: "x"                      # Axis corresponding to physical Yaw rotation ("x", "y", or "z")
+    yaw_axis: "z"                      # Axis corresponding to physical Yaw rotation ("z", "x", or "y")
     max_translation_speed: 1.0         # Max expected speed (m/s) to scale down correction at low speeds
 
     # --------------------------------------------------------------------------
