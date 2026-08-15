@@ -693,7 +693,7 @@ public:
             diagnostics_.read_failures++;
         }
 
-        log(LogLevel::Warning, "I2C/UART readLen transient drop (holding last state)");
+        log(LogLevel::Warning, "I2C/UART readLen drop (frame skipped)");
         return false;
     }
 };
