@@ -49,7 +49,7 @@ class BNO055PublisherNode : public rclcpp::Node {
 public:
     explicit BNO055PublisherNode(const rclcpp::NodeOptions& options = rclcpp::NodeOptions())
         : Node("bno055_publisher_node", options), initialized_(false) {
-        this->declare_parameter<std::string>("device", "/dev/i2c-1");
+        this->declare_parameter<std::string>("device", "/dev/i2c-5");
         this->declare_parameter<int>("address", 0x28);
         this->declare_parameter<int>("publish_rate_hz", 100);
         this->declare_parameter<std::string>("frame_id", "imu_link");
