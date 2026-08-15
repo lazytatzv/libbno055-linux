@@ -156,8 +156,7 @@ private:
         const auto& accel = all_data.accel;
 
         // Outlier check for NaN/Inf
-        if (BNO055_UNLIKELY(std::isnan(quat.w) || std::isnan(quat.x) || std::isnan(quat.y) ||
-                            std::isnan(quat.z))) {
+        if (BNO055_UNLIKELY(std::isnan(quat.w) || std::isnan(quat.x) || std::isnan(quat.y) || std::isnan(quat.z))) {
             RCLCPP_WARN_THROTTLE(this->get_logger(), *this->get_clock(), 2000,
                                  "Corrupted IMU data from I2C/UART dropped.");
             return;
