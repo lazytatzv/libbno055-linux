@@ -1,20 +1,26 @@
 #include <pthread.h>
+#include <rclcpp/version.h>
 #include <sched.h>
 
 #include <algorithm>
 #include <chrono>
 #include <cmath>
+#include <diagnostic_msgs/msg/diagnostic_array.hpp>
+#include <diagnostic_msgs/msg/diagnostic_status.hpp>
+#include <diagnostic_msgs/msg/key_value.hpp>
+#include <geometry_msgs/msg/twist.hpp>
 #include <memory>
+#include <rcl_interfaces/msg/set_parameters_result.hpp>
+#include <rclcpp/executors/multi_threaded_executor.hpp>
+#include <rclcpp/rclcpp.hpp>
+#ifdef BNO055_ROS2_BUILDING_COMPONENT
+#include <rclcpp_components/register_node_macro.hpp>
+#endif
+#include <sensor_msgs/msg/imu.hpp>
+#include <std_srvs/srv/trigger.hpp>
 #include <string>
 #include <vector>
 
-#include "geometry_msgs/msg/twist.hpp"
-#include "rcl_interfaces/msg/set_parameters_result.hpp"
-#include "rclcpp/rclcpp.hpp"
-#ifdef BNO055_ROS2_BUILDING_COMPONENT
-#include "rclcpp_components/register_node_macro.hpp"
-#endif
-#include "sensor_msgs/msg/imu.hpp"
 #include "tf2/LinearMath/Matrix3x3.h"
 #include "tf2/LinearMath/Quaternion.h"
 #include "tf2_geometry_msgs/tf2_geometry_msgs.hpp"
@@ -48,27 +54,77 @@ inline void trySetRealtimePriority(rclcpp::Logger logger, int priority = 80) noe
 class BNO055HeadingControlNode : public rclcpp::Node {
 public:
     explicit BNO055HeadingControlNode(const rclcpp::NodeOptions& options = rclcpp::NodeOptions())
-        : Node("bno055_heading_control_node", options) {
+        : Node("bno055_heading_control_node", options),
+          last_command_time_{0, 0, RCL_ROS_TIME},
+          last_imu_time_{0, 0, RCL_ROS_TIME},
+          last_control_time_{0, 0, RCL_ROS_TIME},
+          current_yaw_rad_{0.0},
+          current_angular_velocity_z_rad_s_{0.0},
+          target_yaw_rad_{0.0},
+          integral_error_rad_s_{0.0},
+          target_yaw_initialized_{false},
+          cmd_vel_timeout_logged_{false},
+          last_correction_{0.0},
+          last_error_deg_{0.0} {
         trySetRealtimePriority(this->get_logger(), 80);
         configure_parameters();
 
+        // 1. Callback Groups Isolation (High-Frequency Control vs Low-Priority Admin)
+        control_cb_group_ = this->create_callback_group(rclcpp::CallbackGroupType::MutuallyExclusive);
+        admin_cb_group_ = this->create_callback_group(rclcpp::CallbackGroupType::MutuallyExclusive);
+
+        auto control_sub_options = rclcpp::SubscriptionOptions();
+        control_sub_options.callback_group = control_cb_group_;
+
+        // 2. Subscriptions & Publishers
         command_sub_ = this->create_subscription<geometry_msgs::msg::Twist>(
             raw_cmd_vel_topic_, rclcpp::QoS(command_qos_depth_),
-            [this](const geometry_msgs::msg::Twist::SharedPtr message) { receive_command(*message); });
+            [this](const geometry_msgs::msg::Twist::SharedPtr message) { receive_command(*message); },
+            control_sub_options);
 
         imu_sub_ = this->create_subscription<sensor_msgs::msg::Imu>(
             imu_topic_, rclcpp::SensorDataQoS(),
-            [this](const sensor_msgs::msg::Imu::SharedPtr message) { receive_imu(*message); });
+            [this](const sensor_msgs::msg::Imu::SharedPtr message) { receive_imu(*message); },
+            control_sub_options);
 
         corrected_command_pub_ = this->create_publisher<geometry_msgs::msg::Twist>(
             corrected_cmd_vel_topic_, rclcpp::QoS(command_qos_depth_));
 
+        diag_pub_ = this->create_publisher<diagnostic_msgs::msg::DiagnosticArray>("diagnostics", rclcpp::QoS(1));
+
+        // 3. Trigger Service (Admin Callback Group)
+        reset_heading_srv_ = this->create_service<std_srvs::srv::Trigger>(
+            "~/reset_heading",
+            [this](const std::shared_ptr<std_srvs::srv::Trigger::Request> /*req*/,
+                   std::shared_ptr<std_srvs::srv::Trigger::Response> res) {
+                target_yaw_rad_ = current_yaw_rad_;
+                target_yaw_initialized_ = true;
+                integral_error_rad_s_ = 0.0;
+                res->success = true;
+                res->message = "Heading target reset to: " + std::to_string(target_yaw_rad_ * 180.0 / M_PI) + " deg";
+                RCLCPP_INFO(this->get_logger(), "%s", res->message.c_str());
+            },
+#if RCLCPP_VERSION_MAJOR >= 28
+            rclcpp::ServicesQoS(),
+#else
+            rmw_qos_profile_services_default,
+#endif
+            admin_cb_group_);
+
+        // 4. Dynamic Parameter Callback
         parameter_callback_ = this->add_on_set_parameters_callback(
             [this](const std::vector<rclcpp::Parameter> & parameters) { return update_parameters(parameters); });
 
+        // 5. Control Timer (50Hz / 100Hz - Control Callback Group)
         last_control_time_ = this->now();
         control_timer_ = this->create_wall_timer(
-            std::chrono::milliseconds(control_period_ms_), [this]() { control(); });
+            std::chrono::milliseconds(control_period_ms_), [this]() { control(); }, control_cb_group_);
+
+        // 6. Diagnostics Timer (1Hz - Admin Callback Group)
+        if (this->get_parameter("enable_diagnostics").as_bool()) {
+            diag_timer_ = this->create_wall_timer(
+                std::chrono::seconds(1), [this]() { publish_diagnostics(); }, admin_cb_group_);
+        }
 
         RCLCPP_INFO(this->get_logger(),
                     "BNO055 Heading Hold: input=%s output=%s imu=%s (Period: %d ms, Kp=%.2f, Kd=%.3f)",
@@ -93,6 +149,7 @@ private:
         imu_topic_ = this->declare_parameter<std::string>("imu_topic", "/imu/data");
         corrected_cmd_vel_topic_ =
             this->declare_parameter<std::string>("corrected_cmd_vel_topic", "/mecanum/cmd_vel_heading");
+        this->declare_parameter<bool>("enable_diagnostics", true);
     }
 
     rcl_interfaces::msg::SetParametersResult update_parameters(const std::vector<rclcpp::Parameter> & parameters) {
@@ -124,6 +181,8 @@ private:
                 next_rotation_deadband = parameter.as_double();
             } else if (name == "max_correction_rad_s") {
                 next_max_correction = parameter.as_double();
+            } else if (name == "enable_diagnostics") {
+                // allow dynamic boolean change
             } else {
                 return result;
             }
@@ -224,6 +283,8 @@ private:
             target_yaw_initialized_ = true;
             integral_error_rad_s_ = 0.0;
             corrected_command_pub_->publish(latest_command_);
+            last_correction_ = latest_command_.angular.z;
+            last_error_deg_ = 0.0;
             return;
         }
 
@@ -236,6 +297,8 @@ private:
         const double safe_dt_s =
             dt_s > 0.0 && dt_s < 0.5 ? dt_s : static_cast<double>(control_period_ms_) / 1000.0;
         double heading_error_rad = normalize_angle(target_yaw_rad_ - current_yaw_rad_);
+        last_error_deg_ = heading_error_rad * 180.0 / M_PI;
+
         if (std::abs(heading_error_rad) < heading_deadband_rad_) {
             heading_error_rad = 0.0;
         }
@@ -249,25 +312,74 @@ private:
 
         auto corrected_command = latest_command_;
         corrected_command.angular.z = correction_rad_s;
+        last_correction_ = correction_rad_s;
         corrected_command_pub_->publish(corrected_command);
+    }
+
+    void publish_diagnostics() {
+        auto diag_arr = std::make_unique<diagnostic_msgs::msg::DiagnosticArray>();
+        diag_arr->header.stamp = this->now();
+
+        diagnostic_msgs::msg::DiagnosticStatus status;
+        status.name = "libbno055_linux: Heading Controller";
+        status.hardware_id = "BNO055_PID_Controller";
+
+        const bool imu_fresh = last_imu_time_.nanoseconds() != 0 &&
+                               (this->now() - last_imu_time_).nanoseconds() <= imu_timeout_ms_ * 1000000LL;
+        if (!imu_fresh) {
+            status.level = diagnostic_msgs::msg::DiagnosticStatus::WARN;
+            status.message = "IMU data timed out or unavailable";
+        } else if (target_yaw_initialized_) {
+            status.level = diagnostic_msgs::msg::DiagnosticStatus::OK;
+            status.message = "Heading Locked (Active Stabilization)";
+        } else {
+            status.level = diagnostic_msgs::msg::DiagnosticStatus::OK;
+            status.message = "Operational (Manual Turning)";
+        }
+
+        auto add_kv = [&status](const std::string& k, const std::string& v) {
+            diagnostic_msgs::msg::KeyValue kv;
+            kv.key = k;
+            kv.value = v;
+            status.values.push_back(kv);
+        };
+
+        add_kv("Target Yaw (deg)", std::to_string(target_yaw_rad_ * 180.0 / M_PI));
+        add_kv("Current Yaw (deg)", std::to_string(current_yaw_rad_ * 180.0 / M_PI));
+        add_kv("Heading Error (deg)", std::to_string(last_error_deg_));
+        add_kv("PID Correction Output (rad/s)", std::to_string(last_correction_));
+        add_kv("Gyro Angular Velocity Z (rad/s)", std::to_string(current_angular_velocity_z_rad_s_));
+        add_kv("Heading Locked", target_yaw_initialized_ ? "True" : "False");
+        add_kv("IMU Fresh", imu_fresh ? "True" : "False");
+
+        diag_arr->status.push_back(status);
+        diag_pub_->publish(std::move(diag_arr));
     }
 
     rclcpp::Subscription<geometry_msgs::msg::Twist>::SharedPtr command_sub_;
     rclcpp::Subscription<sensor_msgs::msg::Imu>::SharedPtr imu_sub_;
     rclcpp::Publisher<geometry_msgs::msg::Twist>::SharedPtr corrected_command_pub_;
+    rclcpp::Publisher<diagnostic_msgs::msg::DiagnosticArray>::SharedPtr diag_pub_;
+    rclcpp::Service<std_srvs::srv::Trigger>::SharedPtr reset_heading_srv_;
     rclcpp::TimerBase::SharedPtr control_timer_;
+    rclcpp::TimerBase::SharedPtr diag_timer_;
     rclcpp::node_interfaces::OnSetParametersCallbackHandle::SharedPtr parameter_callback_;
 
+    rclcpp::CallbackGroup::SharedPtr control_cb_group_;
+    rclcpp::CallbackGroup::SharedPtr admin_cb_group_;
+
     geometry_msgs::msg::Twist latest_command_;
-    rclcpp::Time last_command_time_{0, 0, RCL_ROS_TIME};
-    rclcpp::Time last_imu_time_{0, 0, RCL_ROS_TIME};
-    rclcpp::Time last_control_time_{0, 0, RCL_ROS_TIME};
-    double current_yaw_rad_{0.0};
-    double current_angular_velocity_z_rad_s_{0.0};
-    double target_yaw_rad_{0.0};
-    double integral_error_rad_s_{0.0};
-    bool target_yaw_initialized_{false};
-    bool cmd_vel_timeout_logged_{false};
+    rclcpp::Time last_command_time_;
+    rclcpp::Time last_imu_time_;
+    rclcpp::Time last_control_time_;
+    double current_yaw_rad_;
+    double current_angular_velocity_z_rad_s_;
+    double target_yaw_rad_;
+    double integral_error_rad_s_;
+    bool target_yaw_initialized_;
+    bool cmd_vel_timeout_logged_;
+    double last_correction_;
+    double last_error_deg_;
 
     double kp_{4.0};
     double ki_{0.0};
@@ -292,7 +404,10 @@ RCLCPP_COMPONENTS_REGISTER_NODE(bno055_ros2::BNO055HeadingControlNode)
 #else
 int main(int argc, char ** argv) {
     rclcpp::init(argc, argv);
-    rclcpp::spin(std::make_shared<bno055_ros2::BNO055HeadingControlNode>());
+    auto node = std::make_shared<bno055_ros2::BNO055HeadingControlNode>();
+    rclcpp::executors::MultiThreadedExecutor executor(rclcpp::ExecutorOptions(), 2);
+    executor.add_node(node);
+    executor.spin();
     rclcpp::shutdown();
     return 0;
 }
