@@ -146,6 +146,7 @@ private:
         heading_deadband_rad_ = deadband_deg * M_PI / 180.0;
 
         rotation_input_deadband_rad_s_ = this->declare_parameter("angular_deadband", 0.08);
+        turn_relock_delay_ms_ = static_cast<int>(this->declare_parameter("turn_relock_delay", 0.2) * 1000.0);
         max_correction_rad_s_ = this->declare_parameter("max_output", 1.5);
         control_period_ms_ = 10;
         command_timeout_ms_ = static_cast<int>(this->declare_parameter("cmd_vel_timeout", 0.5) * 1000.0);
@@ -170,6 +171,7 @@ private:
         double next_integral_limit = integral_limit_rad_s_;
         double next_heading_deadband = heading_deadband_rad_;
         double next_rotation_deadband = rotation_input_deadband_rad_s_;
+        int next_turn_relock_delay_ms = turn_relock_delay_ms_;
         double next_max_correction = max_correction_rad_s_;
 
         for (const auto& parameter : parameters) {
@@ -186,6 +188,8 @@ private:
                 next_heading_deadband = parameter.as_double() * M_PI / 180.0;
             } else if (name == "angular_deadband") {
                 next_rotation_deadband = parameter.as_double();
+            } else if (name == "turn_relock_delay") {
+                next_turn_relock_delay_ms = static_cast<int>(parameter.as_double() * 1000.0);
             } else if (name == "max_output") {
                 next_max_correction = parameter.as_double();
             }
@@ -195,7 +199,7 @@ private:
             !std::isfinite(next_integral_limit) || !std::isfinite(next_heading_deadband) ||
             !std::isfinite(next_rotation_deadband) || !std::isfinite(next_max_correction) || next_kp < 0.0 ||
             next_ki < 0.0 || next_kd < 0.0 || next_integral_limit < 0.0 || next_heading_deadband < 0.0 ||
-            next_rotation_deadband < 0.0 || next_max_correction <= 0.0) {
+            next_rotation_deadband < 0.0 || next_turn_relock_delay_ms < 0 || next_max_correction <= 0.0) {
             result.reason = "PID gains and limits must be finite and non-negative";
             return result;
         }
@@ -206,6 +210,7 @@ private:
         integral_limit_rad_s_ = next_integral_limit;
         heading_deadband_rad_ = next_heading_deadband;
         rotation_input_deadband_rad_s_ = next_rotation_deadband;
+        turn_relock_delay_ms_ = next_turn_relock_delay_ms;
         max_correction_rad_s_ = next_max_correction;
         result.successful = true;
         result.reason = "success";
@@ -270,6 +275,7 @@ private:
     void reset_heading_hold() {
         target_yaw_initialized_ = false;
         integral_error_rad_s_ = 0.0;
+        last_manual_turn_time_ = rclcpp::Time(0, 0, RCL_ROS_TIME);
     }
 
     void control() {
@@ -307,8 +313,9 @@ private:
 
         if (std::abs(latest_command_.angular.z) > rotation_input_deadband_rad_s_) {
             target_yaw_rad_ = current_yaw_rad_;
-            target_yaw_initialized_ = true;
+            target_yaw_initialized_ = false;
             integral_error_rad_s_ = 0.0;
+            last_manual_turn_time_ = current_time;
             corrected_command_pub_->publish(latest_command_);
             last_correction_ = latest_command_.angular.z;
             last_error_deg_ = 0.0;
@@ -316,6 +323,18 @@ private:
             RCLCPP_DEBUG_THROTTLE(this->get_logger(), *this->get_clock(), 500,
                                   "[HeadingControl] MANUAL_TURN | In(Wz=%+.2f rad/s) | New Target Yaw: %+.1f°",
                                   latest_command_.angular.z, current_yaw_rad_ * 180.0 / M_PI);
+            return;
+        }
+
+        // Settling delay after manual turning: allow inertia to settle before re-locking heading
+        if (last_manual_turn_time_.nanoseconds() != 0 &&
+            (current_time - last_manual_turn_time_).nanoseconds() < turn_relock_delay_ms_ * 1000000LL) {
+            target_yaw_rad_ = current_yaw_rad_;
+            target_yaw_initialized_ = false;
+            integral_error_rad_s_ = 0.0;
+            corrected_command_pub_->publish(latest_command_);
+            last_correction_ = latest_command_.angular.z;
+            last_error_deg_ = 0.0;
             return;
         }
 
@@ -419,6 +438,7 @@ private:
     rclcpp::Time last_command_time_;
     rclcpp::Time last_imu_time_;
     rclcpp::Time last_control_time_;
+    rclcpp::Time last_manual_turn_time_{0, 0, RCL_ROS_TIME};
     double current_yaw_rad_;
     double current_angular_velocity_z_rad_s_;
     double target_yaw_rad_;
@@ -435,6 +455,7 @@ private:
     double integral_limit_rad_s_{0.5};
     double heading_deadband_rad_{0.02};
     double rotation_input_deadband_rad_s_{0.02};
+    int turn_relock_delay_ms_{200};
     double max_correction_rad_s_{1.5};
     int control_period_ms_{10};
     int command_timeout_ms_{500};
