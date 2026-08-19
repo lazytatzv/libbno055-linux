@@ -313,9 +313,9 @@ private:
             last_correction_ = latest_command_.angular.z;
             last_error_deg_ = 0.0;
 
-            RCLCPP_INFO_THROTTLE(this->get_logger(), *this->get_clock(), 500,
-                                 "[HeadingControl] MANUAL_TURN | In(Wz=%+.2f rad/s) | New Target Yaw: %+.1f°",
-                                 latest_command_.angular.z, current_yaw_rad_ * 180.0 / M_PI);
+            RCLCPP_DEBUG_THROTTLE(this->get_logger(), *this->get_clock(), 500,
+                                  "[HeadingControl] MANUAL_TURN | In(Wz=%+.2f rad/s) | New Target Yaw: %+.1f°",
+                                  latest_command_.angular.z, current_yaw_rad_ * 180.0 / M_PI);
             return;
         }
 
@@ -323,8 +323,8 @@ private:
             target_yaw_rad_ = current_yaw_rad_;
             target_yaw_initialized_ = true;
             integral_error_rad_s_ = 0.0;
-            RCLCPP_INFO(this->get_logger(), "[HeadingControl] Re-locked heading target to %+.1f°",
-                        target_yaw_rad_ * 180.0 / M_PI);
+            RCLCPP_DEBUG(this->get_logger(), "[HeadingControl] Re-locked heading target to %+.1f°",
+                         target_yaw_rad_ * 180.0 / M_PI);
         }
 
         const double safe_dt_s = dt_s > 0.0 && dt_s < 0.5 ? dt_s : static_cast<double>(control_period_ms_) / 1000.0;
@@ -351,11 +351,11 @@ private:
         const double curr_yaw_deg = current_yaw_rad_ * 180.0 / M_PI;
         const double target_yaw_deg = target_yaw_rad_ * 180.0 / M_PI;
 
-        RCLCPP_INFO_THROTTLE(this->get_logger(), *this->get_clock(), 200,
-                             "[HeadingControl] LOCKED | In(Vx=%.2f, Vy=%.2f) | Yaw: curr=%+.1f° -> target=%+.1f° "
-                             "(err=%+.2f°) | GyroZ=%+.2f | Out: Wz=%+.3f rad/s",
-                             latest_command_.linear.x, latest_command_.linear.y, curr_yaw_deg, target_yaw_deg,
-                             last_error_deg_, current_angular_velocity_z_rad_s_, correction_rad_s);
+        RCLCPP_DEBUG_THROTTLE(this->get_logger(), *this->get_clock(), 2000,
+                              "[HeadingControl] LOCKED | In(Vx=%.2f, Vy=%.2f) | Yaw: curr=%+.1f° -> target=%+.1f° "
+                              "(err=%+.2f°) | GyroZ=%+.2f | Out: Wz=%+.3f rad/s",
+                              latest_command_.linear.x, latest_command_.linear.y, curr_yaw_deg, target_yaw_deg,
+                              last_error_deg_, current_angular_velocity_z_rad_s_, correction_rad_s);
     }
 
     void publish_diagnostics() {
