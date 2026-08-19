@@ -668,7 +668,7 @@ public:
     }
 
     bool readLen(uint8_t reg, uint8_t* buffer, uint8_t len,
-                 int retries = 3) {  // NOLINT(bugprone-easily-swappable-parameters)
+                 int retries = 5) {  // NOLINT(bugprone-easily-swappable-parameters)
         for (int i = 0; i < retries; ++i) {
             {
                 std::lock_guard<std::mutex> lock(mutex_);
@@ -679,22 +679,21 @@ public:
                 }
                 diagnostics_.read_failures++;
             }
-            log(LogLevel::Warning, "I2C/UART readLen failed, retrying...");
-            std::this_thread::sleep_for(std::chrono::milliseconds(5));
+            // BNO055 Clock Stretching buffer during high-speed rotation / fusion calculation
+            std::this_thread::sleep_for(std::chrono::microseconds(500 * (i + 1)));
         }
 
-        bool rec_ok = false;
+        // Quick FD refresh without resetting BNO055 internal fusion calibration
         {
             std::lock_guard<std::mutex> lock(mutex_);
-            rec_ok = reconnect();
-            if (rec_ok) {
-                if (readLen_raw(reg, buffer, len)) {
-                    return true;
-                }
+            close_i2c();
+            if (open_i2c() && readLen_raw(reg, buffer, len)) {
+                return true;
             }
             diagnostics_.read_failures++;
         }
-        log(LogLevel::Error, "I2C/UART readLen failed permanently");
+
+        log(LogLevel::Warning, "I2C/UART readLen drop (frame skipped)");
         return false;
     }
 };
