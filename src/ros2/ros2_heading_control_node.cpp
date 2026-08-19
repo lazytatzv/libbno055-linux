@@ -150,7 +150,7 @@ private:
         max_correction_rad_s_ = this->declare_parameter("max_output", 1.5);
         control_period_ms_ = 10;
         command_timeout_ms_ = static_cast<int>(this->declare_parameter("cmd_vel_timeout", 0.5) * 1000.0);
-        imu_timeout_ms_ = static_cast<int>(this->declare_parameter("imu_timeout", 0.05) * 1000.0);
+        imu_timeout_ms_ = static_cast<int>(this->declare_parameter("imu_timeout", 0.25) * 1000.0);
         command_qos_depth_ = 10;
         raw_cmd_vel_topic_ = this->declare_parameter<std::string>("cmd_vel_in_topic", "/drive/cmd_vel");
         imu_topic_ = this->declare_parameter<std::string>("imu_topic", "/imu/data");
@@ -459,7 +459,7 @@ private:
     double max_correction_rad_s_{1.5};
     int control_period_ms_{10};
     int command_timeout_ms_{500};
-    int imu_timeout_ms_{50};
+    int imu_timeout_ms_{250};
     int command_qos_depth_{10};
     std::string raw_cmd_vel_topic_;
     std::string imu_topic_;

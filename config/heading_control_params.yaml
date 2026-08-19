@@ -36,5 +36,5 @@ bno055_heading_control_node:
     # 4. Safety Watchdog & Fail-Safe Protection
     # --------------------------------------------------------------------------
     cmd_vel_timeout: 0.5               # Command loss timeout (s). Triggers Zero Velocity stop
-    imu_timeout: 0.05                  # IMU loss timeout (s, 50ms). Triggers Fail-Safe Passthrough immediately
+    imu_timeout: 0.25                  # IMU loss timeout (s, 250ms). Prevents false-positive failsafe from CAN jitter
     enable_diagnostics: true           # Publish 1Hz real-time diagnostic status (/diagnostics)
