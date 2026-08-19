@@ -254,28 +254,28 @@
 
 <span class="k">class</span><span class="w"> </span><span class="nc">BNO055DriverNode</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="k">public</span><span class="w"> </span><span class="n">rclcpp_lifecycle</span><span class="o">::</span><span class="n">LifecycleNode</span><span class="w"> </span><span class="p">{</span>
 <span class="k">public</span><span class="o">:</span>
-<span class="w">    </span><span class="n">BNO055DriverNode</span><span class="p">()</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="n">LifecycleNode</span><span class="p">(</span><span class="s">&quot;bno055_driver&quot;</span><span class="p">)</span><span class="w"> </span><span class="p">{}</span>
+<span class="w">    </span><span class="n">BNO055DriverNode</span><span class="p">()</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="n">LifecycleNode</span><span class="p">(</span><span class="s">"bno055_driver"</span><span class="p">)</span><span class="w"> </span><span class="p">{}</span>
 
 <span class="w">    </span><span class="c1">// ---------------------------------------------------------</span>
 <span class="w">    </span><span class="c1">// 1. CONFIGURE: Allocate resources and test I2C connection</span>
 <span class="w">    </span><span class="c1">// ---------------------------------------------------------</span>
 <span class="w">    </span><span class="n">CallbackReturn</span><span class="w"> </span><span class="n">on_configure</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="n">rclcpp_lifecycle</span><span class="o">::</span><span class="n">State</span><span class="w"> </span><span class="o">&amp;</span><span class="p">)</span><span class="w"> </span><span class="k">override</span><span class="w"> </span><span class="p">{</span>
-<span class="w">        </span><span class="n">RCLCPP_INFO</span><span class="p">(</span><span class="n">get_logger</span><span class="p">(),</span><span class="w"> </span><span class="s">&quot;Configuring BNO055 Hardware...&quot;</span><span class="p">);</span>
+<span class="w">        </span><span class="n">RCLCPP_INFO</span><span class="p">(</span><span class="n">get_logger</span><span class="p">(),</span><span class="w"> </span><span class="s">"Configuring BNO055 Hardware..."</span><span class="p">);</span>
 <span class="w">        </span>
-<span class="w">        </span><span class="n">imu_</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">make_unique</span><span class="o">&lt;</span><span class="n">bno055lib</span><span class="o">::</span><span class="n">BNO055</span><span class="o">&gt;</span><span class="p">(</span><span class="mh">0x28</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;/dev/i2c-1&quot;</span><span class="p">);</span>
+<span class="w">        </span><span class="n">imu_</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">make_unique</span><span class="o">&lt;</span><span class="n">bno055lib</span><span class="o">::</span><span class="n">BNO055</span><span class="o">&gt;</span><span class="p">(</span><span class="mh">0x28</span><span class="p">,</span><span class="w"> </span><span class="s">"/dev/i2c-1"</span><span class="p">);</span>
 <span class="w">        </span>
 <span class="w">        </span><span class="c1">// Attempt hardware boot into NDOF fusion mode</span>
 <span class="w">        </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="o">!</span><span class="n">imu_</span><span class="o">-&gt;</span><span class="n">begin</span><span class="p">(</span><span class="n">bno055lib</span><span class="o">::</span><span class="n">OpMode</span><span class="o">::</span><span class="n">NDOF</span><span class="p">))</span><span class="w"> </span><span class="p">{</span>
-<span class="w">            </span><span class="n">RCLCPP_ERROR</span><span class="p">(</span><span class="n">get_logger</span><span class="p">(),</span><span class="w"> </span><span class="s">&quot;CRITICAL: I2C connection failed. Sensor missing?&quot;</span><span class="p">);</span>
+<span class="w">            </span><span class="n">RCLCPP_ERROR</span><span class="p">(</span><span class="n">get_logger</span><span class="p">(),</span><span class="w"> </span><span class="s">"CRITICAL: I2C connection failed. Sensor missing?"</span><span class="p">);</span>
 <span class="w">            </span><span class="k">return</span><span class="w"> </span><span class="n">CallbackReturn</span><span class="o">::</span><span class="n">FAILURE</span><span class="p">;</span>
 <span class="w">        </span><span class="p">}</span>
 
 <span class="w">        </span><span class="c1">// Load deterministic calibration</span>
-<span class="w">        </span><span class="n">imu_</span><span class="o">-&gt;</span><span class="n">loadCalibrationFile</span><span class="p">(</span><span class="s">&quot;/etc/robot_config/bno055_calib.bin&quot;</span><span class="p">);</span>
+<span class="w">        </span><span class="n">imu_</span><span class="o">-&gt;</span><span class="n">loadCalibrationFile</span><span class="p">(</span><span class="s">"/etc/robot_config/bno055_calib.bin"</span><span class="p">);</span>
 
 <span class="w">        </span><span class="c1">// Setup publisher with SENSOR_DATA QoS (Best Effort)</span>
 <span class="w">        </span><span class="k">auto</span><span class="w"> </span><span class="n">qos</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">rclcpp</span><span class="o">::</span><span class="n">QoS</span><span class="p">(</span><span class="n">rclcpp</span><span class="o">::</span><span class="n">SensorDataQoS</span><span class="p">());</span>
-<span class="w">        </span><span class="n">pub_</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">this</span><span class="o">-&gt;</span><span class="n">create_publisher</span><span class="o">&lt;</span><span class="n">sensor_msgs</span><span class="o">::</span><span class="n">msg</span><span class="o">::</span><span class="n">Imu</span><span class="o">&gt;</span><span class="p">(</span><span class="s">&quot;imu/data&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">qos</span><span class="p">);</span>
+<span class="w">        </span><span class="n">pub_</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">this</span><span class="o">-&gt;</span><span class="n">create_publisher</span><span class="o">&lt;</span><span class="n">sensor_msgs</span><span class="o">::</span><span class="n">msg</span><span class="o">::</span><span class="n">Imu</span><span class="o">&gt;</span><span class="p">(</span><span class="s">"imu/data"</span><span class="p">,</span><span class="w"> </span><span class="n">qos</span><span class="p">);</span>
 <span class="w">        </span>
 <span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="n">CallbackReturn</span><span class="o">::</span><span class="n">SUCCESS</span><span class="p">;</span>
 <span class="w">    </span><span class="p">}</span>
@@ -292,7 +292,7 @@
 <span class="w">            </span><span class="n">std</span><span class="o">::</span><span class="n">bind</span><span class="p">(</span><span class="o">&amp;</span><span class="n">BNO055DriverNode</span><span class="o">::</span><span class="n">publish_imu_data</span><span class="p">,</span><span class="w"> </span><span class="k">this</span><span class="p">)</span>
 <span class="w">        </span><span class="p">);</span>
 <span class="w">        </span>
-<span class="w">        </span><span class="n">RCLCPP_INFO</span><span class="p">(</span><span class="n">get_logger</span><span class="p">(),</span><span class="w"> </span><span class="s">&quot;IMU Stream Activated.&quot;</span><span class="p">);</span>
+<span class="w">        </span><span class="n">RCLCPP_INFO</span><span class="p">(</span><span class="n">get_logger</span><span class="p">(),</span><span class="w"> </span><span class="s">"IMU Stream Activated."</span><span class="p">);</span>
 <span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="n">CallbackReturn</span><span class="o">::</span><span class="n">SUCCESS</span><span class="p">;</span>
 <span class="w">    </span><span class="p">}</span>
 
@@ -302,7 +302,7 @@
 <span class="w">    </span><span class="n">CallbackReturn</span><span class="w"> </span><span class="n">on_deactivate</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="n">rclcpp_lifecycle</span><span class="o">::</span><span class="n">State</span><span class="w"> </span><span class="o">&amp;</span><span class="p">)</span><span class="w"> </span><span class="k">override</span><span class="w"> </span><span class="p">{</span>
 <span class="w">        </span><span class="n">pub_</span><span class="o">-&gt;</span><span class="n">on_deactivate</span><span class="p">();</span>
 <span class="w">        </span><span class="n">timer_</span><span class="o">-&gt;</span><span class="n">cancel</span><span class="p">();</span>
-<span class="w">        </span><span class="n">RCLCPP_INFO</span><span class="p">(</span><span class="n">get_logger</span><span class="p">(),</span><span class="w"> </span><span class="s">&quot;IMU Stream Paused.&quot;</span><span class="p">);</span>
+<span class="w">        </span><span class="n">RCLCPP_INFO</span><span class="p">(</span><span class="n">get_logger</span><span class="p">(),</span><span class="w"> </span><span class="s">"IMU Stream Paused."</span><span class="p">);</span>
 <span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="n">CallbackReturn</span><span class="o">::</span><span class="n">SUCCESS</span><span class="p">;</span>
 <span class="w">    </span><span class="p">}</span>
 
@@ -313,7 +313,7 @@
 <span class="w">        </span><span class="n">timer_</span><span class="p">.</span><span class="n">reset</span><span class="p">();</span>
 <span class="w">        </span><span class="n">pub_</span><span class="p">.</span><span class="n">reset</span><span class="p">();</span>
 <span class="w">        </span><span class="n">imu_</span><span class="p">.</span><span class="n">reset</span><span class="p">();</span><span class="w"> </span><span class="c1">// RAII safely closes /dev/i2c-*</span>
-<span class="w">        </span><span class="n">RCLCPP_INFO</span><span class="p">(</span><span class="n">get_logger</span><span class="p">(),</span><span class="w"> </span><span class="s">&quot;Hardware released.&quot;</span><span class="p">);</span>
+<span class="w">        </span><span class="n">RCLCPP_INFO</span><span class="p">(</span><span class="n">get_logger</span><span class="p">(),</span><span class="w"> </span><span class="s">"Hardware released."</span><span class="p">);</span>
 <span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="n">CallbackReturn</span><span class="o">::</span><span class="n">SUCCESS</span><span class="p">;</span>
 <span class="w">    </span><span class="p">}</span>
 
@@ -327,7 +327,7 @@
 <span class="w">        </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">quat</span><span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="n">gyro</span><span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="n">accel</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
 <span class="w">            </span><span class="k">auto</span><span class="w"> </span><span class="n">msg</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">sensor_msgs</span><span class="o">::</span><span class="n">msg</span><span class="o">::</span><span class="n">Imu</span><span class="p">();</span>
 <span class="w">            </span><span class="n">msg</span><span class="p">.</span><span class="n">header</span><span class="p">.</span><span class="n">stamp</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">this</span><span class="o">-&gt;</span><span class="n">now</span><span class="p">();</span>
-<span class="w">            </span><span class="n">msg</span><span class="p">.</span><span class="n">header</span><span class="p">.</span><span class="n">frame_id</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;imu_link&quot;</span><span class="p">;</span>
+<span class="w">            </span><span class="n">msg</span><span class="p">.</span><span class="n">header</span><span class="p">.</span><span class="n">frame_id</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">"imu_link"</span><span class="p">;</span>
 <span class="w">            </span>
 <span class="w">            </span><span class="n">msg</span><span class="p">.</span><span class="n">orientation</span><span class="p">.</span><span class="n">w</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">quat</span><span class="o">-&gt;</span><span class="n">w</span><span class="p">;</span>
 <span class="w">            </span><span class="n">msg</span><span class="p">.</span><span class="n">orientation</span><span class="p">.</span><span class="n">x</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">quat</span><span class="o">-&gt;</span><span class="n">x</span><span class="p">;</span>
@@ -347,7 +347,7 @@
 <span class="w">            </span><span class="c1">// Log telemtry to diagnostics system</span>
 <span class="w">            </span><span class="k">auto</span><span class="w"> </span><span class="n">diag</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">imu_</span><span class="o">-&gt;</span><span class="n">getDiagnostics</span><span class="p">();</span>
 <span class="w">            </span><span class="n">RCLCPP_WARN_THROTTLE</span><span class="p">(</span><span class="n">get_logger</span><span class="p">(),</span><span class="w"> </span><span class="o">*</span><span class="n">get_clock</span><span class="p">(),</span><span class="w"> </span><span class="mi">1000</span><span class="p">,</span><span class="w"> </span>
-<span class="w">                </span><span class="s">&quot;I2C Dropout Detected. Reconnect attempts: %d&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">diag</span><span class="p">.</span><span class="n">reconnect_attempts</span><span class="p">);</span>
+<span class="w">                </span><span class="s">"I2C Dropout Detected. Reconnect attempts: %d"</span><span class="p">,</span><span class="w"> </span><span class="n">diag</span><span class="p">.</span><span class="n">reconnect_attempts</span><span class="p">);</span>
 <span class="w">        </span><span class="p">}</span>
 <span class="w">    </span><span class="p">}</span>
 
@@ -457,7 +457,7 @@ rosdep<span class="w"> </span>install<span class="w"> </span>--from-paths<span c
 </pre></div>
 </div>
 <p>You can override parameters directly via CLI:</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>ros2<span class="w"> </span>run<span class="w"> </span>libbno055_linux<span class="w"> </span>bno055_publisher_node<span class="w"> </span>--ros-args<span class="w"> </span>-p<span class="w"> </span>device:<span class="o">=</span><span class="s2">&quot;/dev/i2c-2&quot;</span><span class="w"> </span>-p<span class="w"> </span>address:<span class="o">=</span><span class="m">40</span>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>ros2<span class="w"> </span>run<span class="w"> </span>libbno055_linux<span class="w"> </span>bno055_publisher_node<span class="w"> </span>--ros-args<span class="w"> </span>-p<span class="w"> </span>device:<span class="o">=</span><span class="s2">"/dev/i2c-2"</span><span class="w"> </span>-p<span class="w"> </span>address:<span class="o">=</span><span class="m">40</span>
 </pre></div>
 </div>
 </li>
@@ -526,7 +526,7 @@ sudo<span class="w"> </span>setserial<span class="w"> </span>/dev/ttyUSB0<span c
 <li><p>For absolute determinism, compile or install a kernel patched with the <strong><code class="docutils literal notranslate"><span class="pre">PREEMPT_RT</span></code></strong> real-time patch.</p></li>
 <li><p>Check if real-time preemption is active:</p>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>uname<span class="w"> </span>-a<span class="w"> </span><span class="p">|</span><span class="w"> </span>grep<span class="w"> </span>-i<span class="w"> </span>PREEMPT
-<span class="c1"># Outputs should contain &quot;PREEMPT RT&quot;</span>
+<span class="c1"># Outputs should contain "PREEMPT RT"</span>
 </pre></div>
 </div>
 </li>
@@ -630,7 +630,7 @@ The raw burst request/response packets take <strong>~2.17 milliseconds</strong> 
 
 <span class="w">    </span><span class="c1"># Fusing Raw BNO055 IMU Data (Bypassing internal fusion filter)</span>
 <span class="w">    </span><span class="nt">imu0</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">/imu/raw</span>
-<span class="w">    </span><span class="nt">imu0_config</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="nv">false</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="nv">false</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="nv">false</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="c1"># Position (IMU doesn&#39;t measure position)</span>
+<span class="w">    </span><span class="nt">imu0_config</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="nv">false</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="nv">false</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="nv">false</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="c1"># Position (IMU doesn't measure position)</span>
 <span class="w">                  </span><span class="nv">false</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="nv">false</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="nv">false</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="c1"># Orientation (Fused inside EKF, raw contains no orientation)</span>
 <span class="w">                  </span><span class="nv">false</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="nv">false</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="nv">false</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="c1"># Velocities</span>
 <span class="w">                  </span><span class="nv">false</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="nv">false</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="nv">true</span><span class="p p-Indicator">,</span><span class="w">  </span><span class="c1"># Fusing Roll/Pitch/Yaw angular velocity (yaw rate is critical)</span>
@@ -655,25 +655,25 @@ The raw burst request/response packets take <strong>~2.17 milliseconds</strong> 
 <span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
 
 <span class="k">def</span><span class="w"> </span><span class="nf">generate_launch_description</span><span class="p">():</span>
-    <span class="n">pkg_bno055</span> <span class="o">=</span> <span class="n">get_package_share_directory</span><span class="p">(</span><span class="s1">&#39;libbno055_linux&#39;</span><span class="p">)</span>
+    <span class="n">pkg_bno055</span> <span class="o">=</span> <span class="n">get_package_share_directory</span><span class="p">(</span><span class="s1">'libbno055_linux'</span><span class="p">)</span>
     
     <span class="c1"># 1. BNO055 IMU publisher node</span>
     <span class="n">bno055_node</span> <span class="o">=</span> <span class="n">Node</span><span class="p">(</span>
-        <span class="n">package</span><span class="o">=</span><span class="s1">&#39;libbno055_linux&#39;</span><span class="p">,</span>
-        <span class="n">executable</span><span class="o">=</span><span class="s1">&#39;bno055_publisher_node&#39;</span><span class="p">,</span>
-        <span class="n">name</span><span class="o">=</span><span class="s1">&#39;bno055_node&#39;</span><span class="p">,</span>
-        <span class="n">output</span><span class="o">=</span><span class="s1">&#39;screen&#39;</span><span class="p">,</span>
-        <span class="n">parameters</span><span class="o">=</span><span class="p">[</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">pkg_bno055</span><span class="p">,</span> <span class="s1">&#39;config&#39;</span><span class="p">,</span> <span class="s1">&#39;bno055_params.yaml&#39;</span><span class="p">)]</span>
+        <span class="n">package</span><span class="o">=</span><span class="s1">'libbno055_linux'</span><span class="p">,</span>
+        <span class="n">executable</span><span class="o">=</span><span class="s1">'bno055_publisher_node'</span><span class="p">,</span>
+        <span class="n">name</span><span class="o">=</span><span class="s1">'bno055_node'</span><span class="p">,</span>
+        <span class="n">output</span><span class="o">=</span><span class="s1">'screen'</span><span class="p">,</span>
+        <span class="n">parameters</span><span class="o">=</span><span class="p">[</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">pkg_bno055</span><span class="p">,</span> <span class="s1">'config'</span><span class="p">,</span> <span class="s1">'bno055_params.yaml'</span><span class="p">)]</span>
     <span class="p">)</span>
 
     <span class="c1"># 2. robot_localization EKF node</span>
     <span class="n">ekf_node</span> <span class="o">=</span> <span class="n">Node</span><span class="p">(</span>
-        <span class="n">package</span><span class="o">=</span><span class="s1">&#39;robot_localization&#39;</span><span class="p">,</span>
-        <span class="n">executable</span><span class="o">=</span><span class="s1">&#39;ekf_node&#39;</span><span class="p">,</span>
-        <span class="n">name</span><span class="o">=</span><span class="s1">&#39;ekf_filter_node&#39;</span><span class="p">,</span>
-        <span class="n">output</span><span class="o">=</span><span class="s1">&#39;screen&#39;</span><span class="p">,</span>
-        <span class="n">parameters</span><span class="o">=</span><span class="p">[</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">pkg_bno055</span><span class="p">,</span> <span class="s1">&#39;config&#39;</span><span class="p">,</span> <span class="s1">&#39;ekf.yaml&#39;</span><span class="p">)],</span>
-        <span class="n">remappings</span><span class="o">=</span><span class="p">[(</span><span class="s1">&#39;/odometry/filtered&#39;</span><span class="p">,</span> <span class="s1">&#39;/odom/filtered&#39;</span><span class="p">)]</span>
+        <span class="n">package</span><span class="o">=</span><span class="s1">'robot_localization'</span><span class="p">,</span>
+        <span class="n">executable</span><span class="o">=</span><span class="s1">'ekf_node'</span><span class="p">,</span>
+        <span class="n">name</span><span class="o">=</span><span class="s1">'ekf_filter_node'</span><span class="p">,</span>
+        <span class="n">output</span><span class="o">=</span><span class="s1">'screen'</span><span class="p">,</span>
+        <span class="n">parameters</span><span class="o">=</span><span class="p">[</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">pkg_bno055</span><span class="p">,</span> <span class="s1">'config'</span><span class="p">,</span> <span class="s1">'ekf.yaml'</span><span class="p">)],</span>
+        <span class="n">remappings</span><span class="o">=</span><span class="p">[(</span><span class="s1">'/odometry/filtered'</span><span class="p">,</span> <span class="s1">'/odom/filtered'</span><span class="p">)]</span>
     <span class="p">)</span>
 
     <span class="k">return</span> <span class="n">LaunchDescription</span><span class="p">([</span>
@@ -788,34 +788,34 @@ The raw burst request/response packets take <strong>~2.17 milliseconds</strong> 
 <div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">bno055_node</span><span class="p">:</span>
 <span class="w">  </span><span class="nt">ros__parameters</span><span class="p">:</span>
 <span class="w">    </span><span class="c1"># --- Hardware Connection ---</span>
-<span class="w">    </span><span class="nt">connection_type</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;i2c&quot;</span><span class="w">           </span><span class="c1"># &quot;i2c&quot; or &quot;uart&quot;</span>
-<span class="w">    </span><span class="nt">device</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;/dev/i2c-1&quot;</span><span class="w">             </span><span class="c1"># I2C device path (or UART port e.g. &quot;/dev/ttyUSB0&quot;)</span>
+<span class="w">    </span><span class="nt">connection_type</span><span class="p">:</span><span class="w"> </span><span class="s">"i2c"</span><span class="w">           </span><span class="c1"># "i2c" or "uart"</span>
+<span class="w">    </span><span class="nt">device</span><span class="p">:</span><span class="w"> </span><span class="s">"/dev/i2c-1"</span><span class="w">             </span><span class="c1"># I2C device path (or UART port e.g. "/dev/ttyUSB0")</span>
 <span class="w">    </span><span class="nt">address</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">40</span><span class="w">                      </span><span class="c1"># I2C address (0x28 = 40, 0x29 = 41). Ignored for UART.</span>
-<span class="w">    </span><span class="nt">uart_baudrate</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">115200</span><span class="w">            </span><span class="c1"># UART baud rate (only used if connection_type is &quot;uart&quot;)</span>
+<span class="w">    </span><span class="nt">uart_baudrate</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">115200</span><span class="w">            </span><span class="c1"># UART baud rate (only used if connection_type is "uart")</span>
 <span class="w">    </span><span class="nt">uart_timeout</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0.1</span><span class="w">                </span><span class="c1"># UART timeout in seconds</span>
 <span class="w">    </span>
 <span class="w">    </span><span class="c1"># --- Execution &amp; Read Mode ---</span>
-<span class="w">    </span><span class="nt">read_mode</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;standard&quot;</span><span class="w">            </span><span class="c1"># &quot;standard&quot;, &quot;raw_async&quot;, or &quot;interrupt&quot;</span>
-<span class="w">    </span><span class="nt">interrupt_gpio_pin</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">24</span><span class="w">           </span><span class="c1"># GPIO Pin connected to INT (Required for &quot;interrupt&quot; mode)</span>
-<span class="w">    </span><span class="nt">publish_rate</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">100.0</span><span class="w">              </span><span class="c1"># Publishing frequency in Hz (Ignored in &quot;interrupt&quot; mode)</span>
+<span class="w">    </span><span class="nt">read_mode</span><span class="p">:</span><span class="w"> </span><span class="s">"standard"</span><span class="w">            </span><span class="c1"># "standard", "raw_async", or "interrupt"</span>
+<span class="w">    </span><span class="nt">interrupt_gpio_pin</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">24</span><span class="w">           </span><span class="c1"># GPIO Pin connected to INT (Required for "interrupt" mode)</span>
+<span class="w">    </span><span class="nt">publish_rate</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">100.0</span><span class="w">              </span><span class="c1"># Publishing frequency in Hz (Ignored in "interrupt" mode)</span>
 <span class="w">    </span>
 <span class="w">    </span><span class="c1"># --- Sensor Operation Mode ---</span>
-<span class="w">    </span><span class="nt">operation_mode</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;imu_plus&quot;</span><span class="w">       </span><span class="c1"># Sensor fusion mode (e.g., &quot;ndof&quot;, &quot;imu_plus&quot;, &quot;amg&quot;)</span>
+<span class="w">    </span><span class="nt">operation_mode</span><span class="p">:</span><span class="w"> </span><span class="s">"imu_plus"</span><span class="w">       </span><span class="c1"># Sensor fusion mode (e.g., "ndof", "imu_plus", "amg")</span>
 <span class="w">    </span><span class="nt">use_external_crystal</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span><span class="w">       </span><span class="c1"># Use BNO055 external 32.768 kHz crystal (improves accuracy)</span>
-<span class="w">    </span><span class="nt">axis_map_config</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;p1&quot;</span><span class="w">            </span><span class="c1"># Axis mapping configuration (&quot;p0&quot; to &quot;p7&quot;)</span>
-<span class="w">    </span><span class="nt">axis_map_sign</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;p1&quot;</span><span class="w">              </span><span class="c1"># Axis mapping sign (&quot;p0&quot; to &quot;p7&quot;)</span>
+<span class="w">    </span><span class="nt">axis_map_config</span><span class="p">:</span><span class="w"> </span><span class="s">"p1"</span><span class="w">            </span><span class="c1"># Axis mapping configuration ("p0" to "p7")</span>
+<span class="w">    </span><span class="nt">axis_map_sign</span><span class="p">:</span><span class="w"> </span><span class="s">"p1"</span><span class="w">              </span><span class="c1"># Axis mapping sign ("p0" to "p7")</span>
 <span class="w">    </span>
 <span class="w">    </span><span class="c1"># --- Calibration Management ---</span>
-<span class="w">    </span><span class="nt">calibration_file</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;&quot;</span><span class="w">             </span><span class="c1"># Path to master calibration file to load on startup (e.g., &quot;/etc/bno055_calib.bin&quot;)</span>
+<span class="w">    </span><span class="nt">calibration_file</span><span class="p">:</span><span class="w"> </span><span class="s">""</span><span class="w">             </span><span class="c1"># Path to master calibration file to load on startup (e.g., "/etc/bno055_calib.bin")</span>
 <span class="w">    </span><span class="nt">enable_auto_calibration</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">false</span><span class="w">   </span><span class="c1"># Auto-save calibration file periodically. NOT recommended for flight/production!</span>
 <span class="w">    </span>
 <span class="w">    </span><span class="c1"># --- ROS 2 Publishing &amp; QoS ---</span>
-<span class="w">    </span><span class="nt">frame_id</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;imu_link&quot;</span><span class="w">             </span><span class="c1"># TF frame ID for the IMU messages</span>
-<span class="w">    </span><span class="nt">qos_reliability</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;best_effort&quot;</span><span class="w">   </span><span class="c1"># &quot;best_effort&quot; (SensorData) or &quot;reliable&quot;. Best Effort is highly recommended.</span>
+<span class="w">    </span><span class="nt">frame_id</span><span class="p">:</span><span class="w"> </span><span class="s">"imu_link"</span><span class="w">             </span><span class="c1"># TF frame ID for the IMU messages</span>
+<span class="w">    </span><span class="nt">qos_reliability</span><span class="p">:</span><span class="w"> </span><span class="s">"best_effort"</span><span class="w">   </span><span class="c1"># "best_effort" (SensorData) or "reliable". Best Effort is highly recommended.</span>
 <span class="w">    </span><span class="nt">qos_history_depth</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">10</span><span class="w">            </span><span class="c1"># Message history queue depth</span>
 <span class="w">    </span>
 <span class="w">    </span><span class="c1"># --- Covariance Matrices (Optional Overrides) ---</span>
-<span class="w">    </span><span class="c1"># Diagonals represent variance. You can override these based on your specific robot&#39;s vibration.</span>
+<span class="w">    </span><span class="c1"># Diagonals represent variance. You can override these based on your specific robot's vibration.</span>
 <span class="w">    </span><span class="c1"># orientation_covariance: [0.0, ...]</span>
 <span class="w">    </span><span class="c1"># angular_velocity_covariance: [0.0, ...]</span>
 <span class="w">    </span><span class="c1"># linear_acceleration_covariance: [0.0, ...]</span>
@@ -853,7 +853,7 @@ Edit <code class="docutils literal notranslate"><span class="pre">/boot/firmware
 <li><p><strong>Configuration (Ubuntu/Debian Linux)</strong>:
 Configure the kernel module parameter for the design-ware or BCM I2C controller:</p>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Enable repeated starts globally in the kernel I2C module</span>
-sudo<span class="w"> </span>sh<span class="w"> </span>-c<span class="w"> </span><span class="s1">&#39;echo &quot;Y&quot; &gt; /sys/module/i2c_bcm2835/parameters/combined&#39;</span>
+sudo<span class="w"> </span>sh<span class="w"> </span>-c<span class="w"> </span><span class="s1">'echo "Y" &gt; /sys/module/i2c_bcm2835/parameters/combined'</span>
 </pre></div>
 </div>
 <p>To make this persistent across boots, create <code class="docutils literal notranslate"><span class="pre">/etc/modprobe.d/i2c.conf</span></code>:</p>
@@ -879,8 +879,8 @@ sudo<span class="w"> </span>sh<span class="w"> </span>-c<span class="w"> </span>
 Modify your application launch parameters or ROS 2 YAML parameter file:</p>
 <div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">bno055_node</span><span class="p">:</span>
 <span class="w">  </span><span class="nt">ros__parameters</span><span class="p">:</span>
-<span class="w">    </span><span class="nt">connection_type</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;uart&quot;</span>
-<span class="w">    </span><span class="nt">uart_port</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;/dev/ttyUSB0&quot;</span>
+<span class="w">    </span><span class="nt">connection_type</span><span class="p">:</span><span class="w"> </span><span class="s">"uart"</span>
+<span class="w">    </span><span class="nt">uart_port</span><span class="p">:</span><span class="w"> </span><span class="s">"/dev/ttyUSB0"</span>
 <span class="w">    </span><span class="nt">uart_baudrate</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">921600</span><span class="w">        </span><span class="c1"># Overclocked speed</span>
 </pre></div>
 </div>
@@ -913,7 +913,7 @@ Modify your application launch parameters or ROS 2 YAML parameter file:</p>
 </div>
 <p>Or declare it directly in <code class="docutils literal notranslate"><span class="pre">Cargo.toml</span></code>:</p>
 <div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[dependencies]</span>
-<span class="n">libbno055</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;1.5.1&quot;</span>
+<span class="n">libbno055</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"1.5.1"</span>
 </pre></div>
 </div>
 </section>
@@ -923,47 +923,47 @@ Modify your application launch parameters or ROS 2 YAML parameter file:</p>
 <span class="k">use</span><span class="w"> </span><span class="n">std</span><span class="p">::</span><span class="n">thread</span><span class="p">;</span>
 <span class="k">use</span><span class="w"> </span><span class="n">std</span><span class="p">::</span><span class="n">time</span><span class="p">::</span><span class="n">Duration</span><span class="p">;</span>
 
-<span class="k">fn</span><span class="w"> </span><span class="nf">main</span><span class="p">()</span><span class="w"> </span><span class="p">-&gt;</span><span class="w"> </span><span class="nb">Result</span><span class="o">&lt;</span><span class="p">(),</span><span class="w"> </span><span class="o">&amp;&#39;</span><span class="nb">static</span><span class="w"> </span><span class="kt">str</span><span class="o">&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="k">fn</span><span class="w"> </span><span class="nf">main</span><span class="p">()</span><span class="w"> </span><span class="p">-&gt;</span><span class="w"> </span><span class="nb">Result</span><span class="o">&lt;</span><span class="p">(),</span><span class="w"> </span><span class="o">&amp;'</span><span class="nb">static</span><span class="w"> </span><span class="kt">str</span><span class="o">&gt;</span><span class="w"> </span><span class="p">{</span>
 <span class="w">    </span><span class="c1">// 1. Initialize IMU via I2C (Address 0x28, /dev/i2c-1)</span>
-<span class="w">    </span><span class="kd">let</span><span class="w"> </span><span class="k">mut</span><span class="w"> </span><span class="n">imu</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">BNO055</span><span class="p">::</span><span class="n">new_i2c</span><span class="p">(</span><span class="mh">0x28</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;/dev/i2c-1&quot;</span><span class="p">)</span><span class="o">?</span><span class="p">;</span>
+<span class="w">    </span><span class="kd">let</span><span class="w"> </span><span class="k">mut</span><span class="w"> </span><span class="n">imu</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">BNO055</span><span class="p">::</span><span class="n">new_i2c</span><span class="p">(</span><span class="mh">0x28</span><span class="p">,</span><span class="w"> </span><span class="s">"/dev/i2c-1"</span><span class="p">)</span><span class="o">?</span><span class="p">;</span>
 
 <span class="w">    </span><span class="c1">// OR Initialize via USB-to-UART bridge</span>
-<span class="w">    </span><span class="c1">// let mut imu = BNO055::new_uart(&quot;/dev/ttyUSB0&quot;, 115200)?;</span>
+<span class="w">    </span><span class="c1">// let mut imu = BNO055::new_uart("/dev/ttyUSB0", 115200)?;</span>
 
 <span class="w">    </span><span class="c1">// 2. Boot sensor into NDOF 9-DOF Fusion mode</span>
 <span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="o">!</span><span class="n">imu</span><span class="p">.</span><span class="n">begin</span><span class="p">(</span><span class="n">OpMode</span><span class="p">::</span><span class="n">NDOF</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
-<span class="w">        </span><span class="fm">eprintln!</span><span class="p">(</span><span class="s">&quot;Failed to initialize BNO055 sensor over I2C!&quot;</span><span class="p">);</span>
-<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="nb">Err</span><span class="p">(</span><span class="s">&quot;IMU Init Failed&quot;</span><span class="p">);</span>
+<span class="w">        </span><span class="fm">eprintln!</span><span class="p">(</span><span class="s">"Failed to initialize BNO055 sensor over I2C!"</span><span class="p">);</span>
+<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="nb">Err</span><span class="p">(</span><span class="s">"IMU Init Failed"</span><span class="p">);</span>
 <span class="w">    </span><span class="p">}</span>
 
-<span class="w">    </span><span class="fm">println!</span><span class="p">(</span><span class="s">&quot;BNO055 Initialized Successfully in NDOF mode.&quot;</span><span class="p">);</span>
+<span class="w">    </span><span class="fm">println!</span><span class="p">(</span><span class="s">"BNO055 Initialized Successfully in NDOF mode."</span><span class="p">);</span>
 
 <span class="w">    </span><span class="c1">// 3. High-rate Control Loop (100Hz)</span>
 <span class="w">    </span><span class="k">for</span><span class="w"> </span><span class="n">_</span><span class="w"> </span><span class="k">in</span><span class="w"> </span><span class="mi">0</span><span class="o">..</span><span class="mi">100</span><span class="w"> </span><span class="p">{</span>
 <span class="w">        </span><span class="c1">// Read Orientation Quaternion &amp; Convert to Euler Angles (Degrees)</span>
 <span class="w">        </span><span class="k">if</span><span class="w"> </span><span class="kd">let</span><span class="w"> </span><span class="nb">Some</span><span class="p">(</span><span class="n">q</span><span class="p">)</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">imu</span><span class="p">.</span><span class="n">get_quaternion</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
 <span class="w">            </span><span class="kd">let</span><span class="w"> </span><span class="n">euler</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">BNO055</span><span class="p">::</span><span class="n">to_euler_degrees</span><span class="p">(</span><span class="o">&amp;</span><span class="n">q</span><span class="p">);</span>
-<span class="w">            </span><span class="fm">println!</span><span class="p">(</span><span class="s">&quot;Euler (deg): Roll={:.2}, Pitch={:.2}, Yaw={:.2}&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">euler</span><span class="p">.</span><span class="n">x</span><span class="p">,</span><span class="w"> </span><span class="n">euler</span><span class="p">.</span><span class="n">y</span><span class="p">,</span><span class="w"> </span><span class="n">euler</span><span class="p">.</span><span class="n">z</span><span class="p">);</span>
+<span class="w">            </span><span class="fm">println!</span><span class="p">(</span><span class="s">"Euler (deg): Roll={:.2}, Pitch={:.2}, Yaw={:.2}"</span><span class="p">,</span><span class="w"> </span><span class="n">euler</span><span class="p">.</span><span class="n">x</span><span class="p">,</span><span class="w"> </span><span class="n">euler</span><span class="p">.</span><span class="n">y</span><span class="p">,</span><span class="w"> </span><span class="n">euler</span><span class="p">.</span><span class="n">z</span><span class="p">);</span>
 <span class="w">        </span><span class="p">}</span>
 
 <span class="w">        </span><span class="c1">// Read Raw Linear Acceleration (m/s^2)</span>
 <span class="w">        </span><span class="k">if</span><span class="w"> </span><span class="kd">let</span><span class="w"> </span><span class="nb">Some</span><span class="p">(</span><span class="n">acc</span><span class="p">)</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">imu</span><span class="p">.</span><span class="n">get_accelerometer</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
-<span class="w">            </span><span class="fm">println!</span><span class="p">(</span><span class="s">&quot;Accel (m/s^2): X={:.2}, Y={:.2}, Z={:.2}&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">acc</span><span class="p">.</span><span class="n">x</span><span class="p">,</span><span class="w"> </span><span class="n">acc</span><span class="p">.</span><span class="n">y</span><span class="p">,</span><span class="w"> </span><span class="n">acc</span><span class="p">.</span><span class="n">z</span><span class="p">);</span>
+<span class="w">            </span><span class="fm">println!</span><span class="p">(</span><span class="s">"Accel (m/s^2): X={:.2}, Y={:.2}, Z={:.2}"</span><span class="p">,</span><span class="w"> </span><span class="n">acc</span><span class="p">.</span><span class="n">x</span><span class="p">,</span><span class="w"> </span><span class="n">acc</span><span class="p">.</span><span class="n">y</span><span class="p">,</span><span class="w"> </span><span class="n">acc</span><span class="p">.</span><span class="n">z</span><span class="p">);</span>
 <span class="w">        </span><span class="p">}</span>
 
 <span class="w">        </span><span class="c1">// Check Hardware Calibration Status (0 = Uncalibrated, 3 = Fully Calibrated)</span>
 <span class="w">        </span><span class="k">if</span><span class="w"> </span><span class="kd">let</span><span class="w"> </span><span class="nb">Some</span><span class="p">(</span><span class="n">calib</span><span class="p">)</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">imu</span><span class="p">.</span><span class="n">get_calibration_status</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
-<span class="w">            </span><span class="fm">println!</span><span class="p">(</span><span class="s">&quot;Calibration: SYS={}, GYRO={}, ACCEL={}, MAG={}&quot;</span><span class="p">,</span><span class="w"> </span>
+<span class="w">            </span><span class="fm">println!</span><span class="p">(</span><span class="s">"Calibration: SYS={}, GYRO={}, ACCEL={}, MAG={}"</span><span class="p">,</span><span class="w"> </span>
 <span class="w">                     </span><span class="n">calib</span><span class="p">.</span><span class="n">sys</span><span class="p">,</span><span class="w"> </span><span class="n">calib</span><span class="p">.</span><span class="n">gyro</span><span class="p">,</span><span class="w"> </span><span class="n">calib</span><span class="p">.</span><span class="n">accel</span><span class="p">,</span><span class="w"> </span><span class="n">calib</span><span class="p">.</span><span class="n">mag</span><span class="p">);</span>
 <span class="w">            </span><span class="k">if</span><span class="w"> </span><span class="n">calib</span><span class="p">.</span><span class="n">is_fully_calibrated</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
-<span class="w">                </span><span class="fm">println!</span><span class="p">(</span><span class="s">&quot;System reaches full calibration!&quot;</span><span class="p">);</span>
+<span class="w">                </span><span class="fm">println!</span><span class="p">(</span><span class="s">"System reaches full calibration!"</span><span class="p">);</span>
 <span class="w">            </span><span class="p">}</span>
 <span class="w">        </span><span class="p">}</span>
 
 <span class="w">        </span><span class="c1">// Monitor Bus Telemetry Health</span>
 <span class="w">        </span><span class="kd">let</span><span class="w"> </span><span class="n">diag</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">imu</span><span class="p">.</span><span class="n">get_diagnostics</span><span class="p">();</span>
 <span class="w">        </span><span class="k">if</span><span class="w"> </span><span class="n">diag</span><span class="p">.</span><span class="n">reconnect_attempts</span><span class="w"> </span><span class="o">&gt;</span><span class="w"> </span><span class="mi">0</span><span class="w"> </span><span class="o">||</span><span class="w"> </span><span class="n">diag</span><span class="p">.</span><span class="n">read_failures</span><span class="w"> </span><span class="o">&gt;</span><span class="w"> </span><span class="mi">0</span><span class="w"> </span><span class="p">{</span>
-<span class="w">            </span><span class="fm">println!</span><span class="p">(</span><span class="s">&quot;Telemetry: Reconnects={}, WriteFailures={}, ReadFailures={}&quot;</span><span class="p">,</span>
+<span class="w">            </span><span class="fm">println!</span><span class="p">(</span><span class="s">"Telemetry: Reconnects={}, WriteFailures={}, ReadFailures={}"</span><span class="p">,</span>
 <span class="w">                     </span><span class="n">diag</span><span class="p">.</span><span class="n">reconnect_attempts</span><span class="p">,</span><span class="w"> </span><span class="n">diag</span><span class="p">.</span><span class="n">write_failures</span><span class="p">,</span><span class="w"> </span><span class="n">diag</span><span class="p">.</span><span class="n">read_failures</span><span class="p">);</span>
 <span class="w">        </span><span class="p">}</span>
 

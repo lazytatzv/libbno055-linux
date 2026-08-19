@@ -285,7 +285,7 @@ Add your user to the <code class="docutils literal notranslate"><span class="pre
 <strong>Cause</strong>: The BNO055 does not have internal non-volatile memory for calibration profiles. It loses its calibration every time it loses power.
 <strong>Solution</strong>:
 Use the provided <code class="docutils literal notranslate"><span class="pre">calibrate_imu</span></code> example to generate a <code class="docutils literal notranslate"><span class="pre">bno055_calib.bin</span></code> file, then load it in your code immediately after <code class="docutils literal notranslate"><span class="pre">begin()</span></code>:</p>
-<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="n">imu</span><span class="p">.</span><span class="n">loadCalibrationFile</span><span class="p">(</span><span class="s">&quot;bno055_calib.bin&quot;</span><span class="p">);</span>
+<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="n">imu</span><span class="p">.</span><span class="n">loadCalibrationFile</span><span class="p">(</span><span class="s">"bno055_calib.bin"</span><span class="p">);</span>
 </pre></div>
 </div>
 </section>

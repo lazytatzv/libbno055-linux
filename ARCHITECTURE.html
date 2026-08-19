@@ -397,14 +397,14 @@
 <p>To support modern polyglot robotics stacks, <code class="docutils literal notranslate"><span class="pre">libbno055-linux</span></code> implements a layered binding architecture:</p>
 <div class="highlight-mermaid notranslate"><div class="highlight"><pre><span></span>flowchart TD
     subgraph Core C++ Engine
-        CPP[&quot;C++17 BNO055 Core (bno055lib::BNO055)&quot;]
+        CPP["C++17 BNO055 Core (bno055lib::BNO055)"]
     end
     
     subgraph Language Interfaces
-        C_API[&quot;C ABI Layer (bno055_c.h / bno055_c.cpp)&quot;]
-        PY_BIND[&quot;Pybind11 C-Extension (import libbno055)&quot;]
-        RUST_CRATE[&quot;Safe Rust Crate (use libbno055)&quot;]
-        ROS2_NODES[&quot;ROS 2 C++ / Python Nodes&quot;]
+        C_API["C ABI Layer (bno055_c.h / bno055_c.cpp)"]
+        PY_BIND["Pybind11 C-Extension (import libbno055)"]
+        RUST_CRATE["Safe Rust Crate (use libbno055)"]
+        ROS2_NODES["ROS 2 C++ / Python Nodes"]
     end
     
     CPP --&gt; C_API

@@ -300,9 +300,9 @@
 </section>
 <section id="c-17">
 <h3>C++17<a class="headerlink" href="#c-17" title="Link to this heading">¶</a></h3>
-<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="cp">#include</span><span class="w"> </span><span class="cpf">&quot;libbno055-linux/bno055.hpp&quot;</span>
+<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="cp">#include</span><span class="w"> </span><span class="cpf">"libbno055-linux/bno055.hpp"</span>
 
-<span class="n">bno055lib</span><span class="o">::</span><span class="n">BNO055</span><span class="w"> </span><span class="n">imu</span><span class="p">(</span><span class="mh">0x28</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;/dev/i2c-1&quot;</span><span class="p">);</span>
+<span class="n">bno055lib</span><span class="o">::</span><span class="n">BNO055</span><span class="w"> </span><span class="n">imu</span><span class="p">(</span><span class="mh">0x28</span><span class="p">,</span><span class="w"> </span><span class="s">"/dev/i2c-1"</span><span class="p">);</span>
 <span class="n">imu</span><span class="p">.</span><span class="n">begin</span><span class="p">(</span><span class="n">bno055lib</span><span class="o">::</span><span class="n">OpMode</span><span class="o">::</span><span class="n">NDOF</span><span class="p">);</span>
 
 <span class="k">auto</span><span class="w"> </span><span class="n">quat</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">imu</span><span class="p">.</span><span class="n">getQuaternionNoexcept</span><span class="p">();</span>
@@ -322,7 +322,7 @@ Install: <code class="docutils literal notranslate"><span class="pre">pip</span>
 </pre></div>
 </div>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">libbno055</span>
-<span class="n">imu</span> <span class="o">=</span> <span class="n">libbno055</span><span class="o">.</span><span class="n">BNO055</span><span class="p">(</span><span class="n">address</span><span class="o">=</span><span class="mh">0x28</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="s2">&quot;/dev/i2c-1&quot;</span><span class="p">)</span>
+<span class="n">imu</span> <span class="o">=</span> <span class="n">libbno055</span><span class="o">.</span><span class="n">BNO055</span><span class="p">(</span><span class="n">address</span><span class="o">=</span><span class="mh">0x28</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="s2">"/dev/i2c-1"</span><span class="p">)</span>
 <span class="n">imu</span><span class="o">.</span><span class="n">begin</span><span class="p">(</span><span class="n">libbno055</span><span class="o">.</span><span class="n">OpMode</span><span class="o">.</span><span class="n">NDOF</span><span class="p">)</span>
 <span class="n">q</span> <span class="o">=</span> <span class="n">imu</span><span class="o">.</span><span class="n">get_quaternion</span><span class="p">()</span>
 </pre></div>
