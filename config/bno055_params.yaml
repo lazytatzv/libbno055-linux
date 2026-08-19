@@ -14,8 +14,8 @@
     connection_type: "i2c"           
     
     # --- I2C Specifics ---
-    # Path to the I2C bus (Raspberry Pi is usually /dev/i2c-1)
-    device: "/dev/i2c-1"             
+    # Path to the I2C bus (RDK X5 / rox2026 is /dev/i2c-5)
+    device: "/dev/i2c-5"             
     # I2C Address: 40 (0x28) is default. 41 (0x29) if ADR pin is pulled high.
     address: 40                      
     
