@@ -122,6 +122,9 @@ public:
             },
             rmw_qos_profile_services_default, admin_cb_group_);
 
+        parameter_callback_ = this->add_on_set_parameters_callback(
+            [this](const std::vector<rclcpp::Parameter>& parameters) { return update_parameters(parameters); });
+
         // 4. Timers
         control_timer_ = this->create_wall_timer(
             std::chrono::milliseconds(control_period_ms_), [this]() { control(); }, control_cb_group_);
@@ -131,8 +134,10 @@ public:
                 this->create_wall_timer(std::chrono::seconds(1), [this]() { publish_diagnostics(); }, admin_cb_group_);
         }
 
-        RCLCPP_INFO(this->get_logger(), "BNO055 Heading Control online: input=%s output=%s imu=%s (Kp=%.2f, Kd=%.3f)",
-                    raw_cmd_vel_topic_.c_str(), corrected_cmd_vel_topic_.c_str(), imu_topic_.c_str(), kp_, kd_);
+        RCLCPP_INFO(this->get_logger(),
+                    "BNO055 Heading Control online: input=%s output=%s imu=%s (Kp=%.2f, Kd=%.3f, FF vel=%.2f, acc=%.3f)",
+                    raw_cmd_vel_topic_.c_str(), corrected_cmd_vel_topic_.c_str(), imu_topic_.c_str(), kp_, kd_,
+                    k_ff_vel_, k_ff_acc_);
     }
 
 private:
@@ -158,12 +163,22 @@ private:
             this->declare_parameter<std::string>("cmd_vel_out_topic", "/mecanum/cmd_vel_heading");
         this->declare_parameter<bool>("enable_diagnostics", true);
         yaw_axis_ = this->declare_parameter<std::string>("yaw_axis", "z");
+
+        // Feedforward parameters
+        enable_feedforward_ = this->declare_parameter<bool>("enable_feedforward", true);
+        k_ff_vel_ = this->declare_parameter<double>("k_ff_vel", 1.0);
+        k_ff_acc_ = this->declare_parameter<double>("k_ff_acc", 0.0);
+        k_ff_drift_vx_ = this->declare_parameter<double>("k_ff_drift_vx", 0.0);
+        k_ff_drift_vy_ = this->declare_parameter<double>("k_ff_drift_vy", 0.0);
+        k_ff_drift_ax_ = this->declare_parameter<double>("k_ff_drift_ax", 0.0);
+        k_ff_drift_ay_ = this->declare_parameter<double>("k_ff_drift_ay", 0.0);
+        accel_filter_alpha_ = this->declare_parameter<double>("accel_filter_alpha", 0.3);
     }
 
     rcl_interfaces::msg::SetParametersResult update_parameters(const std::vector<rclcpp::Parameter>& parameters) {
         auto result = rcl_interfaces::msg::SetParametersResult();
         result.successful = false;
-        result.reason = "Only PID and heading-hold limits can be changed while running";
+        result.reason = "Only PID, FF, and heading-hold limits can be changed while running";
 
         double next_kp = kp_;
         double next_ki = ki_;
@@ -173,6 +188,15 @@ private:
         double next_rotation_deadband = rotation_input_deadband_rad_s_;
         int next_turn_relock_delay_ms = turn_relock_delay_ms_;
         double next_max_correction = max_correction_rad_s_;
+
+        bool next_enable_ff = enable_feedforward_;
+        double next_k_ff_vel = k_ff_vel_;
+        double next_k_ff_acc = k_ff_acc_;
+        double next_k_ff_drift_vx = k_ff_drift_vx_;
+        double next_k_ff_drift_vy = k_ff_drift_vy_;
+        double next_k_ff_drift_ax = k_ff_drift_ax_;
+        double next_k_ff_drift_ay = k_ff_drift_ay_;
+        double next_accel_filter_alpha = accel_filter_alpha_;
 
         for (const auto& parameter : parameters) {
             const auto& name = parameter.get_name();
@@ -192,15 +216,36 @@ private:
                 next_turn_relock_delay_ms = static_cast<int>(parameter.as_double() * 1000.0);
             } else if (name == "max_output") {
                 next_max_correction = parameter.as_double();
+            } else if (name == "enable_feedforward") {
+                next_enable_ff = parameter.as_bool();
+            } else if (name == "k_ff_vel" || name == "kff") {
+                next_k_ff_vel = parameter.as_double();
+            } else if (name == "k_ff_acc") {
+                next_k_ff_acc = parameter.as_double();
+            } else if (name == "k_ff_drift_vx") {
+                next_k_ff_drift_vx = parameter.as_double();
+            } else if (name == "k_ff_drift_vy") {
+                next_k_ff_drift_vy = parameter.as_double();
+            } else if (name == "k_ff_drift_ax") {
+                next_k_ff_drift_ax = parameter.as_double();
+            } else if (name == "k_ff_drift_ay") {
+                next_k_ff_drift_ay = parameter.as_double();
+            } else if (name == "accel_filter_alpha") {
+                next_accel_filter_alpha = parameter.as_double();
             }
         }
 
         if (!std::isfinite(next_kp) || !std::isfinite(next_ki) || !std::isfinite(next_kd) ||
             !std::isfinite(next_integral_limit) || !std::isfinite(next_heading_deadband) ||
-            !std::isfinite(next_rotation_deadband) || !std::isfinite(next_max_correction) || next_kp < 0.0 ||
-            next_ki < 0.0 || next_kd < 0.0 || next_integral_limit < 0.0 || next_heading_deadband < 0.0 ||
-            next_rotation_deadband < 0.0 || next_turn_relock_delay_ms < 0 || next_max_correction <= 0.0) {
-            result.reason = "PID gains and limits must be finite and non-negative";
+            !std::isfinite(next_rotation_deadband) || !std::isfinite(next_max_correction) ||
+            !std::isfinite(next_k_ff_vel) || !std::isfinite(next_k_ff_acc) ||
+            !std::isfinite(next_k_ff_drift_vx) || !std::isfinite(next_k_ff_drift_vy) ||
+            !std::isfinite(next_k_ff_drift_ax) || !std::isfinite(next_k_ff_drift_ay) ||
+            !std::isfinite(next_accel_filter_alpha) || next_kp < 0.0 || next_ki < 0.0 || next_kd < 0.0 ||
+            next_integral_limit < 0.0 || next_heading_deadband < 0.0 || next_rotation_deadband < 0.0 ||
+            next_turn_relock_delay_ms < 0 || next_max_correction <= 0.0 || next_accel_filter_alpha < 0.0 ||
+            next_accel_filter_alpha > 1.0) {
+            result.reason = "Gains and limits must be finite and within valid ranges";
             return result;
         }
 
@@ -212,9 +257,18 @@ private:
         rotation_input_deadband_rad_s_ = next_rotation_deadband;
         turn_relock_delay_ms_ = next_turn_relock_delay_ms;
         max_correction_rad_s_ = next_max_correction;
+        enable_feedforward_ = next_enable_ff;
+        k_ff_vel_ = next_k_ff_vel;
+        k_ff_acc_ = next_k_ff_acc;
+        k_ff_drift_vx_ = next_k_ff_drift_vx;
+        k_ff_drift_vy_ = next_k_ff_drift_vy;
+        k_ff_drift_ax_ = next_k_ff_drift_ax;
+        k_ff_drift_ay_ = next_k_ff_drift_ay;
+        accel_filter_alpha_ = next_accel_filter_alpha;
+
         result.successful = true;
         result.reason = "success";
-        RCLCPP_INFO(this->get_logger(), "Heading-hold parameters dynamically updated");
+        RCLCPP_INFO(this->get_logger(), "Heading-hold and feedforward parameters dynamically updated");
         return result;
     }
 
@@ -276,6 +330,12 @@ private:
         target_yaw_initialized_ = false;
         integral_error_rad_s_ = 0.0;
         last_manual_turn_time_ = rclcpp::Time(0, 0, RCL_ROS_TIME);
+        prev_cmd_vx_ = 0.0;
+        prev_cmd_vy_ = 0.0;
+        prev_cmd_wz_ = 0.0;
+        filtered_ax_ = 0.0;
+        filtered_ay_ = 0.0;
+        filtered_ang_accel_ = 0.0;
     }
 
     void control() {
@@ -311,60 +371,80 @@ private:
             return;
         }
 
-        if (std::abs(latest_command_.angular.z) > rotation_input_deadband_rad_s_) {
-            target_yaw_rad_ = current_yaw_rad_;
-            target_yaw_initialized_ = false;
-            integral_error_rad_s_ = 0.0;
-            last_manual_turn_time_ = current_time;
-            corrected_command_pub_->publish(latest_command_);
-            last_correction_ = latest_command_.angular.z;
-            last_error_deg_ = 0.0;
+        const double safe_dt_s = dt_s > 0.0 && dt_s < 0.5 ? dt_s : static_cast<double>(control_period_ms_) / 1000.0;
 
-            RCLCPP_DEBUG_THROTTLE(this->get_logger(), *this->get_clock(), 500,
-                                  "[HeadingControl] MANUAL_TURN | In(Wz=%+.2f rad/s) | New Target Yaw: %+.1f°",
-                                  latest_command_.angular.z, current_yaw_rad_ * 180.0 / M_PI);
-            return;
+        // --- Numerical Acceleration Estimation with Low-Pass Filtering ---
+        const double raw_ax = (latest_command_.linear.x - prev_cmd_vx_) / safe_dt_s;
+        const double raw_ay = (latest_command_.linear.y - prev_cmd_vy_) / safe_dt_s;
+        const double raw_ang_accel = (latest_command_.angular.z - prev_cmd_wz_) / safe_dt_s;
+
+        filtered_ax_ = (1.0 - accel_filter_alpha_) * filtered_ax_ + accel_filter_alpha_ * raw_ax;
+        filtered_ay_ = (1.0 - accel_filter_alpha_) * filtered_ay_ + accel_filter_alpha_ * raw_ay;
+        filtered_ang_accel_ =
+            (1.0 - accel_filter_alpha_) * filtered_ang_accel_ + accel_filter_alpha_ * raw_ang_accel;
+
+        prev_cmd_vx_ = latest_command_.linear.x;
+        prev_cmd_vy_ = latest_command_.linear.y;
+        prev_cmd_wz_ = latest_command_.angular.z;
+
+        // --- Feedforward Term Calculation ---
+        double ff_rad_s = 0.0;
+        if (enable_feedforward_) {
+            // 1. Angular velocity & angular acceleration FF
+            ff_rad_s += k_ff_vel_ * latest_command_.angular.z;
+            ff_rad_s += k_ff_acc_ * filtered_ang_accel_;
+
+            // 2. Translational velocity & acceleration cross-coupling drift cancellation FF
+            ff_rad_s += k_ff_drift_vx_ * latest_command_.linear.x;
+            ff_rad_s += k_ff_drift_vy_ * latest_command_.linear.y;
+            ff_rad_s += k_ff_drift_ax_ * filtered_ax_;
+            ff_rad_s += k_ff_drift_ay_ * filtered_ay_;
+        } else {
+            ff_rad_s = latest_command_.angular.z;
         }
 
-        // Settling delay after manual turning: allow inertia to settle before re-locking heading
-        if (last_manual_turn_time_.nanoseconds() != 0 &&
-            (current_time - last_manual_turn_time_).nanoseconds() < turn_relock_delay_ms_ * 1000000LL) {
-            target_yaw_rad_ = current_yaw_rad_;
-            target_yaw_initialized_ = false;
-            integral_error_rad_s_ = 0.0;
-            corrected_command_pub_->publish(latest_command_);
-            last_correction_ = latest_command_.angular.z;
-            last_error_deg_ = 0.0;
-            return;
-        }
+        // --- 2-DOF Target Tracking & Feedback (PID) ---
+        const bool is_manual_turning = std::abs(latest_command_.angular.z) > rotation_input_deadband_rad_s_;
 
         if (!target_yaw_initialized_) {
             target_yaw_rad_ = current_yaw_rad_;
             target_yaw_initialized_ = true;
             integral_error_rad_s_ = 0.0;
-            RCLCPP_DEBUG(this->get_logger(), "[HeadingControl] Re-locked heading target to %+.1f°",
-                         target_yaw_rad_ * 180.0 / M_PI);
         }
 
-        const double safe_dt_s = dt_s > 0.0 && dt_s < 0.5 ? dt_s : static_cast<double>(control_period_ms_) / 1000.0;
+        if (is_manual_turning) {
+            // Integrate reference angular velocity smoothly into target heading during turns
+            target_yaw_rad_ = normalize_angle(target_yaw_rad_ + latest_command_.angular.z * safe_dt_s);
+            last_manual_turn_time_ = current_time;
+        } else if (last_manual_turn_time_.nanoseconds() != 0) {
+            // Re-sync heading target to eliminate overshoot right after turn completes
+            target_yaw_rad_ = current_yaw_rad_;
+            integral_error_rad_s_ = 0.0;
+            last_manual_turn_time_ = rclcpp::Time(0, 0, RCL_ROS_TIME);
+        }
+
         double heading_error_rad = normalize_angle(target_yaw_rad_ - current_yaw_rad_);
         if (std::abs(heading_error_rad) < heading_deadband_rad_) {
             heading_error_rad = 0.0;
         }
 
-        integral_error_rad_s_ = std::clamp(integral_error_rad_s_ + heading_error_rad * safe_dt_s,
-                                           -integral_limit_rad_s_, integral_limit_rad_s_);
+        if (!is_manual_turning) {
+            integral_error_rad_s_ = std::clamp(integral_error_rad_s_ + heading_error_rad * safe_dt_s,
+                                               -integral_limit_rad_s_, integral_limit_rad_s_);
+        } else {
+            integral_error_rad_s_ = 0.0;
+        }
 
-        // 100% exactly matching heading_hold_node.cpp line 274
-        const double correction_rad_s =
+        const double feedback_rad_s =
             std::clamp(kp_ * heading_error_rad + ki_ * integral_error_rad_s_ - kd_ * current_angular_velocity_z_rad_s_,
                        -max_correction_rad_s_, max_correction_rad_s_);
 
+        // Combined output: Feedforward + Feedback
         auto corrected_command = latest_command_;
-        corrected_command.angular.z = correction_rad_s;
+        corrected_command.angular.z = ff_rad_s + feedback_rad_s;
         corrected_command_pub_->publish(corrected_command);
 
-        last_correction_ = correction_rad_s;
+        last_correction_ = corrected_command.angular.z;
         last_error_deg_ = heading_error_rad * 180.0 / M_PI;
 
         const double curr_yaw_deg = current_yaw_rad_ * 180.0 / M_PI;
@@ -372,9 +452,9 @@ private:
 
         RCLCPP_DEBUG_THROTTLE(this->get_logger(), *this->get_clock(), 2000,
                               "[HeadingControl] LOCKED | In(Vx=%.2f, Vy=%.2f) | Yaw: curr=%+.1f° -> target=%+.1f° "
-                              "(err=%+.2f°) | GyroZ=%+.2f | Out: Wz=%+.3f rad/s",
+                              "(err=%+.2f°) | GyroZ=%+.2f | FF=%+.3f | Out: Wz=%+.3f rad/s",
                               latest_command_.linear.x, latest_command_.linear.y, curr_yaw_deg, target_yaw_deg,
-                              last_error_deg_, current_angular_velocity_z_rad_s_, correction_rad_s);
+                              last_error_deg_, current_angular_velocity_z_rad_s_, ff_rad_s, corrected_command.angular.z);
     }
 
     void publish_diagnostics() {
@@ -448,6 +528,24 @@ private:
     bool heading_hold_enabled_{true};
     double last_correction_;
     double last_error_deg_;
+
+    // Differentiation & Filter state
+    double prev_cmd_vx_{0.0};
+    double prev_cmd_vy_{0.0};
+    double prev_cmd_wz_{0.0};
+    double filtered_ax_{0.0};
+    double filtered_ay_{0.0};
+    double filtered_ang_accel_{0.0};
+
+    // Feedforward gains
+    bool enable_feedforward_{true};
+    double k_ff_vel_{1.0};
+    double k_ff_acc_{0.0};
+    double k_ff_drift_vx_{0.0};
+    double k_ff_drift_vy_{0.0};
+    double k_ff_drift_ax_{0.0};
+    double k_ff_drift_ay_{0.0};
+    double accel_filter_alpha_{0.3};
 
     double kp_{4.0};
     double ki_{0.0};

@@ -12,12 +12,24 @@ bno055_heading_control_node:
     cmd_vel_out_topic: "/mecanum/cmd_vel_heading"  # Corrected output velocity command
 
     # --------------------------------------------------------------------------
-    # 2. Control Gains (Proven PID Architecture matching heading_hold_node)
+    # 2. Feedforward (FF) Control & Drift Cancellation
+    # --------------------------------------------------------------------------
+    enable_feedforward: true           # Enable multi-term feedforward
+    k_ff_vel: 1.0                      # Angular velocity command feedforward gain (w_cmd)
+    k_ff_acc: 0.0                      # Angular acceleration feedforward gain (dw_cmd/dt)
+    k_ff_drift_vx: 0.0                 # Translational Vx drift compensation gain
+    k_ff_drift_vy: 0.0                 # Translational Vy drift compensation gain
+    k_ff_drift_ax: 0.0                 # Translational Ax acceleration drift compensation gain
+    k_ff_drift_ay: 0.0                 # Translational Ay acceleration drift compensation gain
+    accel_filter_alpha: 0.3            # Low-pass filter alpha for acceleration estimation (0.0 - 1.0)
+
+    # --------------------------------------------------------------------------
+    # 3. Control Gains (Proven PID Architecture matching heading_hold_node)
     # --------------------------------------------------------------------------
     kp: 4.0                            # Proportional Gain (Restoring force)
     ki: 0.0                            # Integral Gain (Set to 0.0 to eliminate overshoot drift)
     kd: 0.05                           # Derivative Gain (Direct Gyro-Z braking)
-    kff: 0.0                           # Feedforward Gain
+    kff: 1.0                           # Feedforward Gain (alias for k_ff_vel)
     max_i_term: 0.5                    # Anti-windup integral saturation limit (+-0.5)
     max_output: 1.5                    # Maximum angular velocity correction limit (rad/s)
     deadband_deg: 0.5                  # Deadband (0.5 degrees) to completely eliminate jitter/creeping
@@ -27,14 +39,15 @@ bno055_heading_control_node:
     turn_relock_delay: 0.20            # Delay (seconds) after manual turn before re-locking heading to prevent snap-back
 
     # --------------------------------------------------------------------------
-    # 3. IMU Coordinate Alignment & Adaptive Scaling
+    # 4. IMU Coordinate Alignment & Adaptive Scaling
     # --------------------------------------------------------------------------
     yaw_axis: "z"                      # Axis corresponding to physical Yaw rotation ("z", "x", or "y")
     max_translation_speed: 1.0         # Max expected speed (m/s) to scale down correction at low speeds
 
     # --------------------------------------------------------------------------
-    # 4. Safety Watchdog & Fail-Safe Protection
+    # 5. Safety Watchdog & Fail-Safe Protection
     # --------------------------------------------------------------------------
     cmd_vel_timeout: 0.5               # Command loss timeout (s). Triggers Zero Velocity stop
     imu_timeout: 0.25                  # IMU loss timeout (s, 250ms). Prevents false-positive failsafe from CAN jitter
     enable_diagnostics: true           # Publish 1Hz real-time diagnostic status (/diagnostics)
+
