@@ -134,10 +134,11 @@ public:
                 this->create_wall_timer(std::chrono::seconds(1), [this]() { publish_diagnostics(); }, admin_cb_group_);
         }
 
-        RCLCPP_INFO(this->get_logger(),
-                    "BNO055 Heading Control online: input=%s output=%s imu=%s (Kp=%.2f, Kd=%.3f, FF vel=%.2f, acc=%.3f)",
-                    raw_cmd_vel_topic_.c_str(), corrected_cmd_vel_topic_.c_str(), imu_topic_.c_str(), kp_, kd_,
-                    k_ff_vel_, k_ff_acc_);
+        RCLCPP_INFO(
+            this->get_logger(),
+            "BNO055 Heading Control online: input=%s output=%s imu=%s (Kp=%.2f, Kd=%.3f, FF vel=%.2f, acc=%.3f)",
+            raw_cmd_vel_topic_.c_str(), corrected_cmd_vel_topic_.c_str(), imu_topic_.c_str(), kp_, kd_, k_ff_vel_,
+            k_ff_acc_);
     }
 
 private:
@@ -238,13 +239,12 @@ private:
         if (!std::isfinite(next_kp) || !std::isfinite(next_ki) || !std::isfinite(next_kd) ||
             !std::isfinite(next_integral_limit) || !std::isfinite(next_heading_deadband) ||
             !std::isfinite(next_rotation_deadband) || !std::isfinite(next_max_correction) ||
-            !std::isfinite(next_k_ff_vel) || !std::isfinite(next_k_ff_acc) ||
-            !std::isfinite(next_k_ff_drift_vx) || !std::isfinite(next_k_ff_drift_vy) ||
-            !std::isfinite(next_k_ff_drift_ax) || !std::isfinite(next_k_ff_drift_ay) ||
-            !std::isfinite(next_accel_filter_alpha) || next_kp < 0.0 || next_ki < 0.0 || next_kd < 0.0 ||
-            next_integral_limit < 0.0 || next_heading_deadband < 0.0 || next_rotation_deadband < 0.0 ||
-            next_turn_relock_delay_ms < 0 || next_max_correction <= 0.0 || next_accel_filter_alpha < 0.0 ||
-            next_accel_filter_alpha > 1.0) {
+            !std::isfinite(next_k_ff_vel) || !std::isfinite(next_k_ff_acc) || !std::isfinite(next_k_ff_drift_vx) ||
+            !std::isfinite(next_k_ff_drift_vy) || !std::isfinite(next_k_ff_drift_ax) ||
+            !std::isfinite(next_k_ff_drift_ay) || !std::isfinite(next_accel_filter_alpha) || next_kp < 0.0 ||
+            next_ki < 0.0 || next_kd < 0.0 || next_integral_limit < 0.0 || next_heading_deadband < 0.0 ||
+            next_rotation_deadband < 0.0 || next_turn_relock_delay_ms < 0 || next_max_correction <= 0.0 ||
+            next_accel_filter_alpha < 0.0 || next_accel_filter_alpha > 1.0) {
             result.reason = "Gains and limits must be finite and within valid ranges";
             return result;
         }
@@ -380,8 +380,7 @@ private:
 
         filtered_ax_ = (1.0 - accel_filter_alpha_) * filtered_ax_ + accel_filter_alpha_ * raw_ax;
         filtered_ay_ = (1.0 - accel_filter_alpha_) * filtered_ay_ + accel_filter_alpha_ * raw_ay;
-        filtered_ang_accel_ =
-            (1.0 - accel_filter_alpha_) * filtered_ang_accel_ + accel_filter_alpha_ * raw_ang_accel;
+        filtered_ang_accel_ = (1.0 - accel_filter_alpha_) * filtered_ang_accel_ + accel_filter_alpha_ * raw_ang_accel;
 
         prev_cmd_vx_ = latest_command_.linear.x;
         prev_cmd_vy_ = latest_command_.linear.y;
@@ -454,7 +453,8 @@ private:
                               "[HeadingControl] LOCKED | In(Vx=%.2f, Vy=%.2f) | Yaw: curr=%+.1f° -> target=%+.1f° "
                               "(err=%+.2f°) | GyroZ=%+.2f | FF=%+.3f | Out: Wz=%+.3f rad/s",
                               latest_command_.linear.x, latest_command_.linear.y, curr_yaw_deg, target_yaw_deg,
-                              last_error_deg_, current_angular_velocity_z_rad_s_, ff_rad_s, corrected_command.angular.z);
+                              last_error_deg_, current_angular_velocity_z_rad_s_, ff_rad_s,
+                              corrected_command.angular.z);
     }
 
     void publish_diagnostics() {
