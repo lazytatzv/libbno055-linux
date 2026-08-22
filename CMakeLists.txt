@@ -149,6 +149,8 @@ endif()
 find_package(ament_cmake QUIET)
 
 if(ament_cmake_FOUND)
+    find_package(spdlog_vendor QUIET)
+    find_package(yaml_cpp_vendor QUIET)
     find_package(rclcpp REQUIRED)
     find_package(rclcpp_components REQUIRED)
     find_package(rclcpp_lifecycle REQUIRED)
