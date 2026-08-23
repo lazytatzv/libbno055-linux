@@ -402,31 +402,52 @@ private:
             ff_rad_s = latest_command_.angular.z;
         }
 
+        // 停止中判定: 並進・旋回の指令が共にゼロの場合は補正を休止し、現在の向きを同期してドリフトを防止
+        const double vel_magnitude = std::hypot(latest_command_.linear.x, latest_command_.linear.y);
+        if (vel_magnitude < 1e-3 && std::abs(latest_command_.angular.z) < 1e-3) {
+            target_yaw_rad_ = current_yaw_rad_;
+            target_yaw_initialized_ = false;
+            integral_error_rad_s_ = 0.0;
+            corrected_command_pub_->publish(latest_command_);
+            last_correction_ = 0.0;
+            last_error_deg_ = 0.0;
+            return;
+        }
+
         // --- 2-DOF Target Tracking & Feedback (PID) ---
         const bool is_manual_turning = std::abs(latest_command_.angular.z) > rotation_input_deadband_rad_s_;
 
-        if (!target_yaw_initialized_) {
+        // 手動旋回中: 追従遅延による押し戻しを防ぐため、目標方位を現在値へ同期しタイマー更新
+        if (is_manual_turning) {
+            target_yaw_rad_ = current_yaw_rad_;
+            target_yaw_initialized_ = false;
+            integral_error_rad_s_ = 0.0;
+            last_manual_turn_time_ = current_time;
+        }
+
+        // 手動旋回終了後の慣性セトリング待機判定
+        const bool is_settling = (last_manual_turn_time_.nanoseconds() != 0 &&
+                                  (current_time - last_manual_turn_time_).nanoseconds() < turn_relock_delay_ms_ * 1000000LL);
+
+        if (is_settling) {
+            target_yaw_rad_ = current_yaw_rad_;
+            target_yaw_initialized_ = false;
+            integral_error_rad_s_ = 0.0;
+        } else if (!target_yaw_initialized_) {
+            // 旋回終了後のセトリング完了時、または発進時: 安定した現在方位を目標方位として再ロック
             target_yaw_rad_ = current_yaw_rad_;
             target_yaw_initialized_ = true;
             integral_error_rad_s_ = 0.0;
-        }
-
-        if (is_manual_turning) {
-            // 手動旋回中: 追従遅延による押し戻しを防ぐため、目標方位を常に現在値へ同期
-            target_yaw_rad_ = current_yaw_rad_;
-            integral_error_rad_s_ = 0.0;
-            last_manual_turn_time_ = current_time;
-        } else if (last_manual_turn_time_.nanoseconds() != 0) {
-            // 旋回終了時: 止まった方位を新ターゲットとして即座にロック
-            target_yaw_rad_ = current_yaw_rad_;
-            integral_error_rad_s_ = 0.0;
             last_manual_turn_time_ = rclcpp::Time(0, 0, RCL_ROS_TIME);
+            RCLCPP_INFO(this->get_logger(),
+                        "[HeadingControl] Re-locked heading target to %+.1f° on motion start / turn finish",
+                        target_yaw_rad_ * 180.0 / M_PI);
         }
 
         double heading_error_rad = 0.0;
         double feedback_rad_s = 0.0;
 
-        if (!is_manual_turning) {
+        if (!is_manual_turning && !is_settling) {
             heading_error_rad = normalize_angle(target_yaw_rad_ - current_yaw_rad_);
             if (std::abs(heading_error_rad) < heading_deadband_rad_) {
                 heading_error_rad = 0.0;
