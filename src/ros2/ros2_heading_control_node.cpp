@@ -426,8 +426,9 @@ private:
         }
 
         // 手動旋回終了後の慣性セトリング待機判定
-        const bool is_settling = (last_manual_turn_time_.nanoseconds() != 0 &&
-                                  (current_time - last_manual_turn_time_).nanoseconds() < turn_relock_delay_ms_ * 1000000LL);
+        const bool is_settling =
+            (last_manual_turn_time_.nanoseconds() != 0 &&
+             (current_time - last_manual_turn_time_).nanoseconds() < turn_relock_delay_ms_ * 1000000LL);
 
         if (is_settling) {
             target_yaw_rad_ = current_yaw_rad_;
