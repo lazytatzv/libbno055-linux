@@ -4,6 +4,8 @@ project(libbno055_linux VERSION 1.9.0 LANGUAGES CXX C)
 # Ensure ROS 2 vendor packages (spdlog, fmt, console_bridge, etc.) are found in clean CI environments
 list(APPEND CMAKE_PREFIX_PATH
     "/opt/ros/humble/opt/spdlog_vendor"
+    "/opt/ros/humble/opt/console_bridge_vendor"
+    "/opt/ros/humble"
     "/usr/lib/aarch64-linux-gnu/cmake/spdlog"
     "/usr/lib/x86_64-linux-gnu/cmake/spdlog"
     "/usr/lib/aarch64-linux-gnu/cmake/fmt"
