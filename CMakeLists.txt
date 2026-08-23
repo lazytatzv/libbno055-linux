@@ -1,49 +1,6 @@
 cmake_minimum_required(VERSION 3.10)
 project(libbno055_linux VERSION 1.9.0 LANGUAGES CXX C)
 
-# Ensure ROS 2 vendor packages (spdlog, fmt, console_bridge, orocos_kdl, etc.) are found in clean CI environments
-list(APPEND CMAKE_PREFIX_PATH
-    "/opt/ros/humble/opt/spdlog_vendor"
-    "/opt/ros/humble/opt/console_bridge_vendor"
-    "/opt/ros/humble/opt/orocos_kdl_vendor"
-    "/opt/ros/humble"
-    "/usr/lib/aarch64-linux-gnu/cmake/spdlog"
-    "/usr/lib/x86_64-linux-gnu/cmake/spdlog"
-    "/usr/lib/aarch64-linux-gnu/cmake/fmt"
-    "/usr/lib/x86_64-linux-gnu/cmake/fmt"
-    "/usr/lib/aarch64-linux-gnu/console_bridge/cmake"
-    "/usr/lib/x86_64-linux-gnu/console_bridge/cmake"
-    "/usr/lib/aarch64-linux-gnu/cmake/console_bridge"
-    "/usr/lib/x86_64-linux-gnu/cmake/console_bridge"
-    "/usr/share/console_bridge/cmake"
-    "/usr/lib/aarch64-linux-gnu/cmake/orocos_kdl"
-    "/usr/lib/x86_64-linux-gnu/cmake/orocos_kdl"
-    "/usr/share/orocos_kdl/cmake"
-    "/usr/share/orocos_kdl"
-)
-list(APPEND CMAKE_MODULE_PATH
-    "/usr/lib/aarch64-linux-gnu/console_bridge/cmake"
-    "/usr/lib/x86_64-linux-gnu/console_bridge/cmake"
-    "/usr/share/console_bridge/cmake"
-    "/usr/lib/aarch64-linux-gnu/cmake/orocos_kdl"
-    "/usr/lib/x86_64-linux-gnu/cmake/orocos_kdl"
-    "/usr/share/orocos_kdl/cmake"
-    "/usr/share/orocos_kdl"
-    "/opt/ros/humble/share/orocos_kdl_vendor/cmake"
-)
-if(EXISTS "/usr/lib/aarch64-linux-gnu/console_bridge/cmake")
-    set(console_bridge_DIR "/usr/lib/aarch64-linux-gnu/console_bridge/cmake" CACHE PATH "console_bridge dir" FORCE)
-elseif(EXISTS "/usr/lib/x86_64-linux-gnu/console_bridge/cmake")
-    set(console_bridge_DIR "/usr/lib/x86_64-linux-gnu/console_bridge/cmake" CACHE PATH "console_bridge dir" FORCE)
-endif()
-if(EXISTS "/usr/lib/aarch64-linux-gnu/cmake/orocos_kdl")
-    set(orocos_kdl_DIR "/usr/lib/aarch64-linux-gnu/cmake/orocos_kdl" CACHE PATH "orocos_kdl dir" FORCE)
-elseif(EXISTS "/usr/lib/x86_64-linux-gnu/cmake/orocos_kdl")
-    set(orocos_kdl_DIR "/usr/lib/x86_64-linux-gnu/cmake/orocos_kdl" CACHE PATH "orocos_kdl dir" FORCE)
-elseif(EXISTS "/usr/share/orocos_kdl/cmake")
-    set(orocos_kdl_DIR "/usr/share/orocos_kdl/cmake" CACHE PATH "orocos_kdl dir" FORCE)
-endif()
-
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
