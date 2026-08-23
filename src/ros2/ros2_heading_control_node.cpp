@@ -412,31 +412,31 @@ private:
         }
 
         if (is_manual_turning) {
-            // Integrate reference angular velocity smoothly into target heading during turns
-            target_yaw_rad_ = normalize_angle(target_yaw_rad_ + latest_command_.angular.z * safe_dt_s);
+            // 手動旋回中: 追従遅延による押し戻しを防ぐため、目標方位を常に現在値へ同期
+            target_yaw_rad_ = current_yaw_rad_;
+            integral_error_rad_s_ = 0.0;
             last_manual_turn_time_ = current_time;
         } else if (last_manual_turn_time_.nanoseconds() != 0) {
-            // Re-sync heading target to eliminate overshoot right after turn completes
+            // 旋回終了時: 止まった方位を新ターゲットとして即座にロック
             target_yaw_rad_ = current_yaw_rad_;
             integral_error_rad_s_ = 0.0;
             last_manual_turn_time_ = rclcpp::Time(0, 0, RCL_ROS_TIME);
         }
 
-        double heading_error_rad = normalize_angle(target_yaw_rad_ - current_yaw_rad_);
-        if (std::abs(heading_error_rad) < heading_deadband_rad_) {
-            heading_error_rad = 0.0;
-        }
+        double heading_error_rad = 0.0;
+        double feedback_rad_s = 0.0;
 
         if (!is_manual_turning) {
+            heading_error_rad = normalize_angle(target_yaw_rad_ - current_yaw_rad_);
+            if (std::abs(heading_error_rad) < heading_deadband_rad_) {
+                heading_error_rad = 0.0;
+            }
             integral_error_rad_s_ = std::clamp(integral_error_rad_s_ + heading_error_rad * safe_dt_s,
                                                -integral_limit_rad_s_, integral_limit_rad_s_);
-        } else {
-            integral_error_rad_s_ = 0.0;
+            feedback_rad_s =
+                std::clamp(kp_ * heading_error_rad + ki_ * integral_error_rad_s_ - kd_ * current_angular_velocity_z_rad_s_,
+                           -max_correction_rad_s_, max_correction_rad_s_);
         }
-
-        const double feedback_rad_s =
-            std::clamp(kp_ * heading_error_rad + ki_ * integral_error_rad_s_ - kd_ * current_angular_velocity_z_rad_s_,
-                       -max_correction_rad_s_, max_correction_rad_s_);
 
         // Combined output: Feedforward + Feedback
         auto corrected_command = latest_command_;
