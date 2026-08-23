@@ -1,11 +1,13 @@
 cmake_minimum_required(VERSION 3.10)
 project(libbno055_linux VERSION 1.9.0 LANGUAGES CXX C)
 
-# Ensure ROS 2 vendor packages (spdlog, etc.) are found in clean CI environments
+# Ensure ROS 2 vendor packages (spdlog, fmt, etc.) are found in clean CI environments
 list(APPEND CMAKE_PREFIX_PATH
     "/opt/ros/humble/opt/spdlog_vendor"
     "/usr/lib/aarch64-linux-gnu/cmake/spdlog"
     "/usr/lib/x86_64-linux-gnu/cmake/spdlog"
+    "/usr/lib/aarch64-linux-gnu/cmake/fmt"
+    "/usr/lib/x86_64-linux-gnu/cmake/fmt"
 )
 
 set(CMAKE_CXX_STANDARD 17)
@@ -156,6 +158,7 @@ endif()
 find_package(ament_cmake QUIET)
 
 if(ament_cmake_FOUND)
+    find_package(fmt REQUIRED)
     find_package(spdlog REQUIRED)
     find_package(rclcpp REQUIRED)
     find_package(rclcpp_components REQUIRED)
