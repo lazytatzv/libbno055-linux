@@ -322,7 +322,7 @@ private:
         }
 
         current_yaw_rad_ = new_yaw_rad;
-        current_angular_velocity_z_rad_s_ = -message.angular_velocity.z;
+        current_angular_velocity_z_rad_s_ = message.angular_velocity.z;
         last_imu_time_ = now_time;
     }
 
