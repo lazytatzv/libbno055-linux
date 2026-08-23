@@ -433,9 +433,9 @@ private:
             }
             integral_error_rad_s_ = std::clamp(integral_error_rad_s_ + heading_error_rad * safe_dt_s,
                                                -integral_limit_rad_s_, integral_limit_rad_s_);
-            feedback_rad_s =
-                std::clamp(kp_ * heading_error_rad + ki_ * integral_error_rad_s_ - kd_ * current_angular_velocity_z_rad_s_,
-                           -max_correction_rad_s_, max_correction_rad_s_);
+            feedback_rad_s = std::clamp(
+                kp_ * heading_error_rad + ki_ * integral_error_rad_s_ - kd_ * current_angular_velocity_z_rad_s_,
+                -max_correction_rad_s_, max_correction_rad_s_);
         }
 
         // Combined output: Feedforward + Feedback
