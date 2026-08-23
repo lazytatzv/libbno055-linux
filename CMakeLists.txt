@@ -145,12 +145,39 @@ if(BUILD_PYTHON_BINDINGS)
     set_target_properties(libbno055_py PROPERTIES OUTPUT_NAME "libbno055")
 endif()
 
+# Architecture-aware system paths
+if(CMAKE_SYSTEM_PROCESSOR MATCHES "aarch64|arm64")
+    list(APPEND CMAKE_PREFIX_PATH
+        "/usr/lib/aarch64-linux-gnu/cmake"
+        "/usr/lib/aarch64-linux-gnu"
+    )
+elseif(CMAKE_SYSTEM_PROCESSOR MATCHES "x86_64|amd64")
+    list(APPEND CMAKE_PREFIX_PATH
+        "/usr/lib/x86_64-linux-gnu/cmake"
+        "/usr/lib/x86_64-linux-gnu"
+    )
+endif()
+list(APPEND CMAKE_PREFIX_PATH
+    "/opt/ros/humble/opt/spdlog_vendor"
+    "/opt/ros/humble"
+    "/usr"
+    "/usr/share"
+)
+
 # Optional ROS 2 integration (conditional build of ROS 2 publisher samples)
 find_package(ament_cmake QUIET)
 
 if(ament_cmake_FOUND)
-    find_package(fmt REQUIRED)
-    find_package(spdlog REQUIRED)
+    find_package(fmt QUIET)
+    if(NOT fmt_FOUND)
+        find_package(PkgConfig REQUIRED)
+        pkg_check_modules(fmt REQUIRED fmt)
+    endif()
+    find_package(spdlog QUIET)
+    if(NOT spdlog_FOUND)
+        find_package(PkgConfig REQUIRED)
+        pkg_check_modules(spdlog REQUIRED spdlog)
+    endif()
     find_package(rclcpp REQUIRED)
     find_package(rclcpp_components REQUIRED)
     find_package(rclcpp_lifecycle REQUIRED)
