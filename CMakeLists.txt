@@ -12,7 +12,18 @@ list(APPEND CMAKE_PREFIX_PATH
     "/usr/lib/x86_64-linux-gnu/console_bridge/cmake"
     "/usr/lib/aarch64-linux-gnu/cmake/console_bridge"
     "/usr/lib/x86_64-linux-gnu/cmake/console_bridge"
+    "/usr/share/console_bridge/cmake"
 )
+list(APPEND CMAKE_MODULE_PATH
+    "/usr/lib/aarch64-linux-gnu/console_bridge/cmake"
+    "/usr/lib/x86_64-linux-gnu/console_bridge/cmake"
+    "/usr/share/console_bridge/cmake"
+)
+if(EXISTS "/usr/lib/aarch64-linux-gnu/console_bridge/cmake")
+    set(console_bridge_DIR "/usr/lib/aarch64-linux-gnu/console_bridge/cmake" CACHE PATH "console_bridge dir" FORCE)
+elseif(EXISTS "/usr/lib/x86_64-linux-gnu/console_bridge/cmake")
+    set(console_bridge_DIR "/usr/lib/x86_64-linux-gnu/console_bridge/cmake" CACHE PATH "console_bridge dir" FORCE)
+endif()
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
